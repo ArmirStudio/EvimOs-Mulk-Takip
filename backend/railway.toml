@@ -1,5 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[env]
-NIXPACKS_PYTHON_VERSION = "3.13"

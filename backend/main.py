@@ -27,7 +27,6 @@ DEFAULT_ALLOWED_ORIGINS = [
     "http://localhost:8083",
     "http://127.0.0.1:8083",
     "http://192.168.1.113:8083",
-    "https://emlak-main-1-production.up.railway.app",
 ]
 AUTH_RESOLVE_RATE_LIMIT_WINDOW_SECONDS = int(os.environ.get("AUTH_RESOLVE_RATE_LIMIT_WINDOW_SECONDS", "60"))
 AUTH_RESOLVE_RATE_LIMIT_MAX_REQUESTS = int(os.environ.get("AUTH_RESOLVE_RATE_LIMIT_MAX_REQUESTS", "20"))
@@ -46,10 +45,10 @@ def _get_request_ip(request: Request) -> str:
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
-# Create the main app
+
+
 app = FastAPI()
 
-# Include routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(properties.router, prefix="/api")
@@ -74,7 +73,7 @@ app.add_middleware(
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
 
@@ -112,9 +111,9 @@ async def auth_resolve_rate_limit(request: Request, call_next):
 @app.exception_handler(httpx.RemoteProtocolError)
 @app.exception_handler(httpcore.RemoteProtocolError)
 async def supabase_disconnect_handler(_request: Request, exc: Exception):
-    logger.warning("Supabase bağlantısı kesildi, client yenileniyor: %s", exc)
+    logger.warning("Supabase baglantisi kesildi, client yenileniyor: %s", exc)
     db._refresh()
     return JSONResponse(
-        {"detail": "Bağlantı yenilendi, lütfen tekrar deneyin"},
+        {"detail": "Baglanti yenilendi, lutfen tekrar deneyin"},
         status_code=503,
     )
