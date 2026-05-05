@@ -9,13 +9,11 @@ import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../services/supabase';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
-import { tr } from '../../app/translations';
 import { PROPERTY_IMAGES, formatRentDay, formatCurrency } from '../../utils/propertyHelpers';
 import { useUserData } from '../../hooks/useUserData';
 import ShimmerPlaceholder from './ShimmerPlaceholder';
 import AnimatedHeaderFlatList from './AnimatedHeaderFlatList';
 import AnimatedScreen from './AnimatedScreen';
-import OfficeAvatarMenu from './OfficeAvatarMenu';
 import { canManageOfficeRecords, getOfficeOwnerId, hasFullEmployeeAccess } from '../../utils/employeeAccess';
 
 type FilterType = 'all' | 'occupied' | 'vacant' | 'maintenance';
@@ -35,11 +33,14 @@ const ROLE_TITLE: Record<string, string> = {
   tenant: 'Evim',
 };
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: string }> = {
-  occupied: { label: 'KİRADA', color: '#1E6FD9', bg: 'rgba(30,111,217,0.92)', icon: 'person' },
-  vacant: { label: 'BOŞ', color: '#1A9E5C', bg: 'rgba(26,158,92,0.92)', icon: 'check-circle' },
-  maintenance: { label: 'BAKIMDA', color: '#C47A00', bg: 'rgba(196,122,0,0.92)', icon: 'build' },
-};
+function getStatusMeta(theme: ReturnType<typeof useAppTheme>, status: string): { label: string; color: string; bg: string; icon: string } {
+  const statusMeta: Record<string, { label: string; color: string; bg: string; icon: string }> = {
+    occupied: { label: 'KİRADA', color: theme.colors.info, bg: theme.colors.info, icon: 'person' },
+    vacant: { label: 'BOŞ', color: theme.colors.success, bg: theme.colors.success, icon: 'check-circle' },
+    maintenance: { label: 'BAKIMDA', color: theme.colors.warning, bg: theme.colors.warning, icon: 'build' },
+  };
+  return statusMeta[status] ?? statusMeta.vacant;
+}
 
 const FILTERS: { key: FilterType; label: string; icon: string }[] = [
   { key: 'all', label: 'Tümü', icon: 'apps' },
@@ -146,7 +147,7 @@ export default function PropertiesScreen() {
 
   const renderProperty = ({ item, index }: { item: any; index: number }) => {
     const status = item.status || 'vacant';
-    const meta = STATUS_META[status] ?? STATUS_META.vacant;
+    const meta = getStatusMeta(theme, status);
     const isOccupied = status === 'occupied';
     const tenantName = item.tenant?.full_name || item.tenant_name || null;
     const roomType = item.room_type || parseRoomType(item.description);
@@ -166,13 +167,13 @@ export default function PropertiesScreen() {
 
             {/* Gradient overlay */}
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.55)']}
+              colors={['transparent', theme.colors.modalBackdrop]}
               style={s.imageGradient}
             />
 
             {/* Status badge — sol üst */}
             <View style={[s.statusBadge, { backgroundColor: meta.bg }]}>
-              <MaterialIcons name={meta.icon as any} size={11} color="#fff" />
+              <MaterialIcons name={meta.icon as any} size={11} color={theme.colors.white} />
               <Text style={s.statusBadgeText}>{meta.label}</Text>
             </View>
 
@@ -188,7 +189,7 @@ export default function PropertiesScreen() {
                 {item.description || item.address || 'Mülk'}
               </Text>
               <View style={s.imageLocation}>
-                <MaterialIcons name="location-on" size={12} color="rgba(255,255,255,0.85)" />
+                <MaterialIcons name="location-on" size={12} color={theme.colors.white} />
                 <Text style={s.imageLocationText}>
                   {[item.city, item.district].filter(Boolean).join(' / ') || '—'}
                 </Text>
@@ -287,10 +288,9 @@ export default function PropertiesScreen() {
                       style={s.addBtn}
                       onPress={() => router.push('/agent/create-property')}
                     >
-                      <MaterialIcons name="add" size={22} color="#fff" />
+                      <MaterialIcons name="add" size={22} color={theme.colors.textInverse} />
                     </TouchableOpacity>
                   )}
-                  {(userRole === 'agent' || userRole === 'employee') && <OfficeAvatarMenu />}
                 </View>
               </View>
 
@@ -315,7 +315,7 @@ export default function PropertiesScreen() {
                       <MaterialIcons
                         name={f.icon as any}
                         size={13}
-                        color={active ? '#fff' : theme.colors.textSecondary}
+                        color={active ? theme.colors.textInverse : theme.colors.textSecondary}
                       />
                       <Text style={[s.filterText, active && s.filterTextActive]}>
                         {f.label}
@@ -385,7 +385,7 @@ export default function PropertiesScreen() {
                     style={s.emptyAction}
                     onPress={() => router.push('/agent/create-property')}
                   >
-                    <MaterialIcons name="add" size={18} color="#fff" />
+                    <MaterialIcons name="add" size={18} color={theme.colors.textInverse} />
                     <Text style={s.emptyActionText}>İlk Mülkü Ekle</Text>
                   </TouchableOpacity>
                 )}
@@ -473,16 +473,16 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     borderColor: theme.colors.primary,
   },
   filterText: { fontSize: 13, fontWeight: '600', color: theme.colors.textSecondary },
-  filterTextActive: { color: '#fff' },
+  filterTextActive: { color: theme.colors.textInverse },
   filterCount: {
     minWidth: 18, height: 18, borderRadius: 9,
     backgroundColor: theme.colors.surface2,
     alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  filterCountActive: { backgroundColor: 'rgba(255,255,255,0.25)' },
+  filterCountActive: { backgroundColor: theme.colors.overlaySoft },
   filterCountText: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted },
-  filterCountTextActive: { color: '#fff' },
+  filterCountTextActive: { color: theme.colors.textInverse },
 
   // List
   listContent: { padding: 16, paddingBottom: 110, gap: 16 },
@@ -510,11 +510,11 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 20,
   },
-  statusBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+  statusBadgeText: { color: theme.colors.white, fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
   priceFloat: {
     position: 'absolute', top: 10, right: 10,
     flexDirection: 'row', alignItems: 'baseline', gap: 2,
-    backgroundColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: theme.colors.navGlass,
     paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 12,
     ...theme.shadows.sm,
@@ -525,9 +525,9 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 14, paddingBottom: 12, paddingTop: 20,
   },
-  imageTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  imageTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.white, marginBottom: 2 },
   imageLocation: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  imageLocationText: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
+  imageLocationText: { fontSize: 12, color: theme.colors.white, fontWeight: '500', opacity: 0.85 },
 
   // Content
   content: { padding: 14, gap: 12 },
@@ -596,11 +596,11 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12,
     borderRadius: 14, ...theme.shadows.sm,
   },
-  emptyActionText: { fontSize: 15, fontWeight: '700', color: '#fff' },
+  emptyActionText: { fontSize: 15, fontWeight: '700', color: theme.colors.textInverse },
 
   // Sort Modal
   modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
+    flex: 1, backgroundColor: theme.colors.modalBackdrop,
     justifyContent: 'flex-end',
   },
   modalSheet: {

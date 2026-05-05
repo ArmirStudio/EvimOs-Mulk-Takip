@@ -89,7 +89,7 @@ export default function EditAgentScreen() {
       setAgencies((agencyData as AgencyOption[]) || []);
     } catch (error) {
       console.error('Agent load exception:', error);
-      Alert.alert(tr.common.error, 'Emlakci yuklenirken hata olustu');
+      Alert.alert(tr.common.error, 'Emlakçı yüklenirken hata oluştu');
       router.back();
     } finally {
       setLoading(false);
@@ -128,7 +128,7 @@ export default function EditAgentScreen() {
         setAvatarUri(upload.public_url);
       } catch (error: any) {
         console.error('Avatar update error:', error);
-        Alert.alert(tr.common.error, error?.message || 'Fotograf yuklenemedi');
+        Alert.alert(tr.common.error, error?.message || 'Fotoğraf yüklenemedi');
       } finally {
         setUploadingPhoto(false);
       }
@@ -168,7 +168,7 @@ export default function EditAgentScreen() {
       ]);
     } catch (error: any) {
       console.error('Agent save exception:', error);
-      Alert.alert(tr.common.error, error?.message || 'Kayit kaydedilirken hata olustu');
+      Alert.alert(tr.common.error, error?.message || 'Kayıt kaydedilirken hata oluştu');
     } finally {
       setSaving(false);
     }
@@ -188,10 +188,10 @@ export default function EditAgentScreen() {
 
   const selectedAgency = agencies.find((agency) => agency.id === selectedAgencyId) || null;
   const roleLabel = currentRole === 'employee' ? tr.admin.roleEmployee : tr.admin.roleAgent;
-  const structureLabel = selectedAgency ? selectedAgency.name : 'Bagimsiz Emlakci Ofisi';
+  const structureLabel = selectedAgency ? selectedAgency.name : 'Bağımsız Emlakçı Ofisi';
   const structureMeta = selectedAgency
-    ? `${selectedAgency.entity_type === 'company' ? 'Sirket' : 'Ofis'} • ${selectedAgency.location || 'Konum belirtilmedi'}`
-    : 'Ofis • Sirket baglantisi olmadan calisir';
+    ? `${selectedAgency.entity_type === 'company' ? 'Şirket' : 'Ofis'} • ${selectedAgency.location || 'Konum belirtilmedi'}`
+    : 'Ofis • Şirket bağlantısı olmadan çalışır';
 
   if (loading) {
     return (
@@ -283,15 +283,15 @@ export default function EditAgentScreen() {
                 <Ionicons name="home-outline" size={20} color={theme.colors.textSecondary} />
               </View>
               <View style={styles.agencyInfo}>
-                <Text style={styles.agencyName}>Bagimsiz Emlakci Ofisi</Text>
-                <Text style={styles.agencyMeta}>Ofis • Sirket baglantisi olmadan calisir</Text>
+                <Text style={styles.agencyName}>Bağımsız Emlakçı Ofisi</Text>
+                <Text style={styles.agencyMeta}>Ofis • Şirket bağlantısı olmadan çalışır</Text>
               </View>
               {!selectedAgencyId ? <Ionicons name="checkmark-circle" size={22} color={theme.colors.success} /> : null}
             </TouchableOpacity>
 
             {agencies.map((agency) => {
               const active = selectedAgencyId === agency.id;
-              const typeLabel = agency.entity_type === 'company' ? 'Sirket' : 'Ofis';
+              const typeLabel = agency.entity_type === 'company' ? 'Şirket' : 'Ofis';
               return (
                 <TouchableOpacity
                   key={agency.id}
@@ -317,7 +317,7 @@ export default function EditAgentScreen() {
             {selectedAgency ? (
               <>
                 <Text style={styles.sectionHint}>
-                  Bu emlakci su an bir yapiya bagli. Tema renkleri secilen {selectedAgency.entity_type === 'company' ? 'sirketten' : 'ofisten'} kalitilir.
+                  Bu emlakçı şu an bir yapıya bağlı. Tema renkleri seçilen {selectedAgency.entity_type === 'company' ? 'şirketten' : 'ofisten'} kalıtılır.
                 </Text>
                 <View style={styles.previewRow}>
                   <View style={[styles.previewChip, { backgroundColor: selectedAgency.brand_color_primary || theme.colors.primary }]}>
@@ -328,7 +328,7 @@ export default function EditAgentScreen() {
             ) : (
               <>
                 <Text style={styles.sectionHint}>
-                  Bagimsiz emlakci olarak calisiyorsa tenant ve ev sahibi ekranlarina bu renkler yansir.
+                  Bağımsız emlakçı olarak çalışıyorsa tenant ve ev sahibi ekranlarına bu renkler yansır.
                 </Text>
                 <View style={styles.previewRow}>
                   <View style={[styles.previewChip, { backgroundColor: normalizedPrimary }]}>
@@ -340,7 +340,7 @@ export default function EditAgentScreen() {
                 </View>
                 <BrandColorPicker label="Ana Renk" value={brandColorPrimary} onChange={setBrandColorPrimary} />
                 <View style={styles.spacer} />
-                <BrandColorPicker label="Ikincil Renk" value={brandColorSecondary} onChange={setBrandColorSecondary} />
+                <BrandColorPicker label="İkincil Renk" value={brandColorSecondary} onChange={setBrandColorSecondary} />
               </>
             )}
           </View>

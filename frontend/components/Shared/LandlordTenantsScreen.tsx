@@ -83,7 +83,7 @@ export default function LandlordTenantsScreen() {
 
       const mapped = ((data as any[]) || []).map((item) => ({
         property_id: item.id,
-        property_label: [item.address, item.district, item.city].filter(Boolean).join(', ') || 'Bilinmeyen mulk',
+        property_label: [item.address, item.district, item.city].filter(Boolean).join(', ') || 'Bilinmeyen mülk',
         contract_start: item.contract_start,
         contract_end: item.contract_end,
         tenant: Array.isArray(item.tenant) ? item.tenant[0] || null : item.tenant || null,

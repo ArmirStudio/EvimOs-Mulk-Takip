@@ -81,7 +81,7 @@ export function CompactDatePicker({
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={onClose} />
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>{title || (mode === 'date' ? 'Tarih Secin' : 'Ay Secin')}</Text>
+            <Text style={styles.title}>{title || (mode === 'date' ? 'Tarih Seçin' : 'Ay Seçin')}</Text>
             <TouchableOpacity onPress={onClose}>
               <MaterialIcons name="close" size={24} color={theme.colors.textSecondary} />
             </TouchableOpacity>

@@ -68,7 +68,7 @@ const FILTERS: { key: KindFilter; label: string; icon: keyof typeof MaterialIcon
 const RECEIPT_TYPE_LABELS: Record<string, string> = {
   rent: 'Kira Odemesi',
   dues: 'Aidat Odemesi',
-  other: 'Diger Odeme',
+  other: 'Diğer Ödeme',
 };
 
 const RECEIPT_STATUS_LABELS: Record<string, string> = {

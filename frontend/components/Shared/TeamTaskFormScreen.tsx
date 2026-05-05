@@ -102,7 +102,7 @@ export default function TeamTaskFormScreen() {
         setDate(today);
       }
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Gorev formu yuklenemedi.');
+      Alert.alert('Hata', error.message || 'Görev formu yüklenemedi.');
       router.replace('/agent/team?tab=tasks' as never);
     } finally {
       setLoading(false);
@@ -139,7 +139,7 @@ export default function TeamTaskFormScreen() {
       }
       router.replace('/agent/team?tab=tasks' as never);
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Gorev kaydedilemedi.');
+      Alert.alert('Hata', error.message || 'Görev kaydedilemedi.');
     } finally {
       setSaving(false);
     }

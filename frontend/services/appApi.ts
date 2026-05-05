@@ -55,8 +55,11 @@ function shouldClearSessionForAuthError(error: ApiRequestError) {
   const detail = error.detail.toLocaleLowerCase('tr-TR');
   return (
     detail.includes('gecersiz token') ||
+    detail.includes('geçersiz token') ||
     detail.includes('kullanici profili bulunamadi') ||
-    detail.includes('oturum bulunamadi')
+    detail.includes('kullanıcı profili bulunamadı') ||
+    detail.includes('oturum bulunamadi') ||
+    detail.includes('oturum bulunamadı')
   );
 }
 
@@ -141,7 +144,7 @@ function resolveApiBaseUrl() {
 async function getAccessToken() {
   if (!isSupabaseConfigured) {
     throw new Error(
-      `Supabase ayarlari eksik: ${missingSupabaseEnvVars.join(', ')}`
+      `Supabase ayarları eksik: ${missingSupabaseEnvVars.join(', ')}`
     );
   }
 
@@ -173,11 +176,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
   } catch (error: any) {
-    throw new Error(`Backend baglantisi kurulamadi (${url.origin}). ${error?.message || 'Ag istegi basarisiz oldu'}`);
+    throw new Error(`Backend bağlantısı kurulamadı (${url.origin}). ${error?.message || 'Ağ isteği başarısız oldu'}`);
   }
 
   if (!response.ok) {
-    const error = await buildApiRequestError(response, url.pathname, 'API istegi basarisiz oldu');
+    const error = await buildApiRequestError(response, url.pathname, 'API isteği başarısız oldu');
     if (response.status === 401 && shouldClearSessionForAuthError(error)) {
       await clearStoredUserData();
       await supabase.auth.signOut();
@@ -201,11 +204,11 @@ export async function publicApiRequest<T>(path: string, options: RequestOptions 
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
   } catch (error: any) {
-    throw new Error(`Backend baglantisi kurulamadi (${url.origin}). ${error?.message || 'Ag istegi basarisiz oldu'}`);
+    throw new Error(`Backend bağlantısı kurulamadı (${url.origin}). ${error?.message || 'Ağ isteği başarısız oldu'}`);
   }
 
   if (!response.ok) {
-    throw await buildApiRequestError(response, url.pathname, 'API istegi basarisiz oldu');
+    throw await buildApiRequestError(response, url.pathname, 'API isteği başarısız oldu');
   }
 
   return (await response.json()) as T;

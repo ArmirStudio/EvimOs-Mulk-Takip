@@ -12,6 +12,24 @@ Backend FastAPI ile calisir ve Supabase'e service-role ile baglanir. Mobil istem
 - `team`
 - `admin`
 - `invites`
+- `contacts` (ofis rehberi CRUD)
+- `professions` (meslek/usta kategorileri)
+
+## Railway Deploy ve Prod API
+- Backend Railway uzerinden `backend/` servis kokunden calistirilabilir.
+- Repo kokundeki `railway.toml` start command olarak `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT` kullanir.
+- Zorunlu environment degerleri:
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+  - `ALLOWED_ORIGINS`
+- Opsiyonel environment degerleri:
+  - `SUPABASE_ANON_KEY` — backend dogrudan kullanmaz; ileride public endpoint genislemesi icin referans
+  - `AUTH_RESOLVE_RATE_LIMIT_WINDOW_SECONDS`
+  - `AUTH_RESOLVE_RATE_LIMIT_MAX_REQUESTS`
+- Frontend prod baglantisi `EXPO_PUBLIC_API_URL=https://<railway-app>.up.railway.app` seklinde verilir.
+- `EXPO_PUBLIC_API_URL` degerinin sonuna `/api` eklenmez; `frontend/services/appApi.ts` suffix'i otomatik ekler.
+- CORS icin mobil/web/admin originleri `ALLOWED_ORIGINS` icinde tutulur.
+- Backend baglanti hatalari kullaniciya daha anlasilir mesaj verirken gelistirici icin baglanilamayan origin bilgisini korur.
 
 ## Invite Endpointleri
 - `POST /api/invites`

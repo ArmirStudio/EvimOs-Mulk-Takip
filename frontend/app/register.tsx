@@ -71,7 +71,7 @@ export default function RegisterScreen() {
   const handleLookup = async () => {
     if (!canLookup || !isSupabaseConfigured) {
       if (!isSupabaseConfigured) {
-        showMessage(supabaseConfigurationErrorMessage || 'Supabase ayarlari eksik.');
+        showMessage(supabaseConfigurationErrorMessage || 'Supabase ayarları eksik.');
       }
       return;
     }
@@ -88,7 +88,7 @@ export default function RegisterScreen() {
       }));
     } catch (error: any) {
       setInvite(null);
-      showMessage(error?.detail || error?.message || 'Davet kodu gecersiz veya suresi dolmus.');
+      showMessage(error?.detail || error?.message || 'Davet kodu geçersiz veya süresi dolmuş.');
     } finally {
       setChecking(false);
     }
@@ -117,7 +117,7 @@ export default function RegisterScreen() {
       await persistUserData(userData);
       router.replace(userData.role === 'landlord' ? '/landlord/dashboard' : '/tenant/dashboard');
     } catch (error: any) {
-      showMessage(error?.detail || error?.message || 'Kayit tamamlanamadi. Bilgileri kontrol edin.');
+      showMessage(error?.detail || error?.message || 'Kayıt tamamlanamadı. Bilgileri kontrol edin.');
     } finally {
       setSubmitting(false);
     }
@@ -139,17 +139,17 @@ export default function RegisterScreen() {
         <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
           <View style={styles.heroGlow} />
           <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>Davetli kayit</Text>
+            <Text style={styles.heroBadgeText}>Davetli kayıt</Text>
           </View>
           <BrandLockup size="section" variant="logo" align="left" />
-          <Text style={styles.heroTitle}>Emlak ofisinizin verdigi davet koduyla kaydolun.</Text>
+          <Text style={styles.heroTitle}>Emlak ofisinizin verdiği davet koduyla kaydolun.</Text>
           <Text style={styles.heroSubtitle}>
-            Kod dogrulandiktan sonra rolunuz ve ofisiniz otomatik belirlenir. Hesap, emlakci onayindan sonra acilir.
+            Kod doğrulandıktan sonra rolünüz ve ofisiniz otomatik belirlenir. Hesap, emlakçı onayından sonra açılır.
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(70).duration(420)} style={styles.formCard}>
-          <Text style={styles.formTitle}>Kayit Ol</Text>
+          <Text style={styles.formTitle}>Kayıt Ol</Text>
           <Text style={styles.formSubtitle}>Davet kodunuz yoksa emlak ofisinizden yeni davet isteyin.</Text>
 
           {!isSupabaseConfigured && supabaseConfigurationErrorMessage ? (
@@ -181,7 +181,7 @@ export default function RegisterScreen() {
               <TextInput
                 ref={codeRef}
                 style={styles.input}
-                placeholder="Orn: K7M2P9QA"
+                placeholder="Örn: K7M2P9QA"
                 placeholderTextColor={theme.colors.textMuted}
                 value={code}
                 autoCapitalize="characters"
@@ -212,7 +212,7 @@ export default function RegisterScreen() {
               <ActivityIndicator color={theme.colors.primary} />
             ) : (
               <>
-                <Text style={styles.secondaryButtonText}>Kodu Dogrula</Text>
+                <Text style={styles.secondaryButtonText}>Kodu Doğrula</Text>
                 <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.primary} />
               </>
             )}
@@ -222,7 +222,7 @@ export default function RegisterScreen() {
             <View style={styles.inviteSummary}>
               <Text style={styles.inviteSummaryTitle}>{invite.office_name}</Text>
               <Text style={styles.inviteSummaryText}>
-                {invite.role === 'landlord' ? 'Ev sahibi' : 'Kiraci'} daveti bulundu. Asagidaki bilgileri kendi gercek bilgilerinizle tamamlayin.
+                {invite.role === 'landlord' ? 'Ev sahibi' : 'Kiracı'} daveti bulundu. Aşağıdaki bilgileri kendi gerçek bilgilerinizle tamamlayın.
               </Text>
             </View>
           ) : null}
@@ -300,7 +300,7 @@ export default function RegisterScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Sifre</Text>
+                <Text style={styles.fieldLabel}>Şifre</Text>
                 <Pressable accessible={false} style={inputStyle('password')} onPress={() => focusAndScrollToInput(scrollRef, passwordRef, 300)}>
                   <Ionicons name="lock-closed-outline" size={20} color={focused === 'password' ? theme.colors.primary : theme.colors.textMuted} />
                   <TextInput
@@ -332,7 +332,7 @@ export default function RegisterScreen() {
                   <ActivityIndicator color={theme.colors.textInverse} />
                 ) : (
                   <>
-                    <Text style={styles.submitText}>Kayit Ol</Text>
+                    <Text style={styles.submitText}>Kayıt Ol</Text>
                     <Ionicons name="arrow-forward" size={18} color={theme.colors.textInverse} />
                   </>
                 )}
@@ -352,7 +352,7 @@ export default function RegisterScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => router.replace('/login' as never)} activeOpacity={0.75}>
-            <Text style={styles.footnote}>Zaten hesabiniz varsa giris yapin.</Text>
+            <Text style={styles.footnote}>Zaten hesabınız varsa giriş yapın.</Text>
           </TouchableOpacity>
         </Animated.View>
       </KeyboardAwareScrollView>
@@ -369,7 +369,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: theme.spacing.lg,
+      gap: 35,
     },
     backButton: {
       alignSelf: 'center',
@@ -493,14 +493,14 @@ const useStyles = createThemedStyles((theme) =>
       fontWeight: theme.fontWeight.bold,
     },
     inviteSummaryText: { fontSize: theme.fontSize.sm, lineHeight: 19, color: theme.colors.textSecondary },
-    fieldGroup: { gap: theme.spacing.sm },
+    fieldGroup: { gap: theme.spacing.lg },
     fieldLabel: {
       fontSize: theme.fontSize.sm,
       color: publicSurface.warmText,
       fontWeight: theme.fontWeight.semibold,
     },
     inputContainer: {
-      minHeight: 58,
+      minHeight: 60,
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.md,
@@ -513,7 +513,7 @@ const useStyles = createThemedStyles((theme) =>
     inputFocused: { borderColor: publicSurface.fieldFocus, backgroundColor: theme.colors.surface },
     input: {
       flex: 1,
-      minHeight: 58,
+      minHeight: 60,
       color: theme.colors.textPrimary,
       fontSize: theme.fontSize.base,
       fontWeight: theme.fontWeight.medium,

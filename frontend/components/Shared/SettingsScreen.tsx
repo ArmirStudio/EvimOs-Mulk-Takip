@@ -11,7 +11,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { createThemedStyles, useAppTheme, useThemeController } from '../../app/theme';
 import { tr } from '../../app/translations';
 import { useUserData, signOut } from '../../hooks/useUserData';
-import { listUsers, updateUser } from '../../services/appApi';
+import { appApi, listUsers, updateUser } from '../../services/appApi';
 import { mapPreferenceToBackendTheme } from '../../services/preferences';
 import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
@@ -23,6 +23,21 @@ const ROLE_LABELS: Record<string, string> = {
   landlord: 'Ev Sahibi',
   tenant:   'Kiracı',
   employee: 'Çalışan',
+  technician: 'Usta',
+};
+
+type DirectoryFilter = 'all' | 'technician' | 'landlord' | 'tenant';
+
+type DirectoryItem = {
+  id: string;
+  kind: 'user' | 'technician';
+  role: 'landlord' | 'tenant' | 'technician';
+  full_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  profession?: string | null;
+  created_at?: string | null;
+  deleted_at?: string | null;
 };
 
 function getRoleColor(theme: ReturnType<typeof useAppTheme>, role: string): { bg: string; text: string } {
@@ -31,6 +46,7 @@ function getRoleColor(theme: ReturnType<typeof useAppTheme>, role: string): { bg
     landlord: { bg: theme.colors.warningLight, text: theme.colors.warningText },
     tenant: { bg: theme.colors.infoLight, text: theme.colors.infoText },
     employee: { bg: theme.colors.successLight, text: theme.colors.successText },
+    technician: { bg: theme.colors.primaryLight, text: theme.colors.primary },
   };
   return colors[role] ?? colors.tenant;
 }
@@ -53,9 +69,6 @@ Kişisel verileriniz KVKK kapsamında korunmaktadır. Toplanan veriler yalnızca
 
 Verilerinizin silinmesini talep etmek için destek ekibimizle iletişime geçebilirsiniz.`;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SHARED SETTINGS SCREEN
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function SettingsScreen() {
   const { userData, reload } = useUserData();
   const theme = useAppTheme();
@@ -63,26 +76,23 @@ export default function SettingsScreen() {
   const s = useStyles();
   const role = userData?.role ?? 'tenant';
   const isAgent = role === 'agent';
+  const routeRole = role === 'employee' ? 'agent' : role;
   const roleColor = getRoleColor(theme, role);
+  const isDarkMode = theme.colors.background === theme.colors.dark;
 
   const [activeTab, setActiveTab] = useState<'profile' | 'directory'>('profile');
 
-  // ── Kullanıcı tercihleri ──────────────────────────────────────────
   const { prefs, updateCurrency } = usePreferences();
   const [savingPreference, setSavingPreference] = useState<null | 'currency' | 'theme'>(null);
   const feedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const feedbackOpacity = useSharedValue(0);
   const feedbackScale = useSharedValue(0.92);
 
-  // ── Bildirimler (UI only) ─────────────────────────────────────────
-
-  // ── Yasal modaller ────────────────────────────────────────────────
   const [legalModal, setLegalModal] = useState<null | 'terms' | 'privacy'>(null);
 
-  // ── Rehber (Directory) state ──────────────────────────────────────
-  const [contacts, setContacts] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<DirectoryItem[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
-  const [contactFilter, setContactFilter] = useState<'all' | 'landlord' | 'tenant'>('all');
+  const [contactFilter, setContactFilter] = useState<DirectoryFilter>('all');
   const [contactSort, setContactSort] = useState<'newest' | 'name'>('newest');
   const [showSortModal, setShowSortModal] = useState(false);
   const [showAddTypeModal, setShowAddTypeModal] = useState(false);
@@ -98,11 +108,16 @@ export default function SettingsScreen() {
   const loadContacts = useCallback(async () => {
     setContactsLoading(true);
     try {
-      const [landlords, tenants] = await Promise.all([
+      const [landlords, tenants, technicians] = await Promise.all([
         listUsers({ role: 'landlord' }),
         listUsers({ role: 'tenant' }),
+        appApi.listOfficeContacts(),
       ]);
-      setContacts([...(landlords.users || []), ...(tenants.users || [])]);
+      setContacts([
+        ...(landlords.users || []).map((item: any) => ({ ...item, kind: 'user' as const, role: 'landlord' as const })),
+        ...(tenants.users || []).map((item: any) => ({ ...item, kind: 'user' as const, role: 'tenant' as const })),
+        ...(technicians.contacts || []).map((item: any) => ({ ...item, kind: 'technician' as const, role: 'technician' as const })),
+      ]);
     } catch {
       Alert.alert(tr.common.error, tr.errors.loadFailed);
     } finally {
@@ -124,7 +139,7 @@ export default function SettingsScreen() {
       );
     } else {
       list = [...list].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
     }
     return list;
@@ -254,7 +269,7 @@ export default function SettingsScreen() {
       {/* Avatar + Profil Kartı */}
       <TouchableOpacity
         style={s.profileCard}
-        onPress={() => router.push(`/${role}/profile-edit` as any)}
+        onPress={() => router.push(`/${routeRole}/profile-edit` as any)}
         activeOpacity={0.85}
       >
         {userData?.avatar_url ? (
@@ -275,12 +290,9 @@ export default function SettingsScreen() {
         <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
       </TouchableOpacity>
 
-      {/* HESAP */}
       {renderSectionHeader(tr.settings.account)}
       <View style={s.menuCard}>
-        {renderMenuItem('person', tr.settings.editProfile, () => router.push(`/${role}/profile-edit` as any))}
-        <View style={s.menuDivider} />
-        {renderMenuItem('lock', tr.settings.changePassword, () => router.push(`/${role}/change-password` as any))}
+        {renderMenuItem('lock', tr.settings.changePassword, () => router.push(`/${routeRole}/change-password` as any))}
       </View>
 
       {/* BİLDİRİMLER */}
@@ -385,7 +397,7 @@ export default function SettingsScreen() {
 
       {/* SETTINGS FOOTER - BRANDING */}
       <View style={s.settingsFooter}>
-        <EvimosSVGLogo size={80} variant="icon" isDarkMode={theme.colors.background === '#000'} />
+        <EvimosSVGLogo size={80} variant="icon" isDarkMode={isDarkMode} />
         <Text style={s.footerAppName}>{brand.fullName}</Text>
         <Text style={s.footerSubtitle}>{brand.tagline}</Text>
         <Text style={s.footerVersion}>Sürüm 1.0.0</Text>
@@ -407,19 +419,28 @@ export default function SettingsScreen() {
             <View style={s.emptyEmp}>
               <MaterialIcons name="people-outline" size={44} color={theme.colors.textMuted} />
               <Text style={s.emptyEmpText}>
-                {contactFilter === 'all' ? 'Henüz kişi yok' : contactFilter === 'landlord' ? 'Ev sahibi yok' : 'Kiracı yok'}
+                {contactFilter === 'all'
+                  ? 'Henüz kişi yok'
+                  : contactFilter === 'technician'
+                  ? 'Usta yok'
+                  : contactFilter === 'landlord'
+                  ? 'Ev sahibi yok'
+                  : 'Kiracı yok'}
               </Text>
-              <Text style={s.emptyEmpSub}>+ butonuyla yeni kişi ekleyin</Text>
+              <Text style={s.emptyEmpSub}>Sağ üstten yeni kayıt ekleyin</Text>
             </View>
           ) : (
             displayContacts.map(contact => {
               const rc = getRoleColor(theme, contact.role);
               const roleLabel = ROLE_LABELS[contact.role] ?? contact.role;
+              const onPress = contact.kind === 'technician'
+                ? () => router.push(`/agent/edit-contact?id=${contact.id}` as any)
+                : () => router.push(`/agent/contact-detail?id=${contact.id}` as any);
               return (
                 <TouchableOpacity
                   key={contact.id}
                   style={s.contactCard}
-                  onPress={() => router.push(`/agent/contact-detail?id=${contact.id}` as any)}
+                  onPress={onPress}
                   activeOpacity={0.85}
                 >
                   <View style={[s.contactAvatar, { backgroundColor: rc.bg }]}>
@@ -433,8 +454,15 @@ export default function SettingsScreen() {
                       <View style={[s.contactRoleBadge, { backgroundColor: rc.bg }]}>
                         <Text style={[s.contactRoleBadgeText, { color: rc.text }]}>{roleLabel}</Text>
                       </View>
+                      {!!contact.deleted_at && (
+                        <View style={[s.contactRoleBadge, { backgroundColor: theme.colors.surface2 }]}>
+                          <Text style={[s.contactRoleBadgeText, { color: theme.colors.textMuted }]}>Arşiv</Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={s.contactEmail} numberOfLines={1}>{contact.email ?? '—'}</Text>
+                    <Text style={s.contactEmail} numberOfLines={1}>
+                      {contact.kind === 'technician' ? contact.profession ?? 'Usta' : contact.email ?? '—'}
+                    </Text>
                     {!!contact.phone && <Text style={s.contactPhone}>{contact.phone}</Text>}
                   </View>
                   <MaterialIcons name="chevron-right" size={22} color={theme.colors.textMuted} />
@@ -472,11 +500,23 @@ export default function SettingsScreen() {
               <Text style={s.addTypeTitle}>Kişi Ekle</Text>
               <TouchableOpacity
                 style={s.addTypeOption}
+                onPress={() => { setShowAddTypeModal(false); router.push('/agent/create-contact' as any); }}
+                activeOpacity={0.85}
+              >
+                <View style={[s.addTypeIconBg, { backgroundColor: theme.colors.primaryLight }]}>
+                  <MaterialIcons name="handyman" size={22} color={theme.colors.primary} />
+                </View>
+                <Text style={s.addTypeOptionText}>Usta Ekle</Text>
+                <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
+              </TouchableOpacity>
+              <View style={{ height: 1, backgroundColor: theme.colors.border, marginLeft: 66 }} />
+              <TouchableOpacity
+                style={s.addTypeOption}
                 onPress={() => { setShowAddTypeModal(false); router.push('/agent/create-user?type=landlord' as any); }}
                 activeOpacity={0.85}
               >
-                <View style={[s.addTypeIconBg, { backgroundColor: '#FEF5E7' }]}>
-                  <MaterialIcons name="home" size={22} color="#935116" />
+                <View style={[s.addTypeIconBg, { backgroundColor: theme.colors.warningLight }]}>
+                  <MaterialIcons name="home" size={22} color={theme.colors.warningText} />
                 </View>
                 <Text style={s.addTypeOptionText}>Ev Sahibi Ekle</Text>
                 <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
@@ -487,8 +527,8 @@ export default function SettingsScreen() {
                 onPress={() => { setShowAddTypeModal(false); router.push('/agent/create-user?type=tenant' as any); }}
                 activeOpacity={0.85}
               >
-                <View style={[s.addTypeIconBg, { backgroundColor: '#EBF5FB' }]}>
-                  <MaterialIcons name="person" size={22} color="#1A5276" />
+                <View style={[s.addTypeIconBg, { backgroundColor: theme.colors.infoLight }]}>
+                  <MaterialIcons name="person" size={22} color={theme.colors.infoText} />
                 </View>
                 <Text style={s.addTypeOptionText}>Kiracı Ekle</Text>
                 <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
@@ -513,6 +553,7 @@ export default function SettingsScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.dirFilterScroll}>
                 {[
                   { key: 'all' as const, label: 'Tümü' },
+                  { key: 'technician' as const, label: 'Ustalar' },
                   { key: 'landlord' as const, label: 'Ev Sahipleri' },
                   { key: 'tenant' as const, label: 'Kiracılar' },
                 ].map(opt => (
@@ -540,7 +581,7 @@ export default function SettingsScreen() {
                 <Text style={s.headerTitle}>Profil</Text>
                 {isAgent && activeTab === 'directory' && (
                   <TouchableOpacity style={s.headerAddBtn} onPress={() => setShowAddTypeModal(true)} activeOpacity={0.85}>
-                    <MaterialIcons name="person-add" size={20} color="#FFF" />
+                    <MaterialIcons name="person-add" size={20} color={theme.colors.textInverse} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -601,11 +642,11 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   headerTitle:     { fontSize: 24, fontWeight: '700', color: theme.colors.textPrimary },
   tabBar:          { flexDirection: 'row', marginHorizontal: 20, marginBottom: 8, backgroundColor: theme.colors.surface2, borderRadius: 12, padding: 4 },
   tab:             { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
-  tabActive:       { backgroundColor: theme.colors.surface, ...{ shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } } },
+  tabActive:       { backgroundColor: theme.colors.surface, ...{ shadowColor: theme.colors.shadow, shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } } },
   tabText:         { fontSize: 14, fontWeight: '500', color: theme.colors.textMuted },
   tabTextActive:   { color: theme.colors.textPrimary, fontWeight: '700' },
   scrollContent:   { paddingHorizontal: 20, paddingBottom: 120 },
-  profileCard:     { backgroundColor: theme.colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.colors.border, ...{ shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } } },
+  profileCard:     { backgroundColor: theme.colors.surface, borderRadius: 20, padding: 20, flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24, borderWidth: 1, borderColor: theme.colors.border, ...{ shadowColor: theme.colors.shadow, shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 2 } } },
   avatar:          { width: 60, height: 60, borderRadius: 30, backgroundColor: theme.colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
   avatarText:      { fontSize: 22, fontWeight: '700', color: theme.colors.primary },
   profileInfo:     { flex: 1 },
@@ -632,10 +673,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   passRow:         { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   passToggle:      { padding: 8 },
   saveBtn:         { backgroundColor: theme.colors.primary, borderRadius: 12, paddingVertical: 13, alignItems: 'center', marginTop: 12 },
-  saveBtnText:     { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  saveBtnText:     { color: theme.colors.textInverse, fontWeight: '700', fontSize: 15 },
   hintText:        { fontSize: 12, color: theme.colors.textMuted, marginTop: 8 },
   addEmployeeBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: theme.colors.primary, borderRadius: 14, paddingVertical: 14, marginBottom: 8, marginTop: 8 },
-  addEmployeeBtnText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  addEmployeeBtnText: { color: theme.colors.textInverse, fontWeight: '700', fontSize: 15 },
   addFormCard:     { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 16 },
   empCard:         { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: theme.colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 10 },
   empHeaderRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -656,7 +697,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   filterChip:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: theme.colors.surface2, borderWidth: 1, borderColor: theme.colors.border },
   filterChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   filterChipText:  { fontSize: 13, fontWeight: '500', color: theme.colors.textSecondary },
-  filterChipTextActive: { color: '#FFF', fontWeight: '700' },
+  filterChipTextActive: { color: theme.colors.textInverse, fontWeight: '700' },
   sortBtn:         { width: 38, height: 38, borderRadius: 19, backgroundColor: theme.colors.surface2, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border },
   // ── Kişi Kartı ──
   contactCard:     { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: theme.colors.surface, borderRadius: 16, padding: 14, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 10 },
@@ -688,7 +729,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   addTypeOptionText: { flex: 1, fontSize: 15, fontWeight: '600', color: theme.colors.textPrimary },
   addTypeCancelBtn: { marginTop: 12, paddingVertical: 14, alignItems: 'center', backgroundColor: theme.colors.surface2, borderRadius: 14 },
   addTypeCancelText: { fontSize: 15, fontWeight: '600', color: theme.colors.textSecondary },
-  modalOverlay:    { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalOverlay:    { flex: 1, backgroundColor: theme.colors.modalBackdrop, justifyContent: 'flex-end' },
   modalSheet:      { backgroundColor: theme.colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '75%' },
   modalHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
   modalTitle:      { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },

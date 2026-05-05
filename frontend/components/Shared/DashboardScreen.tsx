@@ -21,19 +21,10 @@ import DashboardMarketingSection from './DashboardMarketingSection';
 import InterstitialAdModal from './InterstitialAdModal';
 import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
-import OfficeAvatarMenu from './OfficeAvatarMenu';
 import PendingApprovalScreen from './PendingApprovalScreen';
 import { getOfficeOwnerId, hasFullEmployeeAccess } from '../../utils/employeeAccess';
 import { getMaintenanceNextAction, getMaintenanceStatusMeta, getMaintenanceStatusTone } from '../../utils/maintenancePresentation';
 import type { TeamReportPayload } from '../../services/teamTypes';
-
-const shadow = (color = '#000', opacity = 0.05, radius = 4, elevation = 2) => ({
-  shadowColor: color,
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: opacity,
-  shadowRadius: radius,
-  elevation,
-});
 
 // ─── Rol bazlı banner alt yazıları ───────────────────────────────────────────
 const BANNER_SUB: Record<string, string> = {
@@ -107,9 +98,6 @@ function buildMaintenanceSummary(rows: any[]): MaintenanceSummary {
 function getDisplayName(fullName?: string | null, email?: string | null) {
   const trimmedName = fullName?.trim();
   if (trimmedName) return trimmedName.split(/\s+/)[0];
-
-  const trimmedEmail = email?.trim();
-  if (trimmedEmail) return trimmedEmail.split('@')[0];
 
   return 'Kullanıcı';
 }
@@ -700,7 +688,6 @@ export default function DashboardScreen() {
                     )}
                   </View>
                 </TouchableOpacity>
-                {(role === 'agent' || role === 'employee') && <OfficeAvatarMenu onNotifications={handleOpenNotifications} />}
               </View>
             </>
           }
@@ -713,10 +700,6 @@ export default function DashboardScreen() {
               <View style={s.bannerGreetingLayer}>
                 <Text style={s.bannerTitle}>{bannerTitle}</Text>
                 <Text style={s.bannerSub}>{bannerSub}</Text>
-              </View>
-              <View style={{ zIndex: 1, opacity: 0 }}>
-                <Text style={s.bannerTitle}>{tr.agent.bannerTitle} {userData?.full_name || 'Kullanıcı'}</Text>
-                <Text style={s.bannerSub}>{legacyBannerSub}</Text>
               </View>
               <MaterialIcons
                 name={role === 'agent' ? 'apartment' : 'home-work'}
@@ -820,7 +803,7 @@ export default function DashboardScreen() {
                       </View>
                     ))
                   ) : (
-                    <Text style={s.emptyText}>Rapor verisi henuz hazir degil.</Text>
+                    <Text style={s.emptyText}>Rapor verisi henüz hazır değil.</Text>
                   )}
                 </View>
               </TouchableOpacity>
@@ -1195,11 +1178,11 @@ export default function DashboardScreen() {
                     entering={FadeInRight.delay(i * 100).duration(500)}
                     style={s.activityCard}
                   >
-                    <View style={[s.activityIcon, { backgroundColor: isMaintenanceType(act.type) ? '#FFE0B2' : '#E1F5FE' }]}>
+                    <View style={[s.activityIcon, { backgroundColor: isMaintenanceType(act.type) ? theme.colors.warningLight : theme.colors.infoLight }]}>
                       <MaterialIcons
                         name={isMaintenanceType(act.type) ? 'build' : 'receipt'}
                         size={18}
-                        color={isMaintenanceType(act.type) ? '#F57C00' : '#0288D1'}
+                        color={isMaintenanceType(act.type) ? theme.colors.warningText : theme.colors.infoText}
                       />
                     </View>
                     <View style={s.activityInfo}>
@@ -1239,11 +1222,11 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logoBox: { backgroundColor: theme.colors.primary, padding: 6, borderRadius: 8 },
   headerTitle: { flexShrink: 1, fontSize: 16, lineHeight: 19, fontWeight: '700', color: theme.colors.textPrimary },
-  headerBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center', ...shadow() },
+  headerBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center', ...theme.shadows.sm },
 
   // Bildirim paneli
   notifOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 },
-  notifCard: { position: 'absolute', top: 90, right: 16, left: 16, backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, ...shadow(), maxHeight: 380 },
+  notifCard: { position: 'absolute', top: 90, right: 16, left: 16, backgroundColor: theme.colors.surface, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm, maxHeight: 380 },
   notifTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 12 },
   notifText: { fontSize: 14, color: theme.colors.textMuted },
   notifItem: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
@@ -1252,7 +1235,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   notifItemMsg: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
   notifItemTime: { fontSize: 11, color: theme.colors.textMuted, marginTop: 4 },
   notifBadge: { position: 'absolute', top: -5, right: -6, backgroundColor: theme.colors.error, borderRadius: 9, minWidth: 18, height: 18, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 3 },
-  notifBadgeText: { fontSize: 10, fontWeight: '800', color: 'white' },
+  notifBadgeText: { fontSize: 10, fontWeight: '800', color: theme.colors.white },
 
   // Scroll
   scrollContent: { paddingBottom: 60 },
@@ -1268,15 +1251,15 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
 
   // Agent mini istatistik kartları
   miniStatsGrid: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  miniStatCard: { flex: 1, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border, ...shadow() },
+  miniStatCard: { flex: 1, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm },
   miniStatValue: { fontSize: 18, fontWeight: '700', color: theme.colors.primary },
   miniStatLabel: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, textTransform: 'uppercase' },
 
   // Landlord finansal kart
-  financialCard: { backgroundColor: '#14181e', borderRadius: 16, padding: 20 },
-  financialLabel: { fontSize: 13, color: 'rgba(255,252,248,0.6)', fontWeight: '500' },
+  financialCard: { backgroundColor: theme.colors.dark, borderRadius: 16, padding: 20 },
+  financialLabel: { fontSize: 13, color: theme.colors.white, opacity: 0.6, fontWeight: '500' },
   financialAmount: { fontSize: 32, color: theme.colors.primary, fontWeight: '700', marginVertical: 4 },
-  financialSub: { fontSize: 12, color: 'rgba(255,252,248,0.5)' },
+  financialSub: { fontSize: 12, color: theme.colors.white, opacity: 0.5 },
 
   // Landlord stat grid
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
@@ -1344,7 +1327,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
 
   // Agent aktivite listesi
   activityStack: { marginTop: 12, gap: 10 },
-  activityCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.primaryLight, ...shadow() },
+  activityCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.primaryLight, ...theme.shadows.sm },
   activityIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   activityInfo: { flex: 1 },
   activityTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.textSecondary },

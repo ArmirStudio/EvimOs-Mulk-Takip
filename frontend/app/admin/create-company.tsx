@@ -45,7 +45,7 @@ export default function CreateCompanyScreen() {
     [entityType]
   );
 
-  const screenTitle = initialValues.entityType === 'company' ? 'Yeni Sirket Olustur' : 'Yeni Ofis Olustur';
+  const screenTitle = initialValues.entityType === 'company' ? 'Yeni Şirket Oluştur' : 'Yeni Ofis Oluştur';
 
   const handleSubmit = async (values: CompanyFormValues) => {
     setSaving(true);
@@ -80,12 +80,12 @@ export default function CreateCompanyScreen() {
 
       Alert.alert(
         tr.common.success,
-        `${values.name} olusturuldu. Giris e-postasi: ${values.contactEmail} | Varsayilan sifre: ${TRIAL_PASSWORD}`,
+        `${values.name} oluşturuldu. Giriş e-postası: ${values.contactEmail} | Varsayılan şifre: ${TRIAL_PASSWORD}`,
         [{ text: tr.common.ok, onPress: () => router.replace('/admin/companies') }]
       );
     } catch (submissionError: any) {
       console.error('Create company error:', submissionError);
-      Alert.alert(tr.common.error, submissionError?.message || 'Kayit kaydedilirken hata olustu');
+      Alert.alert(tr.common.error, submissionError?.message || 'Kayıt kaydedilirken hata oluştu');
     } finally {
       setSaving(false);
     }

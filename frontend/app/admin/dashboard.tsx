@@ -87,15 +87,15 @@ export default function AdminDashboardScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>Admin Anasayfa</Text>
           <Text style={styles.subtitle}>
-            Gercek sayimlar ofis, sirket, bagimsiz emlakci ve operasyon verileriyle birlikte guncellendi.
+            Gerçek sayımlar ofis, şirket, bağımsız emlakçı ve operasyon verileriyle birlikte güncellendi.
           </Text>
         </View>
 
         <View style={styles.grid}>
           <MetricCard label="Ofis" value={stats.offices} />
-          <MetricCard label="Sirket" value={stats.companies} />
-          <MetricCard label="Bagimsiz" value={stats.standaloneAgents} />
-          <MetricCard label="Toplam Emlakci" value={stats.totalAgents} />
+          <MetricCard label="Şirket" value={stats.companies} />
+          <MetricCard label="Bağımsız" value={stats.standaloneAgents} />
+          <MetricCard label="Toplam Emlakçı" value={stats.totalAgents} />
         </View>
 
         <View style={styles.analyticsCard}>
@@ -132,7 +132,7 @@ export default function AdminDashboardScreen() {
         </TouchableOpacity>
 
         <View style={styles.analyticsCard}>
-          <Text style={styles.sectionTitle}>Son Eklenen Kayitlar</Text>
+          <Text style={styles.sectionTitle}>Son Eklenen Kayıtlar</Text>
           {stats.recentRecords.length > 0 ? (
             stats.recentRecords.map((record) => (
               <View key={`${record.type}-${record.id}`} style={styles.recordRow}>
@@ -146,13 +146,13 @@ export default function AdminDashboardScreen() {
                 <View style={styles.recordInfo}>
                   <Text style={styles.recordName}>{record.name}</Text>
                   <Text style={styles.recordMeta}>
-                    {record.type === 'company' ? 'Sirket' : record.type === 'office' ? 'Ofis' : 'Bagimsiz Emlakci'} • {record.location}
+                    {record.type === 'company' ? 'Şirket' : record.type === 'office' ? 'Ofis' : 'Bağımsız Emlakçı'} • {record.location}
                   </Text>
                 </View>
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>Henuz kayit bulunmuyor.</Text>
+            <Text style={styles.emptyText}>Henüz kayıt bulunmuyor.</Text>
           )}
         </View>
       </ScrollView>

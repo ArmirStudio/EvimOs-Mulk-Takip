@@ -3,6 +3,7 @@ import { Alert, Pressable, StyleSheet, Text, View, TouchableOpacity } from 'reac
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router, usePathname } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -14,7 +15,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { useUserData } from '../../hooks/useUserData';
-import { hasFullEmployeeAccess } from '../../utils/employeeAccess';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 type Role = 'admin' | 'agent' | 'landlord' | 'tenant' | 'employee';
@@ -32,23 +32,24 @@ const ROLE_NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: 'Mülkler', icon: 'business-outline', path: '/agent/properties' },
     { label: 'Talepler', icon: 'construct-outline', path: '/agent/maintenance' },
     { label: 'Ekibim', icon: 'people-outline', path: '/agent/team' },
+    { label: 'Profil', icon: 'person-outline', path: '/agent/settings' },
   ],
   employee: [
     { label: 'Ana Sayfa', icon: 'home-outline', path: '/agent/dashboard' },
     { label: 'Mülkler', icon: 'business-outline', path: '/agent/properties' },
     { label: 'Talepler', icon: 'construct-outline', path: '/agent/maintenance' },
     { label: 'Ekibim', icon: 'people-outline', path: '/agent/team' },
+    { label: 'Profil', icon: 'person-outline', path: '/agent/settings' },
   ],
   landlord: [
     { label: 'Ana Sayfa', icon: 'home-outline', path: '/landlord/dashboard' },
     { label: 'Mülkler', icon: 'business-outline', path: '/landlord/properties' },
     { label: 'Talepler', icon: 'construct-outline', path: '/landlord/maintenance' },
-    { label: 'Arşiv', icon: 'document-text-outline', path: '/landlord/archive' },
     { label: 'Profil', icon: 'person-outline', path: '/landlord/settings' },
   ],
   tenant: [
     { label: 'Ana Sayfa', icon: 'home-outline', path: '/tenant/dashboard' },
-    { label: 'Evim', icon: 'business-outline', path: '/tenant/property' },
+    { label: 'Mülkler', icon: 'business-outline', path: '/tenant/property' },
     { label: 'Talepler', icon: 'construct-outline', path: '/tenant/maintenance' },
     { label: 'Profil', icon: 'person-outline', path: '/tenant/settings' },
   ],
@@ -64,15 +65,6 @@ type FabAction = {
 
 const FAB_ACTIONS: Partial<Record<Role, FabAction[]>> = {
   admin: [{ icon: 'domain-add', label: 'Yeni Şirket', route: '/admin/create-company', position: 'center', large: true }],
-  agent: [
-    { icon: 'person-add', label: 'Davet', route: '/agent/invite', position: 'left' },
-    { icon: 'pending-actions', label: 'Onay', route: '/agent/pending-invites', position: 'right' },
-  ],
-  employee: [],
-  tenant: [
-    { icon: 'build', label: 'Arıza Bildir', route: '/tenant/maintenance-request', position: 'left' },
-    { icon: 'receipt', label: 'Ödeme Bildir', route: '/tenant/upload-receipt', position: 'right' },
-  ],
 };
 
 const HIDDEN_FOR_LOCAL_NAV: Record<string, true> = {
@@ -170,7 +162,6 @@ export default function AppBottomNav() {
       setTimeout(() => setFabOpen(false), 220);
     } else {
       setFabOpen(true);
-      // Overdamped spring (ratio ≈ 1.25) — no oscillation, fast settle
       fabProgress.value = withSpring(1, { damping: 25, stiffness: 200, mass: 0.8 });
       fabRotation.value = withTiming(45, { duration: 260, easing: Easing.out(Easing.back(1.2)) });
     }
@@ -213,13 +204,7 @@ export default function AppBottomNav() {
   }
 
   const navItems = ROLE_NAV_ITEMS[role];
-  const fabActions = role === 'employee'
-    ? (hasFullEmployeeAccess(userData) ? [
-        { icon: 'person-add', label: 'Davet', route: '/agent/invite', position: 'left' as const },
-        { icon: 'domain-add', label: 'Mülk', route: '/agent/create-property', position: 'center' as const, large: true },
-        { icon: 'pending-actions', label: 'Onay', route: '/agent/pending-invites', position: 'right' as const },
-      ] : [])
-    : (isPendingInviteUser ? [] : (role ? FAB_ACTIONS[role] : undefined));
+  const fabActions = isPendingInviteUser ? [] : (role ? FAB_ACTIONS[role] : undefined);
   const hasFab = !!fabActions && fabActions.length > 0;
   const handlePrimaryNavigation = (path: string) => {
     if (isPendingInviteUser && !path.endsWith('/dashboard')) {
@@ -242,7 +227,8 @@ export default function AppBottomNav() {
       )}
 
       <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <View style={styles.navContainer}>
+        <BlurView intensity={55} tint={theme.resolvedTheme === 'dark' ? 'dark' : 'light'} style={styles.blurContainer}>
+          <View style={styles.navContainer}>
           {hasFab ? (
             <>
               {navItems.slice(0, 2).map((item) => (
@@ -332,7 +318,8 @@ export default function AppBottomNav() {
               />
             ))
           )}
-        </View>
+          </View>
+        </BlurView>
       </View>
     </>
   );
@@ -350,17 +337,18 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: 12,
       zIndex: 100,
     },
+    blurContainer: {
+      borderRadius: 24,
+      overflow: 'hidden',
+      borderWidth: 0.5,
+      borderColor: theme.colors.copper,
+    },
     navContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderRadius: 24,
-      borderWidth: 1,
-      borderColor: theme.colors.copper,
-      backgroundColor: theme.colors.navGlass,
       paddingHorizontal: 6,
       paddingVertical: 8,
-      ...theme.shadows.lg,
     },
     navButton: {
       flex: 1,

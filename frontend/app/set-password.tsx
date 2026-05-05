@@ -83,10 +83,10 @@ export default function SetPasswordScreen() {
 
   const validate = (): string | null => {
     if (password.length < MIN_PASSWORD_LENGTH) {
-      return `Sifre en az ${MIN_PASSWORD_LENGTH} karakter olmalidir.`;
+      return `Şifre en az ${MIN_PASSWORD_LENGTH} karakter olmalıdır.`;
     }
     if (password !== passwordConfirm) {
-      return 'Sifreler eslesmiyor.';
+      return 'Şifreler eşleşmiyor.';
     }
     return null;
   };
@@ -109,7 +109,7 @@ export default function SetPasswordScreen() {
 
       if (updateError) {
         triggerShake();
-        setErrorMessage(updateError.message || 'Sifre belirlenirken bir hata olustu.');
+        setErrorMessage(updateError.message || 'Şifre belirlenirken bir hata oluştu.');
         return;
       }
 
@@ -128,7 +128,7 @@ export default function SetPasswordScreen() {
       navigateByRole(userData.role);
     } catch {
       triggerShake();
-      setErrorMessage('Beklenmeyen bir hata olustu. Lutfen tekrar deneyin.');
+      setErrorMessage('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -149,12 +149,12 @@ export default function SetPasswordScreen() {
           </View>
           <Text style={styles.title}>Hesabiniza Hos Geldiniz</Text>
           <Text style={styles.subtitle}>
-            Guvenli bir sifre belirleyerek hesabiniza erismeye baslayin.
+            Güvenli bir şifre belirleyerek hesabınıza erişmeye başlayın.
           </Text>
         </View>
 
         <Animated.View style={shakeStyle}>
-          <Text style={styles.label}>Sifre</Text>
+          <Text style={styles.label}>Şifre</Text>
           <Pressable
             accessible={false}
             style={[styles.inputContainer, focused === 'password' && styles.inputFocused]}
@@ -196,7 +196,7 @@ export default function SetPasswordScreen() {
             </TouchableOpacity>
           </Pressable>
 
-          <Text style={styles.label}>Sifre Tekrar</Text>
+          <Text style={styles.label}>Şifre Tekrar</Text>
           <Pressable
             accessible={false}
             style={[styles.inputContainer, focused === 'confirm' && styles.inputFocused]}
@@ -210,7 +210,7 @@ export default function SetPasswordScreen() {
             <TextInput
               ref={confirmInputRef}
               style={styles.input}
-              placeholder="Sifrenizi tekrar girin"
+              placeholder="Şifrenizi tekrar girin"
               placeholderTextColor={theme.colors.textMuted}
               value={passwordConfirm}
               onChangeText={setPasswordConfirm}
@@ -256,12 +256,12 @@ export default function SetPasswordScreen() {
             {loading ? (
               <ActivityIndicator color={theme.colors.textInverse} />
             ) : (
-              <Text style={styles.submitText}>Sifremi Belirle</Text>
+              <Text style={styles.submitText}>Şifremi Belirle</Text>
             )}
           </AnimatedTouchableOpacity>
         </Animated.View>
 
-        <Text style={styles.hint}>Sifreniz guvenli bicimde sifrelenerek saklanir.</Text>
+        <Text style={styles.hint}>Şifreniz güvenli biçimde şifrelenerek saklanır.</Text>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );

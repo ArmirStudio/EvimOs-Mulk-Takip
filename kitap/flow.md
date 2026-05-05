@@ -7,6 +7,7 @@ Bu dosya canli kritik akislarin mevcut halini ozetler.
 2. `Giris Yap` mevcut oturum ekranina gider.
 3. `Kayit Ol` davet kodu ekranina gider; davet kodu olmadan tenant/landlord kaydi acilmaz.
 4. Bozuk davet linkinde kullanici ayni ekranda davet kodu girerek devam edebilir.
+5. Giris/kayit ekranlarinda label ve inputlar bitisik tasarlanmaz; form ritmi token spacing ile korunur.
 
 ## Davet Linki ve Kodu
 1. Agent veya full employee rol secer: kiraci veya ev sahibi.
@@ -30,3 +31,14 @@ Bu dosya canli kritik akislarin mevcut halini ozetler.
 3. Agent takma adi sonradan duzenleyebilir; bu kullanicinin profil adini degistirmez.
 4. Onaylanan kullanici `active` olur ve rol listesine duser.
 5. Onayli ama mulksuz kullanici davet bekleme ekrani degil, mevcut mulk atanmadi deneyimini gorur.
+
+## Tenant Talepler Akisi
+1. Tenant alt barda `Talepler` ekranina gider; alt barda FAB yoktur.
+2. Ariza bildirimi ve dekont yukleme aksiyonlari talepler yuzeyi icinden acilir.
+
+## Landlord Talepler ve Arsiv Akisi
+1. Landlord alt barda `Talepler` ekranina gider; `Arsiv` ayri alt bar sekmesi degildir.
+2. `Aktif Talepler` sekmesinde bakim talepleri izlenir.
+3. `Dekontlar` sekmesinde kira/aidat/diger odeme dekontlari listelenir ve detay acilir.
+4. `Belgeler` sekmesinde mulk belgeleri listelenir ve signed URL ile acilir.
+5. Eski `/landlord/archive` linki uyumluluk icin talepler/dekontlar sekmesine yonlenir.

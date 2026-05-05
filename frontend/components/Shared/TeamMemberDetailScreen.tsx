@@ -97,7 +97,7 @@ export default function TeamMemberDetailScreen() {
     }
 
     Alert.alert(
-      'Calisani Sil',
+      'Çalışanı Sil',
       `${member.full_name} kaydini silmek istediginize emin misiniz? Bu islem mulk atamasini da temizler.`,
       [
         { text: 'Iptal', style: 'cancel' },
@@ -110,7 +110,7 @@ export default function TeamMemberDetailScreen() {
               await deleteUser(member.id);
               router.replace('/agent/team?tab=team' as never);
             } catch (error: any) {
-              Alert.alert('Hata', error.message || 'Calisan silinemedi.');
+              Alert.alert('Hata', error.message || 'Çalışan silinemedi.');
             } finally {
               setSaving(false);
             }
@@ -126,7 +126,7 @@ export default function TeamMemberDetailScreen() {
         <TouchableOpacity style={styles.headerBtn} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Calisan Detayi</Text>
+        <Text style={styles.headerTitle}>Çalışan Detayı</Text>
         <View style={styles.headerBtn} />
       </View>
 
@@ -166,7 +166,7 @@ export default function TeamMemberDetailScreen() {
             {canAssignTask && (
               <TouchableOpacity style={styles.primaryAction} onPress={() => router.push(`/agent/task-form?assigneeId=${member.id}` as never)}>
                 <MaterialIcons name="task-alt" size={16} color={theme.colors.textInverse} />
-                <Text style={styles.primaryActionText}>Gorev Ata</Text>
+                <Text style={styles.primaryActionText}>Görev Ata</Text>
               </TouchableOpacity>
             )}
             {canEdit && (
@@ -188,7 +188,7 @@ export default function TeamMemberDetailScreen() {
       <Modal visible={editOpen} transparent animationType="slide" onRequestClose={() => setEditOpen(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.cardTitle}>Calisani Duzenle</Text>
+            <Text style={styles.cardTitle}>Çalışanı Düzenle</Text>
             <TextInput style={styles.input} value={fullName} onChangeText={setFullName} placeholder="Ad Soyad" placeholderTextColor={theme.colors.textMuted} />
             <TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Telefon" placeholderTextColor={theme.colors.textMuted} />
             <TextInput style={styles.input} value={city} onChangeText={setCity} placeholder="Sehir" placeholderTextColor={theme.colors.textMuted} />

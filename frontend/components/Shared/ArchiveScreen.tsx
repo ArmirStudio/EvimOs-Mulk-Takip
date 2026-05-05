@@ -54,14 +54,14 @@ type ArchiveDocument = {
 };
 
 const FILTERS: { key: FilterType; label: string }[] = [
-  { key: 'all', label: 'Tumu' },
+  { key: 'all', label: 'Tümü' },
   { key: 'rent', label: 'Kira' },
   { key: 'dues', label: 'Aidat' },
-  { key: 'other', label: 'Diger' },
-  { key: 'approved', label: 'Onayli' },
+  { key: 'other', label: 'Diğer' },
+  { key: 'approved', label: 'Onaylı' },
   { key: 'pending', label: 'Bekleyen' },
   { key: 'rejected', label: 'Reddedilen' },
-  { key: 'withdrawn', label: 'Geri Alinan' },
+  { key: 'withdrawn', label: 'Geri Alınan' },
 ];
 
 function BottomSheetModal({
@@ -123,7 +123,7 @@ const useBottomSheetStyles = createThemedStyles((theme) =>
   StyleSheet.create({
     overlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.5)',
+      backgroundColor: theme.colors.modalBackdrop,
     },
     sheet: {
       position: 'absolute',
@@ -151,14 +151,14 @@ const useBottomSheetStyles = createThemedStyles((theme) =>
 function receiptTypeLabel(type: string): string {
   if (type === 'rent') return 'Kira';
   if (type === 'dues') return 'Aidat';
-  return 'Diger';
+  return 'Diğer';
 }
 
 function statusLabel(status: string): string {
-  if (status === 'approved') return 'Onayli';
+  if (status === 'approved') return 'Onaylı';
   if (status === 'pending') return 'Bekleyen';
   if (status === 'rejected') return 'Reddedildi';
-  if (status === 'withdrawn') return 'Geri Alindi';
+  if (status === 'withdrawn') return 'Geri Alındı';
   return status;
 }
 
@@ -205,7 +205,7 @@ export default function ArchiveScreen() {
 
     setLoading(true);
     try {
-      let propertyRows: Array<{ id: string; address?: string | null; city?: string | null; district?: string | null }> = [];
+      let propertyRows: { id: string; address?: string | null; city?: string | null; district?: string | null }[] = [];
       if (userData.role === 'landlord') {
         const { data } = await supabase
           .from('properties')
@@ -233,7 +233,7 @@ export default function ArchiveScreen() {
         ...item,
         property_address: [item.property_address, item.property_city, item.property_district]
           .filter(Boolean)
-          .join(', ') || 'Bilinmeyen mulk',
+          .join(', ') || 'Bilinmeyen mülk',
       }));
       setReceipts(list);
 
@@ -330,7 +330,7 @@ export default function ArchiveScreen() {
             </View>
 
             <Text style={styles.cardAddress} numberOfLines={1}>
-              {item.property_address || 'Bilinmeyen mulk'}
+              {item.property_address || 'Bilinmeyen mülk'}
             </Text>
 
             <View style={styles.cardRow}>
@@ -340,7 +340,7 @@ export default function ArchiveScreen() {
 
             {item.uploader_name ? (
               <Text style={styles.cardUploader} numberOfLines={1}>
-                Yukleyen: {item.uploader_name}
+                Yükleyen: {item.uploader_name}
               </Text>
             ) : null}
           </View>
@@ -356,7 +356,7 @@ export default function ArchiveScreen() {
           <View style={styles.documentSectionHeader}>
             <Text style={styles.documentSectionTitle}>{tr.documents.title}</Text>
             <Text style={styles.documentSectionHint}>
-              {userData?.role === 'tenant' ? tr.documents.contract : 'Mulk belgeleri'}
+              {userData?.role === 'tenant' ? tr.documents.contract : 'Mülk belgeleri'}
             </Text>
           </View>
           {documents.length === 0 ? (
@@ -364,8 +364,8 @@ export default function ArchiveScreen() {
               <MaterialIcons name="description" size={22} color={theme.colors.textMuted} />
               <Text style={styles.documentEmptyText}>
                 {userData?.role === 'tenant'
-                  ? 'Kira sozlesmesi ve diger belgeler burada gorunecek.'
-                  : 'Mulklerinize ait belgeler burada gorunecek.'}
+                  ? 'Kira sözleşmesi ve diğer belgeler burada görünecek.'
+                  : 'Mülklerinize ait belgeler burada görünecek.'}
               </Text>
             </View>
           ) : (
@@ -419,12 +419,12 @@ export default function ArchiveScreen() {
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Mulk veya dekont ara..."
+          placeholder="Mülk veya dekont ara..."
           placeholderTextColor={theme.colors.textMuted}
           accessibilityLabel="Dekont ara"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Aramayi temizle">
+          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityLabel="Aramayı temizle">
             <MaterialIcons name="close" size={18} color={theme.colors.textMuted} />
           </TouchableOpacity>
         )}
@@ -463,8 +463,8 @@ export default function ArchiveScreen() {
       <View style={styles.emptyIconBox}>
         <MaterialIcons name="folder-open" size={56} color={theme.colors.primary} />
       </View>
-      <Text style={styles.emptyTitle}>Henuz belge yok</Text>
-      <Text style={styles.emptySubtitle}>Dekont arsivi bu ekranda listelenecek.</Text>
+      <Text style={styles.emptyTitle}>Henüz belge yok</Text>
+      <Text style={styles.emptySubtitle}>Dekont arşivi bu ekranda listelenecek.</Text>
     </View>
   );
 
@@ -475,7 +475,7 @@ export default function ArchiveScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <MaterialIcons name="arrow-back" size={24} color={theme.colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Arsiv ve Belgeler</Text>
+        <Text style={styles.headerTitle}>Arşiv ve Belgeler</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -560,14 +560,15 @@ const useStyles = createThemedStyles((theme) =>
     summaryCard: {
       margin: theme.spacing.lg,
       borderRadius: theme.borderRadius.xl,
-      backgroundColor: '#14181e',
+      backgroundColor: theme.colors.dark,
       padding: theme.spacing.xl,
       ...theme.shadows.lg,
     },
     summaryLabel: {
       fontSize: theme.fontSize.xs,
       fontWeight: theme.fontWeight.semibold,
-      color: 'rgba(255,252,248,0.55)',
+      color: theme.colors.textInverse,
+      opacity: 0.6,
       letterSpacing: 1.1,
       marginBottom: theme.spacing.xs,
     },

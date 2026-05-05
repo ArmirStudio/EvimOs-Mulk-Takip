@@ -60,7 +60,6 @@ import {
   TEAM_TASK_FILTER_LABELS,
 } from '../../utils/teamPresentation';
 import LocationPicker from './LocationPicker';
-import OfficeAvatarMenu from './OfficeAvatarMenu';
 import TeamMessagesPanel from './TeamMessagesPanel';
 import TeamReportPanel from './TeamReportPanel';
 
@@ -180,7 +179,7 @@ export default function TeamHubScreen() {
       const taskResponse = await listTeamTasks();
       setTasks(taskResponse.tasks || []);
     } catch (error: any) {
-      setTasksError(error.message || 'Gorev akisi yuklenemedi.');
+      setTasksError(error.message || 'Görev akışı yüklenemedi.');
     } finally {
       setTasksLoading(false);
     }
@@ -277,7 +276,7 @@ export default function TeamHubScreen() {
         setTaskModalLoading(true);
         setSelectedTask(await getTeamTask(selectedTaskId));
       } catch (error: any) {
-        Alert.alert('Hata', error.message || 'Gorev detayi yuklenemedi.');
+        Alert.alert('Hata', error.message || 'Görev detayı yüklenemedi.');
         setSelectedTaskId(null);
       } finally {
         setTaskModalLoading(false);
@@ -362,9 +361,9 @@ export default function TeamHubScreen() {
       setEmployeeModalVisible(false);
       resetEmployeeForm();
       await Promise.allSettled([loadMembers(), loadAnnouncements()]);
-      Alert.alert('Calisan Olusturuldu', `Giris: ${trimmedIdentifier}\nSifre: 1234`);
+      Alert.alert('Çalışan Oluşturuldu', `Giriş: ${trimmedIdentifier}\nŞifre: 1234`);
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Calisan olusturulamadi.');
+      Alert.alert('Hata', error.message || 'Çalışan oluşturulamadı.');
     } finally {
       setEmployeeSubmitting(false);
     }
@@ -448,7 +447,7 @@ export default function TeamHubScreen() {
       setAnnouncementAttachment(null);
       await loadHubData();
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Duyuru olusturulamadi.');
+      Alert.alert('Hata', error.message || 'Duyuru oluşturulamadı.');
     } finally {
       setAnnouncementSubmitting(false);
     }
@@ -544,7 +543,7 @@ export default function TeamHubScreen() {
       closeTaskModal();
       await loadHubData();
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Gorev durumu guncellenemedi.');
+      Alert.alert('Hata', error.message || 'Görev durumu güncellenemedi.');
     } finally {
       setTaskModalSubmitting(false);
     }
@@ -600,18 +599,17 @@ export default function TeamHubScreen() {
             <Text style={styles.headerTitle}>Ekibim</Text>
             <Text style={styles.headerSubtitle}>
               {isManager
-                ? 'Ofis ekibini, gorev akisini ve duyurulari ayni merkezden yonetin.'
-                : 'Rosteri, size atanan gorevleri ve duyurulari buradan takip edin.'}
+                ? 'Ofis ekibini, görev akışını ve duyuruları aynı merkezden yönetin.'
+                : 'Rosteri, size atanan görevleri ve duyuruları buradan takip edin.'}
             </Text>
           </View>
-          <OfficeAvatarMenu />
         </View>
 
         <View style={styles.heroCard}>
           <View style={styles.heroTop}>
             <View>
               <Text style={styles.heroEyebrow}>Ofis Merkezi</Text>
-              <Text style={styles.heroTitle}>Takim nabzi tek yerde</Text>
+              <Text style={styles.heroTitle}>Takım nabzı tek yerde</Text>
             </View>
             <TouchableOpacity
               style={styles.heroButton}
@@ -619,7 +617,7 @@ export default function TeamHubScreen() {
               activeOpacity={0.85}
             >
               <MaterialIcons name={canSeeReport ? 'bar-chart' : 'task'} size={18} color={theme.colors.primary} />
-              <Text style={styles.heroButtonText}>{canSeeReport ? 'Rapor' : 'Gorevler'}</Text>
+              <Text style={styles.heroButtonText}>{canSeeReport ? 'Rapor' : 'Görevler'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -630,7 +628,7 @@ export default function TeamHubScreen() {
             </View>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryValue}>{summary.openTasks}</Text>
-              <Text style={styles.summaryLabel}>Acik Gorev</Text>
+              <Text style={styles.summaryLabel}>Açık Görev</Text>
             </View>
             <View style={styles.summaryCard}>
               <Text style={styles.summaryValue}>{summary.unreadAnnouncements}</Text>
@@ -659,12 +657,12 @@ export default function TeamHubScreen() {
             <View style={styles.sectionHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sectionTitle}>Ofis Rosteri</Text>
-                <Text style={styles.sectionSubtitle}>Ofis sahibi ve ayni ofise bagli employee kullanicilar.</Text>
+                <Text style={styles.sectionSubtitle}>Ofis sahibi ve aynı ofise bağlı çalışan kullanıcılar.</Text>
               </View>
               {canManageEmployees && (
                 <TouchableOpacity style={styles.primaryAction} onPress={() => setEmployeeModalVisible(true)}>
                   <MaterialIcons name="person-add" size={18} color={theme.colors.textInverse} />
-                  <Text style={styles.primaryActionText}>Calisan Ekle</Text>
+                  <Text style={styles.primaryActionText}>Çalışan Ekle</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -693,10 +691,10 @@ export default function TeamHubScreen() {
             ) : members.length === 0 ? (
               renderSectionStateCard({
                 icon: 'groups',
-                title: 'Calisan bulunamadi',
+                title: 'Çalışan bulunamadı',
                 description: canManageEmployees
-                  ? 'Bu ofiste henuz calisan yok. Yeni bir calisan ekleyebilirsiniz.'
-                  : 'Bu ofiste henuz roster verisi gorunmuyor.',
+                  ? 'Bu ofiste henüz çalışan yok. Yeni bir çalışan ekleyebilirsiniz.'
+                  : 'Bu ofiste henüz roster verisi görünmüyor.',
               })
             ) : (
               members.map((member) => (
@@ -732,13 +730,13 @@ export default function TeamHubScreen() {
           <View style={styles.sectionStack}>
             <View style={styles.sectionHeader}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.sectionTitle}>Gorev Akisi</Text>
-                <Text style={styles.sectionSubtitle}>{isManager ? 'Tum ofis gorevleri.' : 'Sadece size atanan gorevler.'}</Text>
+                <Text style={styles.sectionTitle}>Görev Akışı</Text>
+                <Text style={styles.sectionSubtitle}>{isManager ? 'Tüm ofis görevleri.' : 'Sadece size atanan görevler.'}</Text>
               </View>
               {isManager && (
                 <TouchableOpacity style={styles.primaryAction} onPress={() => router.push('/agent/task-form' as never)}>
                   <MaterialIcons name="add" size={18} color={theme.colors.textInverse} />
-                  <Text style={styles.primaryActionText}>Yeni Gorev</Text>
+                  <Text style={styles.primaryActionText}>Yeni Görev</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -758,19 +756,19 @@ export default function TeamHubScreen() {
             {tasksError && tasks.length > 0 && (
               <View style={styles.inlineWarning}>
                 <MaterialIcons name="error-outline" size={18} color={theme.colors.warningText} />
-                <Text style={styles.inlineWarningText}>Gorev listesi yenilenemedi. Son basarili veri gosteriliyor.</Text>
+                <Text style={styles.inlineWarningText}>Görev listesi yenilenemedi. Son başarılı veri gösteriliyor.</Text>
               </View>
             )}
             {tasksLoading && tasks.length === 0 ? (
               renderSectionStateCard({
                 icon: 'task-alt',
-                title: 'Gorevler yukleniyor',
-                description: 'Ofis gorev akisi hazirlaniyor.',
+                title: 'Görevler yükleniyor',
+                description: 'Ofis görev akışı hazırlanıyor.',
               })
             ) : tasksError && tasks.length === 0 ? (
               renderSectionStateCard({
                 icon: 'task-alt',
-                title: 'Gorevleri yukleyemedik',
+                title: 'Görevleri yükleyemedik',
                 description: tasksError,
                 actionLabel: 'Tekrar dene',
                 onAction: loadTasks,
@@ -778,7 +776,7 @@ export default function TeamHubScreen() {
             ) : filteredTasks.length === 0 ? (
               <View style={styles.emptyCard}>
                 <MaterialIcons name="task-alt" size={36} color={theme.colors.textMuted} />
-                <Text style={styles.emptyTitle}>Gorev bulunamadi</Text>
+                <Text style={styles.emptyTitle}>Görev bulunamadı</Text>
               </View>
             ) : (
               filteredTasks.map((task) => {
@@ -911,7 +909,7 @@ export default function TeamHubScreen() {
           <View style={styles.sectionStack}>
             <View>
               <Text style={styles.sectionTitle}>Rapor</Text>
-              <Text style={styles.sectionSubtitle}>Gorev, duyuru ve bakim istatistikleri secilen araliga gore hesaplanir.</Text>
+              <Text style={styles.sectionSubtitle}>Görev, duyuru ve bakım istatistikleri seçilen aralığa göre hesaplanır.</Text>
             </View>
             {reportLoading && reportPayload && (
               <View style={styles.inlineWarning}>
@@ -940,8 +938,8 @@ export default function TeamHubScreen() {
             ) : (
               renderSectionStateCard({
                 icon: 'bar-chart',
-                title: 'Henuz veri yok',
-                description: 'Secilen aralikta raporlanacak gorev, duyuru veya bakim kaydi bulunmuyor.',
+                title: 'Henüz veri yok',
+                description: 'Seçilen aralıkta raporlanacak görev, duyuru veya bakım kaydı bulunmuyor.',
               })
             )}
           </View>
@@ -955,8 +953,8 @@ export default function TeamHubScreen() {
               <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={styles.sheetHeader}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.sheetTitle}>Calisan Ekle</Text>
-                    <Text style={styles.sheetSubtitle}>Calisan olusturma ve silme yalnizca agent hesabinda aciktir.</Text>
+                    <Text style={styles.sheetTitle}>Çalışan Ekle</Text>
+                    <Text style={styles.sheetSubtitle}>Çalışan oluşturma ve silme yalnızca agent hesabında açıktır.</Text>
                   </View>
                   <TouchableOpacity onPress={closeEmployeeModal} disabled={employeeSubmitting}>
                     <MaterialIcons name="close" size={22} color={theme.colors.textMuted} />
@@ -995,7 +993,7 @@ export default function TeamHubScreen() {
                   required
                 />
 
-                <Text style={styles.switchLabel}>Calisan Yetkisi</Text>
+                <Text style={styles.switchLabel}>Çalışan Yetkisi</Text>
                 <View style={styles.permissionRow}>
                   {([
                     { key: 'limited', label: 'Sinirli Yetki' },
@@ -1019,14 +1017,14 @@ export default function TeamHubScreen() {
                 <Text style={styles.sheetSubtitle}>
                   {employeeAccessLevel === 'full'
                     ? 'Kiraci, ev sahibi ve mulk operasyonlarina erisebilir.'
-                    : 'Yalnizca kendisine acik gorev ve ekranlari gorur.'}
+                    : 'Yalnızca kendisine açık görev ve ekranları görür.'}
                 </Text>
 
                 <TouchableOpacity style={styles.primaryLarge} onPress={submitEmployee} disabled={employeeSubmitting}>
                   {employeeSubmitting ? (
                     <ActivityIndicator size="small" color={theme.colors.textInverse} />
                   ) : (
-                    <Text style={styles.primaryActionText}>Calisani Olustur</Text>
+                    <Text style={styles.primaryActionText}>Çalışanı Oluştur</Text>
                   )}
                 </TouchableOpacity>
               </ScrollView>

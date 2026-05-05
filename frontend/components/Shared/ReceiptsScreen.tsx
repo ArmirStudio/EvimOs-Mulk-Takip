@@ -24,9 +24,9 @@ import AnimatedScreen from './AnimatedScreen';
 type ReceiptFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
 const FILTER_LABELS: Record<ReceiptFilter, string> = {
-  all: 'Tumu',
+  all: 'Tümü',
   pending: 'Bekleyen',
-  approved: 'Onayli',
+  approved: 'Onaylı',
   rejected: 'Reddedilen',
   withdrawn: 'Geri Alinan',
 };
@@ -34,7 +34,7 @@ const FILTER_LABELS: Record<ReceiptFilter, string> = {
 const RECEIPT_TYPE_LABELS: Record<string, string> = {
   rent: 'Kira Odemesi',
   dues: 'Aidat Odemesi',
-  other: 'Diger Odeme',
+  other: 'Diğer Ödeme',
 };
 
 const RECEIPT_STATUS_LABELS: Record<string, string> = {
@@ -83,7 +83,7 @@ export default function ReceiptsScreen() {
         ...item,
         property_address: [item.property_address, item.property_city, item.property_district]
           .filter(Boolean)
-          .join(', ') || 'Bilinmeyen mulk',
+          .join(', ') || 'Bilinmeyen mülk',
       }));
 
       setReceipts(nextReceipts);

@@ -66,7 +66,7 @@ const ENTITY_OPTIONS: {
   icon: keyof typeof Ionicons.glyphMap;
 }[] = [
   { key: 'office', title: 'Emlak Ofisi', description: 'Kucuk veya orta ekipli saha ofisi.', icon: 'home-outline' },
-  { key: 'company', title: 'Emlak Sirketi', description: 'Daha kurumsal ve cok calisanli yapi.', icon: 'business-outline' },
+  { key: 'company', title: 'Emlak Şirketi', description: 'Daha kurumsal ve çok çalışanlı yapı.', icon: 'business-outline' },
 ];
 
 export const EMPTY_COMPANY_FORM: CompanyFormValues = {
@@ -143,7 +143,7 @@ export default function CompanyFormScreen({
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      Alert.alert(tr.common.error, 'Lutfen sirket veya ofis adini girin');
+      Alert.alert(tr.common.error, 'Lütfen şirket veya ofis adını girin');
       return;
     }
 
@@ -158,7 +158,7 @@ export default function CompanyFormScreen({
     }
 
     if (!form.contactEmail.trim()) {
-      Alert.alert(tr.common.error, 'Iletisim e-postasi girilmeli. Bu e-posta giris hesabi olarak kullanilacak.');
+      Alert.alert(tr.common.error, 'İletişim e-postası girilmeli. Bu e-posta giriş hesabı olarak kullanılacak.');
       return;
     }
 
@@ -210,9 +210,9 @@ export default function CompanyFormScreen({
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-          <SectionCard title="Varlik Tipi">
+          <SectionCard title="Varlık Tipi">
             <Text style={styles.helperText}>
-              Buradan kaydin kucuk ofis mi yoksa daha kurumsal bir sirket mi oldugunu secin.
+              Buradan kaydın küçük ofis mi yoksa daha kurumsal bir şirket mi olduğunu seçin.
             </Text>
             <View style={styles.entityGrid}>
               {ENTITY_OPTIONS.map((option) => {
@@ -239,7 +239,7 @@ export default function CompanyFormScreen({
             </View>
           </SectionCard>
 
-          <SectionCard title="Gorseller">
+          <SectionCard title="Görseller">
             <TouchableOpacity style={styles.bannerBox} onPress={() => pickImage('bannerUrl')} activeOpacity={0.92}>
               {form.bannerUrl ? (
                 <Image source={{ uri: form.bannerUrl }} style={styles.bannerImage} />
@@ -295,7 +295,7 @@ export default function CompanyFormScreen({
 
           <SectionCard title="Ofis Bilgileri">
             <LabeledInput
-              label={form.entityType === 'company' ? 'Sirket Adi' : 'Ofis Adi'}
+              label={form.entityType === 'company' ? 'Şirket Adı' : 'Ofis Adı'}
               value={form.name}
               placeholder={form.entityType === 'company' ? 'Orn: Marmara Gayrimenkul' : 'Orn: Bursa Merkez Ofisi'}
               onChangeText={(name) => setForm((current) => ({ ...current, name }))}
@@ -352,7 +352,7 @@ export default function CompanyFormScreen({
 
           <SectionCard title={tr.admin.brandColors}>
             <Text style={styles.helperText}>
-              Secilen ana renk ileride bu yapiya bagli kiraci ve ev sahibi ekranlarina da yansitilir.
+              Seçilen ana renk ileride bu yapıya bağlı kiracı ve ev sahibi ekranlarına da yansıtılır.
             </Text>
             <View style={styles.brandPreviewCard}>
               <View style={[styles.brandPreviewSwatch, { backgroundColor: primaryColor }]}>
@@ -378,9 +378,9 @@ export default function CompanyFormScreen({
             </View>
           </SectionCard>
 
-          <SectionCard title="Plan ve Iletisim">
+          <SectionCard title="Plan ve İletişim">
             <Text style={styles.helperText}>
-              Girilen e-posta yeni acilan giris hesabi olur. Deneme sureci icin varsayilan sifre: 1234.
+              Girilen e-posta yeni açılan giriş hesabı olur. Deneme süreci için varsayılan şifre: 1234.
             </Text>
             <View style={styles.chipWrap}>
               {(['free', 'basic', 'premium'] as const).map((plan) => {
@@ -421,7 +421,7 @@ export default function CompanyFormScreen({
             </View>
 
             <LabeledInput
-              label="Giris E-postasi"
+              label="Giriş E-postası"
               value={form.contactEmail}
               placeholder="email@ornek.com"
               keyboardType="email-address"

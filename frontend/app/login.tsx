@@ -314,7 +314,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: theme.spacing.lg,
+      gap: 35,
     },
     heroCard: {
       position: 'relative',
@@ -383,7 +383,7 @@ const useStyles = createThemedStyles((theme) =>
     warningCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: theme.spacing.sm,
+      gap: theme.spacing.md,
       backgroundColor: theme.colors.warningLight,
       borderRadius: theme.borderRadius.lg,
       padding: theme.spacing.md,
@@ -413,7 +413,7 @@ const useStyles = createThemedStyles((theme) =>
       fontWeight: theme.fontWeight.medium,
     },
     fieldGroup: {
-      gap: theme.spacing.sm,
+      gap: theme.spacing.lg,
     },
     fieldLabel: {
       fontSize: theme.fontSize.sm,
@@ -421,7 +421,7 @@ const useStyles = createThemedStyles((theme) =>
       fontWeight: theme.fontWeight.semibold,
     },
     inputContainer: {
-      minHeight: 58,
+      minHeight: 60,
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.md,
@@ -437,7 +437,7 @@ const useStyles = createThemedStyles((theme) =>
     },
     input: {
       flex: 1,
-      minHeight: 58,
+      minHeight: 60,
       color: theme.colors.textPrimary,
       fontSize: theme.fontSize.base,
       fontWeight: theme.fontWeight.medium,

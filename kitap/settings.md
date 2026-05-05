@@ -8,7 +8,8 @@ Bu dosya `SettingsScreen.tsx`, `ProfileEditScreen.tsx` ve ilgili preference/sess
 - Agent tarafinda ikinci sekme olarak rehber gorunur; landlord ve tenant yalniz profil sekmesini gorur.
 
 ## Settings Davranisi
-- Hesap bolumunde profil duzenleme ve sifre degistirme aksiyonlari vardir.
+- Profil kartina basinca profil duzenleme akisina gidilir.
+- Hesap bolumunde ayrica `Profili Duzenle` satiri gosterilmez; yalniz sifre degistirme aksiyonu kalir.
 - Bildirimler bolumu calismayan toggle gostermez.
 - Push ve e-posta bildirimleri yalnizca statik `Yakinda` durumu ile sunulur.
 - Settings satirlarinda standart olarak `chevron-right` gorunur.
@@ -26,6 +27,17 @@ Bu dosya `SettingsScreen.tsx`, `ProfileEditScreen.tsx` ve ilgili preference/sess
 - Profil alanlari bu turda hala dogrudan Supabase `users` tablosuna yazilir.
 - `ProfileEditScreen` artik `user_data` JSON'unu manuel patch etmez.
 - Profil veya avatar guncellemesi sonrasi ortak session refresh kullanilir.
+
+## Agent Rehberi
+- Agent profilindeki `Rehber` sekmesi tek birlesik rehberdir.
+- Veri kaynaklari:
+  - `listUsers({ role: 'landlord' })`
+  - `listUsers({ role: 'tenant' })`
+  - `appApi.listOfficeContacts()`
+- Filtreler: `Tumu`, `Ustalar`, `Ev Sahipleri`, `Kiracilar`.
+- Usta/tadilatci karti `/agent/edit-contact?id=...` akisina gider.
+- Ev sahibi/kiraci karti `/agent/contact-detail?id=...` akisina gider.
+- Yeni kayit modalinda `Usta Ekle`, `Ev Sahibi Ekle`, `Kiraci Ekle` aksiyonlari bulunur.
 
 ## Session ve Local Storage
 - `user_data` cache'i `frontend/services/userSession.ts` icinde tutulur.

@@ -18,9 +18,21 @@ export function TestimonialFields({ data, onChange }: Props) {
         </div>
       </div>
 
-      <ImageUpload 
-        label="Müşteri Profil Fotoğrafı (Opsiyonel)" 
-        value={data.client_avatar || ''} 
+      <div className="form-group mb-24">
+        <label className="form-label">Dahili Başlık (Opsiyonel)</label>
+        <span className="help-text">Kampanya listesinde görünecek kısa etiket. Uygulamada gösterilmez.</span>
+        <input
+          type="text"
+          className="form-control mt-4"
+          value={data.title || ''}
+          onChange={(e) => onChange({ title: e.target.value })}
+          placeholder="Örn: Ahmet Bey Yorumu — Mayıs 2025"
+        />
+      </div>
+
+      <ImageUpload
+        label="Müşteri Profil Fotoğrafı (Opsiyonel)"
+        value={data.client_avatar || ''}
         onChange={(url) => onChange({ client_avatar: url })}
         aspectHint="1:1 Kare veya Yuvarlak format (Örn: 150x150px)"
         circular

@@ -45,6 +45,8 @@ uvicorn main:app --reload --port 8000
 - `admin-web`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, istege bagli `VITE_API_URL`
 - `backend`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, istege bagli `ALLOWED_ORIGINS`
 
+Railway backend deploy icin repo kokundeki `railway.toml` backend servisini `backend/` altindan baslatir. Frontend tarafinda `EXPO_PUBLIC_API_URL` degeri `https://<railway-app>.up.railway.app` biciminde verilir; sona `/api` eklemeyin, istemci bunu otomatik ekler.
+
 ## Android Preflight
 - PowerShell icinde `npm` yerine `npm.cmd` kullanin.
 - Expo push bildirimleri Expo Go'da kapali tutulur; Android dev build veya fiziksel cihaz gerekir.

@@ -1,12 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Linking,
   RefreshControl,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,7 +20,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { tr } from '../../app/translations';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { useUserData } from '../../hooks/useUserData';
-import { listMaintenance } from '../../services/appApi';
+import { listMaintenance, listReceipts } from '../../services/appApi';
+import { createSignedStorageUrl } from '../../services/supabaseStorage';
+import { supabase } from '../../services/supabase';
+import { formatCurrency } from '../../utils/propertyHelpers';
 import {
   formatMaintenanceDate,
   getMaintenanceHeroCopy,
@@ -31,12 +37,88 @@ import {
 import { MaintenanceDetailView } from './MaintenanceDetailView';
 import AnimatedScreen from './AnimatedScreen';
 import BottomSheetModal from './BottomSheetModal';
-import OfficeAvatarMenu from './OfficeAvatarMenu';
+import { ReceiptDetailView } from './ReceiptDetailView';
 
 type MaintenanceFilter = 'all' | 'pending' | 'in_progress' | 'awaiting_tenant' | 'completed' | 'rejected';
+type LandlordTab = 'maintenance' | 'receipts' | 'documents';
+type ReceiptFilter = 'all' | 'rent' | 'dues' | 'other' | 'approved' | 'pending' | 'rejected' | 'withdrawn';
+
+type Receipt = {
+  id: string;
+  property_id: string;
+  property_address?: string;
+  receipt_type: string;
+  status: string;
+  amount?: number | null;
+  uploader_name?: string | null;
+  created_at: string;
+};
+
+type ArchiveDocument = {
+  id: string;
+  property_id: string;
+  category: string;
+  title: string;
+  file_url: string;
+  storage_path?: string | null;
+  created_at: string;
+  property_label: string;
+};
+
+const LANDLORD_TABS: { key: LandlordTab; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { key: 'maintenance', label: 'Aktif Talepler', icon: 'build' },
+  { key: 'receipts', label: 'Dekontlar', icon: 'receipt-long' },
+  { key: 'documents', label: 'Belgeler', icon: 'description' },
+];
+
+const RECEIPT_FILTERS: { key: ReceiptFilter; label: string }[] = [
+  { key: 'all', label: 'Tümü' },
+  { key: 'rent', label: 'Kira' },
+  { key: 'dues', label: 'Aidat' },
+  { key: 'other', label: 'Diğer' },
+  { key: 'approved', label: 'Onaylı' },
+  { key: 'pending', label: 'Bekleyen' },
+  { key: 'rejected', label: 'Reddedilen' },
+  { key: 'withdrawn', label: 'Geri Alınan' },
+];
 
 function getActorRoute(role?: string | null) {
   return role === 'employee' ? 'agent' : role || 'tenant';
+}
+
+function receiptTypeLabel(type: string): string {
+  if (type === 'rent') return 'Kira';
+  if (type === 'dues') return 'Aidat';
+  return 'Diğer';
+}
+
+function receiptStatusLabel(status: string): string {
+  if (status === 'approved') return 'Onaylı';
+  if (status === 'pending') return 'Bekleyen';
+  if (status === 'rejected') return 'Reddedildi';
+  if (status === 'withdrawn') return 'Geri Alındı';
+  return status;
+}
+
+function receiptStatusStyle(theme: ReturnType<typeof useAppTheme>, status: string) {
+  if (status === 'approved') {
+    return { bg: theme.colors.successLight, text: theme.colors.successText };
+  }
+  if (status === 'pending') {
+    return { bg: theme.colors.warningLight, text: theme.colors.warningText };
+  }
+  if (status === 'withdrawn') {
+    return { bg: theme.colors.surface2, text: theme.colors.textSecondary };
+  }
+  return { bg: theme.colors.errorLight, text: theme.colors.errorText };
+}
+
+function documentCategoryLabel(category: string) {
+  if (category === 'contract') return tr.documents.contract;
+  if (category === 'insurance') return tr.documents.insurance;
+  if (category === 'deed') return tr.documents.deed;
+  if (category === 'bill') return tr.documents.bill;
+  return tr.documents.other;
 }
 
 export default function MaintenanceScreen() {
@@ -51,15 +133,22 @@ export default function MaintenanceScreen() {
   const [filter, setFilter] = useState<MaintenanceFilter>('all');
   const [requests, setRequests] = useState<any[]>([]);
   const [selectedMaintenanceId, setSelectedMaintenanceId] = useState<string | null>(null);
+  const [landlordTab, setLandlordTab] = useState<LandlordTab>('maintenance');
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [documents, setDocuments] = useState<ArchiveDocument[]>([]);
+  const [receiptFilter, setReceiptFilter] = useState<ReceiptFilter>('all');
+  const [archiveSearch, setArchiveSearch] = useState('');
+  const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
   const userRole = userData?.role || 'tenant';
   const actorRoute = getActorRoute(userRole);
   const isOfficeViewer = userRole === 'agent' || userRole === 'employee' || userRole === 'admin';
-  const canOpenArchive = isOfficeViewer || userRole === 'landlord';
+  const canOpenArchive = isOfficeViewer;
   const filterOptions = useMemo(() => {
     if (isOfficeViewer) {
       return [
-        { key: 'all' as const, label: 'Tumu' },
+        { key: 'all' as const, label: 'Tümü' },
         { key: 'pending' as const, label: tr.maintenance.firstActionQueue },
         { key: 'in_progress' as const, label: tr.maintenance.fieldWorkQueue },
         { key: 'awaiting_tenant' as const, label: tr.maintenance.tenantApprovalQueue },
@@ -70,7 +159,7 @@ export default function MaintenanceScreen() {
 
     if (userRole === 'landlord') {
       return [
-        { key: 'all' as const, label: 'Tumu' },
+        { key: 'all' as const, label: 'Tümü' },
         { key: 'pending' as const, label: tr.maintenance.firstActionQueue },
         { key: 'in_progress' as const, label: tr.maintenance.fieldWorkQueue },
         { key: 'awaiting_tenant' as const, label: tr.maintenance.tenantApprovalQueue },
@@ -80,11 +169,11 @@ export default function MaintenanceScreen() {
     }
 
     return [
-      { key: 'all' as const, label: 'Tumu' },
+      { key: 'all' as const, label: 'Tümü' },
       { key: 'pending' as const, label: 'Bekliyor' },
       { key: 'in_progress' as const, label: 'Devam Ediyor' },
       { key: 'awaiting_tenant' as const, label: 'Onay Bekliyor' },
-      { key: 'completed' as const, label: 'Tamamlandi' },
+      { key: 'completed' as const, label: 'Tamamlandı' },
       { key: 'rejected' as const, label: 'Reddedildi' },
     ];
   }, [isOfficeViewer, userRole]);
@@ -92,11 +181,23 @@ export default function MaintenanceScreen() {
   useEffect(() => {
     const openId = params.openId as string | undefined;
     const openType = params.openType as string | undefined;
+    const tab = params.tab as string | undefined;
 
     if (openId && openType === 'maintenance') {
+      setLandlordTab('maintenance');
       setSelectedMaintenanceId(openId);
     }
-  }, [params.openId, params.openType]);
+    if (openId && openType === 'receipt') {
+      setLandlordTab('receipts');
+      setSelectedReceiptId(openId);
+    }
+    if (tab === 'receipts' || tab === 'archive') {
+      setLandlordTab('receipts');
+    }
+    if (tab === 'documents') {
+      setLandlordTab('documents');
+    }
+  }, [params.openId, params.openType, params.tab]);
 
   const loadRequests = useCallback(async () => {
     if (!userData) {
@@ -122,12 +223,71 @@ export default function MaintenanceScreen() {
     }
   }, [userData]);
 
+  const loadArchiveData = useCallback(async () => {
+    if (!userData?.id || userData.role !== 'landlord') {
+      return;
+    }
+
+    setArchiveLoading(true);
+    try {
+      const { data: propertyRowsData } = await supabase
+        .from('properties')
+        .select('id, address, city, district')
+        .eq('landlord_id', userData.id);
+
+      const propertyRows = propertyRowsData || [];
+      const propertyIds = propertyRows.map((item: any) => item.id);
+      const propertyLabelMap = new Map(
+        propertyRows.map((item: any) => [
+          item.id,
+          [item.address, item.city, item.district].filter(Boolean).join(', ') || tr.receipts.unknownProperty,
+        ])
+      );
+
+      const response = await listReceipts();
+      setReceipts(
+        (response.receipts || []).map((item: any) => ({
+          ...item,
+          property_address:
+            [item.property_address, item.property_city, item.property_district].filter(Boolean).join(', ') ||
+            tr.receipts.unknownProperty,
+        }))
+      );
+
+      if (propertyIds.length > 0) {
+        const { data: docs } = await supabase
+          .from('property_documents')
+          .select('id, property_id, category, title, file_url, storage_path, created_at')
+          .in('property_id', propertyIds)
+          .order('created_at', { ascending: false });
+        setDocuments(
+          ((docs as any[]) || []).map((item) => ({
+            ...item,
+            property_label: propertyLabelMap.get(item.property_id) || tr.receipts.unknownProperty,
+          }))
+        );
+      } else {
+        setDocuments([]);
+      }
+    } catch (error) {
+      console.error('Landlord archive load error:', error);
+      setReceipts([]);
+      setDocuments([]);
+    } finally {
+      setArchiveLoading(false);
+      setRefreshing(false);
+    }
+  }, [userData?.id, userData?.role]);
+
   useFocusEffect(
     useCallback(() => {
       if (!userLoading && userData) {
         loadRequests();
+        if (userData.role === 'landlord') {
+          loadArchiveData();
+        }
       }
-    }, [loadRequests, userData, userLoading])
+    }, [loadArchiveData, loadRequests, userData, userLoading])
   );
 
   const summary = useMemo(() => {
@@ -169,11 +329,58 @@ export default function MaintenanceScreen() {
     });
   }, [filter, requests]);
 
+  const filteredReceipts = useMemo(() => {
+    return receipts.filter((receipt) => {
+      if (receiptFilter === 'rent' && receipt.receipt_type !== 'rent') return false;
+      if (receiptFilter === 'dues' && receipt.receipt_type !== 'dues') return false;
+      if (receiptFilter === 'other' && receipt.receipt_type !== 'other') return false;
+      if (['approved', 'pending', 'rejected', 'withdrawn'].includes(receiptFilter) && receipt.status !== receiptFilter) {
+        return false;
+      }
+
+      if (!archiveSearch.trim()) {
+        return true;
+      }
+
+      const query = archiveSearch.trim().toLocaleLowerCase('tr');
+      return (
+        (receipt.property_address || '').toLocaleLowerCase('tr').includes(query) ||
+        (receipt.uploader_name || '').toLocaleLowerCase('tr').includes(query)
+      );
+    });
+  }, [archiveSearch, receiptFilter, receipts]);
+
+  const filteredDocuments = useMemo(() => {
+    if (!archiveSearch.trim()) {
+      return documents;
+    }
+
+    const query = archiveSearch.trim().toLocaleLowerCase('tr');
+    return documents.filter((document) =>
+      `${document.title} ${document.property_label} ${documentCategoryLabel(document.category)}`
+        .toLocaleLowerCase('tr')
+        .includes(query)
+    );
+  }, [archiveSearch, documents]);
+
+  const receiptSummary = useMemo(() => {
+    return {
+      approvedTotal: receipts
+        .filter((item) => item.status === 'approved')
+        .reduce((sum, item) => sum + Number(item.amount || 0), 0),
+      approvedCount: receipts.filter((item) => item.status === 'approved').length,
+      pendingCount: receipts.filter((item) => item.status === 'pending').length,
+    };
+  }, [receipts]);
+
   const heroCopy = getMaintenanceHeroCopy(userRole, summary);
 
   const handleRefresh = () => {
     setRefreshing(true);
     loadRequests();
+    if (userRole === 'landlord') {
+      loadArchiveData();
+    }
   };
 
   const renderHeroStats = () => {
@@ -244,7 +451,7 @@ export default function MaintenanceScreen() {
           ? userRole === 'tenant'
             ? tr.maintenance.emptyTenantAll
             : tr.maintenance.emptyGenericAll
-          : `${filterOptions.find((item) => item.key === filter)?.label || 'Secili kuyruk'} ${tr.maintenance.emptyQueueSuffix}`}
+          : `${filterOptions.find((item) => item.key === filter)?.label || 'Seçili kuyruk'} ${tr.maintenance.emptyQueueSuffix}`}
       </Text>
       {userRole === 'tenant' && (
         <TouchableOpacity
@@ -256,6 +463,122 @@ export default function MaintenanceScreen() {
           <Text style={s.emptyBtnText}>{tr.maintenance.createRecord}</Text>
         </TouchableOpacity>
       )}
+    </View>
+  );
+
+  const renderLandlordTabs = () => {
+    if (userRole !== 'landlord') {
+      return null;
+    }
+
+    return (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.landlordTabRow}>
+        {LANDLORD_TABS.map((item) => {
+          const active = landlordTab === item.key;
+          return (
+            <TouchableOpacity
+              key={item.key}
+              style={[s.landlordTab, active && s.landlordTabActive]}
+              onPress={() => setLandlordTab(item.key)}
+              activeOpacity={0.85}
+            >
+              <MaterialIcons name={item.icon} size={17} color={active ? theme.colors.textInverse : theme.colors.textSecondary} />
+              <Text style={[s.landlordTabText, active && s.landlordTabTextActive]}>{item.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  };
+
+  const renderArchiveSearch = (placeholder: string) => (
+    <View style={s.archiveSearchRow}>
+      <MaterialIcons name="search" size={20} color={theme.colors.textMuted} />
+      <TextInput
+        style={s.archiveSearchInput}
+        value={archiveSearch}
+        onChangeText={setArchiveSearch}
+        placeholder={placeholder}
+        placeholderTextColor={theme.colors.textMuted}
+        accessibilityLabel={placeholder}
+      />
+      {archiveSearch.length > 0 && (
+        <TouchableOpacity onPress={() => setArchiveSearch('')} accessibilityLabel="Aramayı temizle">
+          <MaterialIcons name="close" size={18} color={theme.colors.textMuted} />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  const openDocument = async (document: ArchiveDocument) => {
+    try {
+      const url = await createSignedStorageUrl(
+        'property-documents',
+        document.storage_path || document.file_url
+      );
+      if (url) {
+        await Linking.openURL(url);
+      }
+    } catch {
+      Alert.alert(tr.common.error, tr.receipts.documentOpenError);
+    }
+  };
+
+  const renderReceipt = ({ item }: { item: Receipt }) => {
+    const badge = receiptStatusStyle(theme, item.status);
+    const dateStr = new Date(item.created_at).toLocaleDateString('tr-TR', {
+      month: 'long',
+      year: 'numeric',
+    });
+
+    return (
+      <TouchableOpacity style={s.archiveCard} activeOpacity={0.82} onPress={() => setSelectedReceiptId(item.id)}>
+        <View style={s.archiveIconBox}>
+          <MaterialIcons name="receipt-long" size={22} color={theme.colors.primary} />
+        </View>
+        <View style={s.archiveCardContent}>
+          <View style={s.archiveCardRow}>
+            <Text style={s.archiveCardTitle} numberOfLines={1}>{receiptTypeLabel(item.receipt_type)} Dekontu</Text>
+            <View style={[s.archiveBadge, { backgroundColor: badge.bg }]}>
+              <Text style={[s.archiveBadgeText, { color: badge.text }]}>{receiptStatusLabel(item.status)}</Text>
+            </View>
+          </View>
+          <Text style={s.archiveCardMeta} numberOfLines={1}>{item.property_address || tr.receipts.unknownProperty}</Text>
+          <View style={s.archiveCardRow}>
+            {item.amount != null ? <Text style={s.archiveAmount}>{formatCurrency(Number(item.amount))}</Text> : <View />}
+            <Text style={s.archiveCardDate}>{dateStr}</Text>
+          </View>
+          {!!item.uploader_name && <Text style={s.archiveCardMeta} numberOfLines={1}>Yükleyen: {item.uploader_name}</Text>}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const renderDocument = ({ item }: { item: ArchiveDocument }) => (
+    <TouchableOpacity style={s.archiveCard} activeOpacity={0.82} onPress={() => void openDocument(item)}>
+      <View style={s.archiveIconBox}>
+        <MaterialIcons name="description" size={22} color={theme.colors.primary} />
+      </View>
+      <View style={s.archiveCardContent}>
+        <Text style={s.archiveCardTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={s.archiveCardMeta} numberOfLines={1}>
+          {documentCategoryLabel(item.category)} · {item.property_label}
+        </Text>
+        <Text style={s.archiveCardDate}>
+          {new Date(item.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+        </Text>
+      </View>
+      <MaterialIcons name="chevron-right" size={22} color={theme.colors.textMuted} />
+    </TouchableOpacity>
+  );
+
+  const renderArchiveEmpty = (title: string, subtitle: string, icon: keyof typeof MaterialIcons.glyphMap) => (
+    <View style={s.emptyContainer}>
+      <View style={s.emptyIconBg}>
+        <MaterialIcons name={icon} size={40} color={theme.colors.textMuted} />
+      </View>
+      <Text style={s.emptyTitle}>{title}</Text>
+      <Text style={s.emptySubtext}>{subtitle}</Text>
     </View>
   );
 
@@ -341,6 +664,127 @@ export default function MaintenanceScreen() {
     );
   };
 
+  if (userRole === 'landlord' && landlordTab === 'receipts') {
+    return (
+      <AnimatedScreen type="fade">
+        <View style={[s.container, { paddingTop: insets.top }]}>
+          <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+          <FlatList
+            data={archiveLoading ? [] : filteredReceipts}
+            renderItem={renderReceipt}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <>
+                <View style={s.header}>
+                  <View>
+                    <Text style={s.headerTitle}>Talepler</Text>
+                    <Text style={s.headerSubtitle}>Bakım, dekont ve belgeleri tek merkezden yönetin.</Text>
+                  </View>
+                </View>
+                {renderLandlordTabs()}
+                <View style={s.receiptSummaryCard}>
+                  <Text style={s.receiptSummaryLabel}>TOPLAM GELİR</Text>
+                  <Text style={s.receiptSummaryAmount}>{formatCurrency(receiptSummary.approvedTotal)}</Text>
+                  <View style={s.receiptSummaryRow}>
+                    <View style={s.receiptSummaryPill}>
+                      <MaterialIcons name="check-circle" size={14} color={theme.colors.successText} />
+                      <Text style={[s.receiptSummaryPillText, { color: theme.colors.successText }]}>
+                        {receiptSummary.approvedCount} onaylı
+                      </Text>
+                    </View>
+                    <View style={[s.receiptSummaryPill, { backgroundColor: theme.colors.warningLight }]}>
+                      <MaterialIcons name="hourglass-empty" size={14} color={theme.colors.warningText} />
+                      <Text style={[s.receiptSummaryPillText, { color: theme.colors.warningText }]}>
+                        {receiptSummary.pendingCount} bekleyen
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                {renderArchiveSearch('Mülk veya dekont ara')}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.receiptFilterRow}>
+                  {RECEIPT_FILTERS.map((item) => (
+                    <TouchableOpacity
+                      key={item.key}
+                      style={[s.receiptFilterChip, receiptFilter === item.key && s.receiptFilterChipActive]}
+                      onPress={() => setReceiptFilter(item.key)}
+                      activeOpacity={0.85}
+                    >
+                      <Text style={[s.receiptFilterText, receiptFilter === item.key && s.receiptFilterTextActive]}>
+                        {item.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                {!archiveLoading && <Text style={s.archiveResultCount}>{filteredReceipts.length} dekont</Text>}
+              </>
+            }
+            ListEmptyComponent={
+              archiveLoading
+                ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.primary} />
+                : renderArchiveEmpty('Henüz dekont yok', 'Dekont arşivi bu sekmede listelenecek.', 'receipt-long')
+            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.primary} />}
+            contentContainerStyle={[s.listContent, !archiveLoading && filteredReceipts.length === 0 && { flexGrow: 1 }]}
+            showsVerticalScrollIndicator={false}
+          />
+          <BottomSheetModal
+            visible={!!selectedReceiptId}
+            onClose={() => {
+              setSelectedReceiptId(null);
+              loadArchiveData();
+            }}
+          >
+            {selectedReceiptId && (
+              <ReceiptDetailView
+                receiptId={selectedReceiptId}
+                onClose={() => {
+                  setSelectedReceiptId(null);
+                  loadArchiveData();
+                }}
+              />
+            )}
+          </BottomSheetModal>
+        </View>
+      </AnimatedScreen>
+    );
+  }
+
+  if (userRole === 'landlord' && landlordTab === 'documents') {
+    return (
+      <AnimatedScreen type="fade">
+        <View style={[s.container, { paddingTop: insets.top }]}>
+          <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+          <FlatList
+            data={archiveLoading ? [] : filteredDocuments}
+            renderItem={renderDocument}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={
+              <>
+                <View style={s.header}>
+                  <View>
+                    <Text style={s.headerTitle}>Talepler</Text>
+                    <Text style={s.headerSubtitle}>Bakım, dekont ve belgeleri tek merkezden yönetin.</Text>
+                  </View>
+                </View>
+                {renderLandlordTabs()}
+                {renderArchiveSearch('Belge veya mülk ara')}
+                {!archiveLoading && <Text style={s.archiveResultCount}>{filteredDocuments.length} belge</Text>}
+              </>
+            }
+            ListEmptyComponent={
+              archiveLoading
+                ? <ActivityIndicator style={{ marginTop: 40 }} size="large" color={theme.colors.primary} />
+                : renderArchiveEmpty('Henüz belge yok', 'Mülklerinize ait belgeler burada görünecek.', 'description')
+            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.primary} />}
+            contentContainerStyle={[s.listContent, !archiveLoading && filteredDocuments.length === 0 && { flexGrow: 1 }]}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </AnimatedScreen>
+    );
+  }
+
   return (
     <AnimatedScreen type="fade">
       <View style={[s.container, { paddingTop: insets.top }]}>
@@ -356,7 +800,11 @@ export default function MaintenanceScreen() {
             <View style={s.header}>
               <View>
                 <Text style={s.headerTitle}>
-                  {isOfficeViewer ? tr.maintenance.operationsTitle : tr.maintenance.tenantScreenTitle}
+                  {isOfficeViewer
+                    ? tr.maintenance.operationsTitle
+                    : userRole === 'landlord'
+                    ? 'Talepler'
+                    : tr.maintenance.tenantScreenTitle}
                 </Text>
                 <Text style={s.headerSubtitle}>
                   {userRole === 'tenant'
@@ -385,9 +833,10 @@ export default function MaintenanceScreen() {
                     <MaterialIcons name="folder-open" size={22} color={theme.colors.textSecondary} />
                   </TouchableOpacity>
                 )}
-                {(userRole === 'agent' || userRole === 'employee') && <OfficeAvatarMenu />}
               </View>
             </View>
+
+            {renderLandlordTabs()}
 
             <View style={s.heroCard}>
               <Text style={s.heroEyebrow}>{heroCopy.eyebrow}</Text>
@@ -481,6 +930,178 @@ const useStyles = createThemedStyles((theme) =>
       borderWidth: 1,
       borderColor: theme.colors.border,
       marginLeft: 8,
+    },
+    landlordTabRow: {
+      paddingHorizontal: 16,
+      gap: 8,
+      paddingBottom: 12,
+    },
+    landlordTab: {
+      minHeight: 42,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      borderRadius: 999,
+      paddingHorizontal: 14,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    landlordTabActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    landlordTabText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.colors.textSecondary,
+    },
+    landlordTabTextActive: {
+      color: theme.colors.textInverse,
+    },
+    archiveSearchRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 16,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      ...theme.shadows.sm,
+    },
+    archiveSearchInput: {
+      flex: 1,
+      fontSize: 14,
+      color: theme.colors.textPrimary,
+      paddingVertical: 2,
+    },
+    receiptSummaryCard: {
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderRadius: 20,
+      backgroundColor: theme.colors.dark,
+      padding: 20,
+      ...theme.shadows.md,
+    },
+    receiptSummaryLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: theme.colors.textInverse,
+      opacity: 0.72,
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    receiptSummaryAmount: {
+      fontSize: 32,
+      fontWeight: '800',
+      color: theme.colors.primary,
+      marginBottom: 14,
+    },
+    receiptSummaryRow: { flexDirection: 'row', gap: 8 },
+    receiptSummaryPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: theme.colors.successLight,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    receiptSummaryPillText: {
+      fontSize: 12,
+      fontWeight: '700',
+    },
+    receiptFilterRow: {
+      paddingHorizontal: 16,
+      gap: 8,
+      paddingBottom: 12,
+    },
+    receiptFilterChip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 999,
+      backgroundColor: theme.colors.surface2,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    receiptFilterChipActive: {
+      backgroundColor: theme.colors.primaryLight,
+      borderColor: theme.colors.primary,
+    },
+    receiptFilterText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: theme.colors.textSecondary,
+    },
+    receiptFilterTextActive: {
+      color: theme.colors.primary,
+      fontWeight: '700',
+    },
+    archiveResultCount: {
+      marginHorizontal: 16,
+      marginBottom: 10,
+      fontSize: 13,
+      color: theme.colors.textMuted,
+    },
+    archiveCard: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+      marginHorizontal: 16,
+      marginBottom: 12,
+      borderRadius: 18,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      padding: 14,
+      ...theme.shadows.sm,
+    },
+    archiveIconBox: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      backgroundColor: theme.colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    archiveCardContent: { flex: 1, gap: 4 },
+    archiveCardRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 10,
+    },
+    archiveCardTitle: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
+    },
+    archiveCardMeta: {
+      fontSize: 12,
+      color: theme.colors.textSecondary,
+    },
+    archiveCardDate: {
+      fontSize: 12,
+      color: theme.colors.textMuted,
+    },
+    archiveAmount: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: theme.colors.textPrimary,
+    },
+    archiveBadge: {
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 999,
+    },
+    archiveBadgeText: {
+      fontSize: 11,
+      fontWeight: '700',
     },
     heroCard: {
       marginHorizontal: 16,

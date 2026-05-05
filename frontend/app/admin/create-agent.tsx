@@ -109,12 +109,12 @@ export default function CreateAgentScreen() {
 
       Alert.alert(
         'Basarili',
-        `Bagimsiz emlakci olusturuldu. Giris e-postasi: ${email.trim().toLowerCase()} | Varsayilan sifre: ${TRIAL_PASSWORD}`,
+        `Bağımsız emlakçı oluşturuldu. Giriş e-postası: ${email.trim().toLowerCase()} | Varsayılan şifre: ${TRIAL_PASSWORD}`,
         [{ text: 'Tamam', onPress: () => router.replace('/admin/companies') }]
       );
     } catch (error: any) {
       console.error('Create standalone agent error:', error);
-      Alert.alert('Hata', error?.message || 'Kayit olusturulamadi');
+      Alert.alert('Hata', error?.message || 'Kayıt oluşturulamadı');
     } finally {
       setSaving(false);
     }
@@ -127,7 +127,7 @@ export default function CreateAgentScreen() {
           <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={22} color={theme.colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.title}>Bagimsiz Emlakci Olustur</Text>
+          <Text style={styles.title}>Bağımsız Emlakçı Oluştur</Text>
           <TouchableOpacity
             style={[styles.iconButton, styles.saveButtonSmall, saving && styles.disabled]}
             onPress={handleSave}
@@ -154,9 +154,9 @@ export default function CreateAgentScreen() {
               </View>
             </TouchableOpacity>
             <View style={styles.heroCopy}>
-              <Text style={styles.heroTitle}>{fullName || 'Bagimsiz Emlakci'}</Text>
+              <Text style={styles.heroTitle}>{fullName || 'Bağımsız Emlakçı'}</Text>
               <Text style={styles.heroText}>
-                Bu kayit bir sirket veya ofise baglanmaz. Marka renkleri bu emlakciya ait tenant ve ev sahibi ekranlarina akar.
+                Bu kayıt bir şirket veya ofise bağlanmaz. Marka renkleri bu emlakçıya ait tenant ve ev sahibi ekranlarına akar.
               </Text>
             </View>
           </View>
@@ -164,7 +164,7 @@ export default function CreateAgentScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Temel Bilgiler</Text>
             <Field label="Ad Soyad" value={fullName} onChangeText={setFullName} />
-            <Field label="Giris E-postasi" value={email} onChangeText={setEmail} keyboardType="email-address" />
+            <Field label="Giriş E-postası" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Telefon" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
             <LocationPicker
               province={city}
@@ -173,7 +173,7 @@ export default function CreateAgentScreen() {
               onDistrictChange={setDistrict}
               required
             />
-            <Text style={styles.helper}>Varsayilan sifre: 1234</Text>
+            <Text style={styles.helper}>Varsayılan şifre: 1234</Text>
           </View>
 
           <View style={styles.section}>
@@ -188,11 +188,11 @@ export default function CreateAgentScreen() {
             </View>
             <BrandColorPicker label="Ana Renk" value={primaryColor} onChange={setPrimaryColor} />
             <View style={styles.spacer} />
-            <BrandColorPicker label="Ikincil Renk" value={secondaryColor} onChange={setSecondaryColor} />
+            <BrandColorPicker label="İkincil Renk" value={secondaryColor} onChange={setSecondaryColor} />
           </View>
 
           <TouchableOpacity style={[styles.submitButton, saving && styles.disabled]} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color={theme.colors.textInverse} /> : <Text style={styles.submitText}>Bagimsiz Emlakciyi Kaydet</Text>}
+            {saving ? <ActivityIndicator color={theme.colors.textInverse} /> : <Text style={styles.submitText}>Bağımsız Emlakçıyı Kaydet</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

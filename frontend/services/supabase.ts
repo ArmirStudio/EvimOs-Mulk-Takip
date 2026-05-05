@@ -15,7 +15,7 @@ export const missingSupabaseEnvVars = [
 export const isSupabaseConfigured = missingSupabaseEnvVars.length === 0;
 export const supabaseConfigurationErrorMessage = isSupabaseConfigured
   ? null
-  : `Supabase ayarlari eksik: ${missingSupabaseEnvVars.join(', ')}. frontend/.env dosyasini guncelleyin.`;
+  : `Supabase ayarları eksik: ${missingSupabaseEnvVars.join(', ')}. frontend/.env dosyasını güncelleyin.`;
 
 if (!isSupabaseConfigured) {
   console.warn(

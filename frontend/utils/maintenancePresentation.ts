@@ -11,6 +11,15 @@ type Tone = {
   accentColor: string;
 };
 
+type MaintenanceTimelineStep = {
+  key: string;
+  title: string;
+  description: string;
+  date?: string | null;
+  state: 'done' | 'active' | 'upcoming';
+  icon: string;
+};
+
 export function formatMaintenanceDate(
   value?: string | null,
   mode: 'date' | 'datetime' | 'relative' = 'date'
@@ -57,7 +66,7 @@ export function formatMaintenanceDate(
 
 export function getMaintenancePropertyLabel(item: any) {
   if (!item) {
-    return 'Bilinmeyen mulk';
+    return 'Bilinmeyen mülk';
   }
 
   return (
@@ -68,7 +77,7 @@ export function getMaintenancePropertyLabel(item: any) {
       item.property?.city || item.property_city,
     ]
       .filter(Boolean)
-      .join(', ') || 'Bilinmeyen mulk'
+      .join(', ') || 'Bilinmeyen mülk'
   );
 }
 
@@ -256,9 +265,9 @@ export function getMaintenanceNextAction(item: any, role: string = 'tenant') {
 export function getMaintenanceRoleLabel(role?: string | null) {
   switch (role) {
     case 'agent':
-      return 'Emlakci';
+      return 'Emlakçı';
     case 'employee':
-      return 'Sorumlu calisan';
+      return 'Sorumlu çalışan';
     case 'landlord':
       return 'Ev sahibi';
     case 'tenant':
@@ -282,22 +291,22 @@ export function getMaintenanceHeroCopy(role: string, summary: {
   if (role === 'tenant') {
     return {
       eyebrow: 'Ariza merkezi',
-      title: summary.total > 0 ? 'Evinizdeki surec tek yerde' : 'Bu evde henuz kayit yok',
+      title: summary.total > 0 ? 'Evinizdeki süreç tek yerde' : 'Bu evde henüz kayıt yok',
       subtitle:
         summary.awaitingTenantApproval > 0
           ? 'Tamamlanan isleriniz icin geri bildirim vermeniz bekleniyor.'
-          : 'Acik, devam eden ve tamamlanan tum kayitlari tek ekranda izleyin.',
+          : 'Açık, devam eden ve tamamlanan tüm kayıtları tek ekranda izleyin.',
     };
   }
 
   if (role === 'landlord') {
     return {
-      eyebrow: 'Mulk sagligi',
-      title: summary.critical > 0 ? 'Kritik talepler one cikti' : 'Mulklerinizdeki bakim akisi',
+      eyebrow: 'Mülk sağlığı',
+      title: summary.critical > 0 ? 'Kritik talepler öne çıktı' : 'Mülklerinizdeki bakım akışı',
       subtitle:
         summary.pending + summary.inProgress > 0
           ? 'Acik bakim taleplerini izleyin, gerekirse surece bilgi notu ekleyin.'
-          : 'Su anda acik bir sorun gorunmuyor. Gecmis kayitlar detayda kalir.',
+          : 'Şu anda açık bir sorun görünmüyor. Geçmiş kayıtlar detayda kalır.',
     };
   }
 
@@ -309,22 +318,22 @@ export function getMaintenanceHeroCopy(role: string, summary: {
         : 'Bakim operasyonu dengede gorunuyor',
     subtitle:
       summary.awaitingTenantApproval > 0
-        ? 'Bugun tamamlanan isleri ve kiraci onayi bekleyen kayitlari yonetin.'
+        ? 'Bugün tamamlanan işleri ve kiracı onayı bekleyen kayıtları yönetin.'
         : 'Bekleyen, sahadaki ve kapanan talepleri tek panelden yonetin.',
   };
 }
 
-export function buildMaintenanceTimeline(request: any) {
+export function buildMaintenanceTimeline(request: any): MaintenanceTimelineStep[] {
   const status = request?.status || 'pending';
   const awaitingTenantApproval =
     status === 'completed' && !!request?.property?.tenant_id && !request?.tenant_approved_at;
   const rejectedByTenant = !!request?.tenant_rejection_reason;
 
-  const steps = [
+  const steps: MaintenanceTimelineStep[] = [
     {
       key: 'created',
-      title: 'Talep olusturuldu',
-      description: 'Kayit sisteme eklendi ve ilgili kisilere iletildi.',
+      title: 'Talep oluşturuldu',
+      description: 'Kayıt sisteme eklendi ve ilgili kişilere iletildi.',
       date: request?.created_at,
       state: 'done' as const,
       icon: 'campaign',
@@ -346,7 +355,7 @@ export function buildMaintenanceTimeline(request: any) {
     steps.push({
       key: 'rejected',
       title: 'Talep reddedildi',
-      description: 'Kayit isleme alinmadan kapatildi.',
+      description: 'Kayıt işleme alınmadan kapatıldı.',
       date: request?.updated_at,
       state: 'active' as const,
       icon: 'block',

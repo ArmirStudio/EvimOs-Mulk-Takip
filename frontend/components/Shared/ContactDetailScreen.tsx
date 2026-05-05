@@ -18,10 +18,10 @@ import { deleteUser, getUserDetail } from '../../services/appApi';
 import { useUserData } from '../../hooks/useUserData';
 
 const ROLE_LABELS: Record<string, string> = {
-  agent: 'Emlakci',
+  agent: 'Emlakçı',
   landlord: 'Ev Sahibi',
   tenant: 'Kiraci',
-  employee: 'Calisan',
+  employee: 'Çalışan',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,7 +30,7 @@ const STATUS_LABELS: Record<string, string> = {
   maintenance: 'Bakimda',
 };
 
-function getRoleColors(theme: any) {
+function getRoleColors(theme: any): Record<string, { bg: string; text: string }> {
   return {
     agent: { bg: theme.colors.primaryLight, text: theme.colors.primary },
     landlord: { bg: theme.colors.warningLight, text: theme.colors.warningText },
@@ -113,7 +113,7 @@ export default function ContactDetailScreen() {
             try {
               setDeleting(true);
               await deleteUser(id);
-              Alert.alert('Basarili', 'Kayit silindi.', [
+              Alert.alert('Başarılı', 'Kayıt silindi.', [
                 { text: 'Tamam', onPress: () => router.back() },
               ]);
             } catch (error: any) {
@@ -203,7 +203,7 @@ export default function ContactDetailScreen() {
               <MaterialIcons name="calendar-today" size={18} color={theme.colors.primary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={s.infoLabel}>Kayit Tarihi</Text>
+              <Text style={s.infoLabel}>Kayıt Tarihi</Text>
               <Text style={s.infoValue}>{formatDate(contact.created_at)}</Text>
             </View>
           </View>

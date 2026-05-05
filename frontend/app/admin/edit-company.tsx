@@ -84,7 +84,7 @@ export default function EditCompanyScreen() {
       });
     } catch (loadError) {
       console.error('Load company error:', loadError);
-      Alert.alert(tr.common.error, 'Sirket yuklenirken hata olustu');
+      Alert.alert(tr.common.error, 'Şirket yüklenirken hata oluştu');
       router.back();
     } finally {
       setLoading(false);
@@ -132,7 +132,7 @@ export default function EditCompanyScreen() {
       ]);
     } catch (submissionError: any) {
       console.error('Edit company error:', submissionError);
-      Alert.alert(tr.common.error, submissionError?.message || 'Sirket guncellenirken hata olustu');
+      Alert.alert(tr.common.error, submissionError?.message || 'Şirket güncellenirken hata oluştu');
     } finally {
       setSaving(false);
     }
@@ -140,7 +140,7 @@ export default function EditCompanyScreen() {
 
   return (
     <CompanyFormScreen
-      title={initialValues.entityType === 'company' ? 'Sirket Duzenle' : 'Ofis Duzenle'}
+      title={initialValues.entityType === 'company' ? 'Şirket Düzenle' : 'Ofis Düzenle'}
       submitLabel={tr.common.save}
       initialValues={initialValues}
       loading={loading}

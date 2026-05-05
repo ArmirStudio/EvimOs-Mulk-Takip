@@ -38,9 +38,9 @@ interface AgencyCardModel {
 }
 
 const FILTERS: { key: FilterMode; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { key: 'all', label: 'Tumu', icon: 'grid-outline' },
+  { key: 'all', label: 'Tümü', icon: 'grid-outline' },
   { key: 'agency', label: 'Yapilar', icon: 'business-outline' },
-  { key: 'standalone_agent', label: 'Bagimsiz', icon: 'person-outline' },
+  { key: 'standalone_agent', label: 'Bağımsız', icon: 'person-outline' },
 ];
 
 export default function CompaniesScreen() {
@@ -121,9 +121,9 @@ export default function CompaniesScreen() {
 
   const getTypeLabel = (item: AgencyCardModel) => {
     if (item.source === 'standalone_agent') {
-      return 'Bagimsiz Emlakci';
+      return 'Bağımsız Emlakçı';
     }
-    return item.entity_type === 'company' ? 'Sirket' : 'Ofis';
+    return item.entity_type === 'company' ? 'Şirket' : 'Ofis';
   };
 
   const handleCardPress = (item: AgencyCardModel) => {
@@ -143,19 +143,19 @@ export default function CompaniesScreen() {
       >
         <View style={styles.heroCard}>
           <View style={styles.heroGlow} />
-          <Text style={styles.title}>Sirketler ve Ofisler</Text>
+          <Text style={styles.title}>Şirketler ve Ofisler</Text>
           <Text style={styles.subtitle}>
-            Ofis, sirket ve bagimsiz emlakci kayitlarini tek listede yonet.
+            Ofis, şirket ve bağımsız emlakçı kayıtlarını tek listede yönet.
           </Text>
           <TouchableOpacity style={styles.addButton} onPress={() => setShowCreateSheet(true)} activeOpacity={0.9}>
             <Ionicons name="add" size={18} color={theme.colors.textInverse} />
-            <Text style={styles.addButtonText}>Yeni Kayit</Text>
+            <Text style={styles.addButtonText}>Yeni Kayıt</Text>
           </TouchableOpacity>
 
           <View style={styles.statsRow}>
             <StatPill value={summary.offices} label="Ofis" />
-            <StatPill value={summary.companies} label="Sirket" />
-            <StatPill value={summary.standalone} label="Bagimsiz" />
+            <StatPill value={summary.companies} label="Şirket" />
+            <StatPill value={summary.standalone} label="Bağımsız" />
           </View>
         </View>
 
@@ -250,9 +250,9 @@ export default function CompaniesScreen() {
         ) : (
           <View style={styles.emptyState}>
             <Ionicons name="business-outline" size={52} color={theme.colors.textMuted} />
-            <Text style={styles.emptyTitle}>Kayit bulunamadi</Text>
+            <Text style={styles.emptyTitle}>Kayıt bulunamadı</Text>
             <Text style={styles.emptyText}>
-              {query ? 'Arama kriterlerine uygun sonuc bulunamadi.' : 'Henüz kayit bulunmuyor.'}
+              {query ? 'Arama kriterlerine uygun sonuç bulunamadı.' : 'Henüz kayıt bulunmuyor.'}
             </Text>
           </View>
         )}
@@ -262,8 +262,8 @@ export default function CompaniesScreen() {
         <View style={styles.sheetOverlay}>
           <Pressable style={styles.sheetScrim} onPress={() => setShowCreateSheet(false)} />
           <View style={styles.sheetCard}>
-            <Text style={styles.sheetTitle}>Yeni Kayit Sec</Text>
-            <Text style={styles.sheetSubtitle}>Istedigin akisa dogrudan buradan gec.</Text>
+            <Text style={styles.sheetTitle}>Yeni Kayıt Seç</Text>
+            <Text style={styles.sheetSubtitle}>İstediğin akışa doğrudan buradan geç.</Text>
 
             <SheetOption
               icon="home-outline"
@@ -276,8 +276,8 @@ export default function CompaniesScreen() {
             />
             <SheetOption
               icon="business-outline"
-              title="Emlak Sirketi"
-              description="Kurumsal ve cok calisanli yapi."
+              title="Emlak Şirketi"
+              description="Kurumsal ve çok çalışanlı yapı."
               onPress={() => {
                 setShowCreateSheet(false);
                 router.push('/admin/create-company?entityType=company');
@@ -285,8 +285,8 @@ export default function CompaniesScreen() {
             />
             <SheetOption
               icon="person-outline"
-              title="Bagimsiz Emlakci"
-              description="Ofise bagli olmayan bireysel kayit."
+              title="Bağımsız Emlakçı"
+              description="Ofise bağlı olmayan bireysel kayıt."
               onPress={() => {
                 setShowCreateSheet(false);
                 router.push('/admin/create-agent' as any);

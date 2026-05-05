@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
@@ -221,6 +222,9 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
   const [displayedYear, setDisplayedYear] = useState(today.getFullYear());
   const [rawProperties, setRawProperties] = useState<PropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const collapsibleOpacity = useSharedValue(1);
 
   const fetchProperties = useCallback(async () => {
     try {
@@ -272,6 +276,16 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
     }
   };
 
+  const toggleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    collapsibleOpacity.value = withTiming(newCollapsed ? 0 : 1, { duration: 300 });
+  };
+
+  const collapsibleAnimStyle = useAnimatedStyle(() => ({
+    opacity: collapsibleOpacity.value,
+  }));
+
   if (loading) {
     return (
       <View style={s.container}>
@@ -289,8 +303,17 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
       {!hideHeader && (
         <View style={s.header}>
           <View style={s.headerLeft}>
-            <Text style={s.headerTitle}>Takvim</Text>
-            <Text style={s.headerSubtitle}>Yaklaşan ödeme ve sözleşme tarihleri</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={s.headerTitle}>Takvim</Text>
+              <TouchableOpacity onPress={toggleCollapse} hitSlop={8}>
+                <MaterialIcons
+                  name={isCollapsed ? 'chevron-right' : 'chevron-down'}
+                  size={20}
+                  color={theme.colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
+            {!isCollapsed && <Text style={s.headerSubtitle}>Yaklaşan ödeme ve sözleşme tarihleri</Text>}
           </View>
           <View style={s.headerRight}>
             <TouchableOpacity onPress={goToPrevMonth} hitSlop={8} style={s.navBtn}>
@@ -324,13 +347,15 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
         </View>
       )}
 
-      <View style={s.dayNamesRow}>
-        {DAY_NAMES_TR.map(name => (
-          <Text key={name} style={s.dayName}>{name}</Text>
-        ))}
-      </View>
+      {!isCollapsed && (
+        <Animated.View style={[collapsibleAnimStyle, { originY: 0 }]}>
+          <View style={s.dayNamesRow}>
+          {DAY_NAMES_TR.map(name => (
+            <Text key={name} style={s.dayName}>{name}</Text>
+          ))}
+        </View>
 
-      <View style={s.calendarGrid}>
+        <View style={s.calendarGrid}>
         {calendarDays.map((cell, idx) => {
           const { day, isOverflow } = cell;
 
@@ -343,14 +368,20 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
           }
 
           const isToday = day === todayDay && displayedMonth === todayMonth && displayedYear === todayYear;
+          const isSelected = selectedDay === day;
           const dateKey = toDateKey(displayedYear, displayedMonth, day);
           const eventsForDay = eventMap[dateKey] ?? [];
           const dotColors = getDotColors(theme, eventsForDay);
 
           return (
-            <View key={dateKey} style={s.dayCell}>
-              <View style={[s.dayInner, isToday && s.todayCell]}>
-                <Text style={[s.dayText, isToday && s.todayText]}>{day}</Text>
+            <TouchableOpacity
+              key={dateKey}
+              style={s.dayCell}
+              onPress={() => setSelectedDay(isSelected ? null : day)}
+              activeOpacity={0.7}
+            >
+              <View style={[s.dayInner, isToday && s.todayCell, isSelected && { backgroundColor: theme.colors.primary + '2E', borderWidth: 2, borderColor: theme.colors.primary }]}>
+                <Text style={[s.dayText, isToday && s.todayText, isSelected && { color: theme.colors.primary, fontWeight: '800' }]}>{day}</Text>
               </View>
               {dotColors.length > 0 && (
                 <View style={s.dotRow}>
@@ -359,77 +390,85 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
                   ))}
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           );
         })}
       </View>
 
-      <View style={s.legend}>
-        {getLegendItems(theme).map(item => (
-          <View key={item.label} style={s.legendItem}>
-            <View style={[s.legendDot, { backgroundColor: item.color }]} />
-            <Text style={s.legendLabel}>{item.label}</Text>
-          </View>
-        ))}
-      </View>
+        <View style={s.legend}>
+          {getLegendItems(theme).map(item => (
+            <View key={item.label} style={s.legendItem}>
+              <View style={[s.legendDot, { backgroundColor: item.color }]} />
+              <Text style={s.legendLabel}>{item.label}</Text>
+            </View>
+          ))}
+        </View>
 
-      {!hideHeader && (
+        {!hideHeader && (
         <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>Yaklaşan İşlemler</Text>
+          <Text style={s.sectionTitle}>{selectedDay ? `${selectedDay} ${MONTH_NAMES_TR[displayedMonth]} İşlemleri` : 'Yaklaşan İşlemler'}</Text>
           <TouchableOpacity onPress={() => router.push(`/${role}/calendar` as any)}>
             <Text style={s.seeAllBtn}>Tümünü Gör</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {monthEvents.length === 0 ? (
-        <View style={s.empty}>
-          <Text style={s.emptyText}>Bu ay planlanmış işlem yok</Text>
-        </View>
-      ) : (
-        <View style={s.eventList}>
-          {monthEvents.map(event => {
-            const badge = getStatusBadge(theme, event.date);
-            const dateLabel = `${event.date.getDate()} ${MONTH_NAMES_TR[event.date.getMonth()]} ${event.date.getFullYear()}`;
-            return (
-              <View key={event.id} style={s.eventCard}>
-                <View style={[s.eventIconBox, { backgroundColor: getEventBg(theme, event.type) }]}>
-                  <MaterialIcons name={EVENT_ICON[event.type]} size={20} color={getDotColor(theme, event.type)} />
-                </View>
+        {(() => {
+          const displayedEvents = selectedDay
+            ? monthEvents.filter(e => e.date.getDate() === selectedDay)
+            : monthEvents;
 
-                <View style={s.eventCardBody}>
-                  <View style={s.eventCardTop}>
-                    <Text style={s.eventCardTitle} numberOfLines={1}>
-                      {EVENT_TITLE[event.type]}
-                    </Text>
-                    <View style={[s.statusBadge, { backgroundColor: badge.bg }]}>
-                      <Text style={[s.statusBadgeText, { color: badge.color }]}>
-                        {badge.label}
+          return displayedEvents.length === 0 ? (
+          <View style={s.empty}>
+            <Text style={s.emptyText}>{selectedDay ? 'Bu gün planlanmış işlem yok' : 'Bu ay planlanmış işlem yok'}</Text>
+          </View>
+        ) : (
+          <View style={s.eventList}>
+            {displayedEvents.map(event => {
+              const badge = getStatusBadge(theme, event.date);
+              const dateLabel = `${event.date.getDate()} ${MONTH_NAMES_TR[event.date.getMonth()]} ${event.date.getFullYear()}`;
+              return (
+                <View key={event.id} style={s.eventCard}>
+                  <View style={[s.eventIconBox, { backgroundColor: getEventBg(theme, event.type) }]}>
+                    <MaterialIcons name={EVENT_ICON[event.type]} size={20} color={getDotColor(theme, event.type)} />
+                  </View>
+
+                  <View style={s.eventCardBody}>
+                    <View style={s.eventCardTop}>
+                      <Text style={s.eventCardTitle} numberOfLines={1}>
+                        {EVENT_TITLE[event.type]}
                       </Text>
-                    </View>
-                  </View>
-
-                  <Text style={s.eventCardSub} numberOfLines={1}>
-                    {event.propertyName}
-                  </Text>
-
-                  <View style={s.eventCardFooter}>
-                    {event.tenantName && role !== 'tenant' && (
-                      <View style={s.footerItem}>
-                        <MaterialIcons name="person" size={13} color={theme.colors.textMuted} />
-                        <Text style={s.footerText}>{event.tenantName}</Text>
+                      <View style={[s.statusBadge, { backgroundColor: badge.bg }]}>
+                        <Text style={[s.statusBadgeText, { color: badge.color }]}>
+                          {badge.label}
+                        </Text>
                       </View>
-                    )}
-                    <View style={s.footerItem}>
-                      <MaterialIcons name="calendar-today" size={13} color={theme.colors.textMuted} />
-                      <Text style={s.footerText}>{dateLabel}</Text>
+                    </View>
+
+                    <Text style={s.eventCardSub} numberOfLines={1}>
+                      {event.propertyName}
+                    </Text>
+
+                    <View style={s.eventCardFooter}>
+                      {event.tenantName && role !== 'tenant' && (
+                        <View style={s.footerItem}>
+                          <MaterialIcons name="person" size={13} color={theme.colors.textMuted} />
+                          <Text style={s.footerText}>{event.tenantName}</Text>
+                        </View>
+                      )}
+                      <View style={s.footerItem}>
+                        <MaterialIcons name="calendar-today" size={13} color={theme.colors.textMuted} />
+                        <Text style={s.footerText}>{dateLabel}</Text>
+                      </View>
                     </View>
                   </View>
                 </View>
-              </View>
-            );
-          })}
-        </View>
+              );
+            })}
+          </View>
+        );
+        })()}
+        </Animated.View>
       )}
     </View>
   );
