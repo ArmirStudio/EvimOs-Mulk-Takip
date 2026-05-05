@@ -1,20 +1,20 @@
 # Admin Web
 
-`admin-web/` bagimsiz React + Vite panelidir. Reklam kampanyasi yonetiminin tek kanonik arayuzu burasidir.
+`admin-web/` bağımsız React + Vite panelidir. Reklam kampanyası yönetiminin kanonik arayüzü burasıdır.
 
 ## Sorumluluk
-- kampanya listeleme
-- create, update, delete
-- aktiflik toggle
-- duplicate
-- medya upload
-- canli mobil preview
-- admin oturum dogrulamasi
+- Kampanya listeleme.
+- Create, update, delete.
+- Aktiflik toggle.
+- Duplicate.
+- Medya upload.
+- Canlı mobil preview.
+- Admin oturum doğrulaması.
 
 ## Mimari
-- Auth icin sadece anon key kullanan Supabase client vardir.
-- Tum yazma islemleri backend `/api/admin/*` endpoint'lerine gider.
-- Ortak kampanya ve lokasyon modelleri `shared/` alias'lari ile kullanilir.
+- Auth için anon key kullanan Supabase client vardır.
+- Tüm yazma işlemleri backend `/api/admin/*` endpoint'lerine gider.
+- Ortak kampanya ve lokasyon modelleri `shared/` alias'ları ile kullanılır.
 
 ## Temel Dosyalar
 - `src/lib/supabase.ts`
@@ -32,11 +32,6 @@
 - `service`
 - `interstitial`
 
-## Preview
-- Form ekraninda sag sutunda sabit `PhonePreview` bulunur.
-- Preview bilesenleri mobil dashboard render'i ile ayni kampanya tiplerini baz alir.
-- Interstitial alanlarinda modal genisligi, gorsel yuksekligi, lock duration ve gunluk frekans girdileri preview ile birlikte gosterilir.
-
 ## Endpointler
 - `GET /api/admin/session`
 - `GET /api/admin/campaigns`
@@ -49,33 +44,12 @@
 - `GET /api/admin/agency-options`
 - `POST /api/admin/uploads/public`
 
-## Upload Kurallari
-- Upload adaptoru: `src/hooks/useImageUpload.ts`
+## Upload Kuralları
 - Bucket: `ad-media`
-- Upload backend tarafinda korunur:
-  - sadece gorsel MIME type
-  - 10 MB limit
-
-## Hedefleme
-- Form tarafinda secilebilen hedef alanlar:
-  - `target_roles`
-  - `target_provinces`
-  - `target_districts`
-  - `target_agency_ids`
-- Bu alanlar kayit edilir, mobil delivery tarafinda backend `GET /api/dashboard/campaigns` ile uygulanir.
-
-## Durum Notlari
-- Aktif/pasif toggle sonrasinda liste yeniden fetch edilir.
-- Kampanya kopyalama yeni kaydi olusturur ve duzenleme ekranina yonlendirir.
-- Mobil admin dashboard sadece bu panele yonlendirir; kampanya CRUD mobilde yapilmaz.
-
-## Ortam Degiskenleri
-- zorunlu:
-  - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
-- istege bagli:
-  - `VITE_API_URL`
+- Upload backend tarafında korunur.
+- Sadece görsel MIME type kabul edilir.
+- Limit: 10 MB.
 
 ## Temizlik Notu
 - `VITE_SUPABASE_SERVICE_ROLE_KEY` beklenmez.
-- Admin reklam yonetimi icin ikinci bir mobil route ailesi tutulmaz.
+- Kampanya CRUD mobil uygulamada tutulmaz.

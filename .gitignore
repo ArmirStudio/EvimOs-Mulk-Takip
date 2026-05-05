@@ -52,6 +52,8 @@ yarn-error.log*
 dump.rdb
 
 # Local tool state
+.claude/settings.json
+.claude/worktrees/
 .claude/settings.local.json
 .gitconfig
 .chainlit/

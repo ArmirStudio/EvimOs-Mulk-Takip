@@ -1,6 +1,6 @@
-# Backend Dokumantasyonu
+# Backend
 
-Backend FastAPI ile calisir ve Supabase'e service-role ile baglanir. Mobil istemci normalde `frontend/services/appApi.ts` uzerinden backend'e gider.
+Backend FastAPI ile çalışır ve Supabase'e service-role ile bağlanır. Mobil istemci backend'e `frontend/services/appApi.ts` üzerinden gider.
 
 ## Aktif Router'lar
 - `auth`
@@ -12,53 +12,33 @@ Backend FastAPI ile calisir ve Supabase'e service-role ile baglanir. Mobil istem
 - `team`
 - `admin`
 - `invites`
-- `contacts` (ofis rehberi CRUD)
-- `professions` (meslek/usta kategorileri)
 
-## Railway Deploy ve Prod API
-- Backend Railway uzerinden `backend/` servis kokunden calistirilabilir.
-- Repo kokundeki `railway.toml` start command olarak `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT` kullanir.
-- Zorunlu environment degerleri:
+## Railway Deploy
+- Backend Railway üzerinde `backend/` servis kökünden çalışır.
+- Start command: `cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT`
+- Zorunlu env:
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
+  - `SUPABASE_ANON_KEY`
   - `ALLOWED_ORIGINS`
-- Opsiyonel environment degerleri:
-  - `SUPABASE_ANON_KEY` — backend dogrudan kullanmaz; ileride public endpoint genislemesi icin referans
-  - `AUTH_RESOLVE_RATE_LIMIT_WINDOW_SECONDS`
-  - `AUTH_RESOLVE_RATE_LIMIT_MAX_REQUESTS`
-- Frontend prod baglantisi `EXPO_PUBLIC_API_URL=https://<railway-app>.up.railway.app` seklinde verilir.
-- `EXPO_PUBLIC_API_URL` degerinin sonuna `/api` eklenmez; `frontend/services/appApi.ts` suffix'i otomatik ekler.
-- CORS icin mobil/web/admin originleri `ALLOWED_ORIGINS` icinde tutulur.
-- Backend baglanti hatalari kullaniciya daha anlasilir mesaj verirken gelistirici icin baglanilamayan origin bilgisini korur.
+- Frontend prod bağlantısı: `EXPO_PUBLIC_API_URL=https://<railway-app>.up.railway.app`
+- `EXPO_PUBLIC_API_URL` sonuna `/api` eklenmez; client otomatik ekler.
+- CORS originleri `ALLOWED_ORIGINS` içinde tutulur.
 
 ## Invite Endpointleri
-- `POST /api/invites`
-  - Agent/full employee davet olusturur.
-  - Request: `role`, `contact_label`, opsiyonel `prefill_full_name`, `prefill_phone`, `prefill_email`.
-  - Response: `invite`, `token`, `link`, `code`.
-- `GET /api/public/invites/{token}`
-  - Link tokenini dogrular ve public invite bilgisini doner.
-- `POST /api/public/invites/{token}/register`
-  - Token ile tenant/landlord pending hesap olusturur.
-- `POST /api/public/invites/lookup-code`
-  - 8 karakterlik davet kodunu dogrular.
-- `POST /api/public/invites/register-code`
-  - Kod ile pending hesap olusturur.
-- `GET /api/invites/pending`
-  - Agent/full employee pending kullanicilari listeler.
-- `GET /api/invites/pending/{user_id}`
-  - Pending detayini doner.
-- `PATCH /api/invites/pending/{user_id}`
-  - `approve` herkes icin; `update_label` sadece agent/admin icin.
-- `DELETE /api/invites/pending/{user_id}`
-  - Pending kullaniciyi reddeder ve auth/profile kaydini siler.
-- `POST /api/invites/remind`
-  - Pending kullanicinin 24 saat cooldown ile hatirlatma gondermesini saglar.
+- `POST /api/invites`: davet oluşturur.
+- `GET /api/public/invites/{token}`: link token doğrular.
+- `POST /api/public/invites/{token}/register`: token ile pending hesap oluşturur.
+- `POST /api/public/invites/lookup-code`: davet kodunu doğrular.
+- `POST /api/public/invites/register-code`: kod ile pending hesap oluşturur.
+- `GET /api/invites/pending`: pending kullanıcıları listeler.
+- `PATCH /api/invites/pending/{user_id}`: onay veya takma ad güncelleme.
+- `DELETE /api/invites/pending/{user_id}`: pending kullanıcıyı reddeder.
+- `POST /api/invites/remind`: 24 saat cooldown ile hatırlatma gönderir.
 
-## Guvenlik Kurallari
+## Güvenlik
 - Davet kodu ham saklanmaz; `code_hash` tutulur.
-- Token ve kod ayni invite kaydina baglidir.
-- Link/kod tek kullanimliktir ve 24 saat sonra expire olur.
+- Link ve kod tek kullanımlıktır.
 - Rol davetten gelir; register payload role override edemez.
-- Telefon backend'de `+905321234567` formatina normalize edilir.
-- Full employee takma adi API response'unda goremez; agent/admin gorebilir.
+- Telefon backend'de `+905321234567` formatına normalize edilir.
+- Full employee takma adı API response'unda göremez; agent/admin görebilir.

@@ -1,6 +1,6 @@
-# Yetkiler ve Izinler
+# Yetkiler ve İzinler
 
-Bu dosya canli erisim matrisini ve davet kurallarini ozetler.
+Bu dosya canlı erişim matrisini ve davet kurallarını özetler.
 
 ## Roller
 - `admin`
@@ -11,29 +11,29 @@ Bu dosya canli erisim matrisini ve davet kurallarini ozetler.
 - `tenant`
 
 ## Davet Yetkileri
-| Islem | Admin | Agent | Employee Full | Employee Limited | Landlord | Tenant |
+| İşlem | Admin | Agent | Employee Full | Employee Limited | Landlord | Tenant |
 |---|---|---|---|---|---|---|
-| Davet olustur | Evet | Evet | Evet | Hayir | Hayir | Hayir |
-| Pending listele | Evet | Evet | Evet | Hayir | Hayir | Hayir |
-| Pending onayla | Evet | Evet | Evet | Hayir | Hayir | Hayir |
-| Pending reddet | Evet | Evet | Evet | Hayir | Hayir | Hayir |
-| Takma ad gorme | Evet | Evet | Hayir | Hayir | Hayir | Hayir |
-| Takma ad duzenleme | Evet | Evet | Hayir | Hayir | Hayir | Hayir |
+| Davet oluştur | Evet | Evet | Evet | Hayır | Hayır | Hayır |
+| Pending listele | Evet | Evet | Evet | Hayır | Hayır | Hayır |
+| Pending onayla | Evet | Evet | Evet | Hayır | Hayır | Hayır |
+| Pending reddet | Evet | Evet | Evet | Hayır | Hayır | Hayır |
+| Takma ad görme | Evet | Evet | Hayır | Hayır | Hayır | Hayır |
+| Takma ad düzenleme | Evet | Evet | Hayır | Hayır | Hayır | Hayır |
 
-## Takma Ad Gizliligi
-- `contact_label` agent'in ozel takip adidir.
-- Full employee, tenant, landlord ve kullanici tarafinda bu alan gosterilmez.
-- Sistem geneli ekranlarda temiz profil adi `users.full_name` kullanilir.
-- Agent kendi panelinde profil adi ve takma ad ile arama yapabilir.
+## Takma Ad Gizliliği
+- `contact_label` agent'in özel takip adıdır.
+- Full employee, tenant ve landlord bu alanı görmez.
+- Sistem geneli ekranlarda `users.full_name` kullanılır.
+- Agent kendi panelinde profil adı ve takma ad ile arama yapabilir.
 
-## Kayit Kurali
-- Tenant/landlord serbest kayit yapamaz.
-- Kayit icin gecerliligi devam eden link veya davet kodu gerekir.
-- Kod ve link ayni 24 saatlik tek kullanimlik davettir.
-- Kullanici rol secemez; rol davetten gelir.
+## Kayıt Kuralı
+- Tenant/landlord serbest kayıt yapamaz.
+- Kayıt için geçerli link veya davet kodu gerekir.
+- Kod ve link aynı tek kullanımlık davettir.
+- Kullanıcı rol seçemez; rol davetten gelir.
 
-## Rehber Izinleri
-- Rehberden secim sadece mobil cihazda native contact picker ile yapilir.
-- Tum rehber sisteme aktarilmaz.
-- Sadece secilen kisinin ad, telefon ve e-posta bilgisi davet formuna alinir.
-- Web veya izin reddi durumunda manuel giris kullanilir.
+## Rehber İzinleri
+- Rehberden seçim mobil cihazda native contact picker ile yapılır.
+- Tüm rehber sisteme aktarılmaz.
+- Sadece seçilen kişinin ad, telefon ve e-posta bilgisi alınır.
+- Web veya izin reddi durumunda manuel giriş kullanılır.

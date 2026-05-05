@@ -1,44 +1,37 @@
-# Is Akislari
+# İş Akışları
 
-Bu dosya canli kritik akislarin mevcut halini ozetler.
+Bu dosya canlı kritik akışları özetler.
 
-## Giris ve Kayit
-1. Acilis ekraninda `Giris Yap` ve `Kayit Ol` bulunur.
-2. `Giris Yap` mevcut oturum ekranina gider.
-3. `Kayit Ol` davet kodu ekranina gider; davet kodu olmadan tenant/landlord kaydi acilmaz.
-4. Bozuk davet linkinde kullanici ayni ekranda davet kodu girerek devam edebilir.
-5. Giris/kayit ekranlarinda label ve inputlar bitisik tasarlanmaz; form ritmi token spacing ile korunur.
+## Giriş ve Kayıt
+1. Açılış ekranında `Giriş Yap` ve `Kayıt Ol` bulunur.
+2. `Giriş Yap` oturum ekranına gider.
+3. `Kayıt Ol` davet kodu ekranına gider; tenant/landlord serbest kayıt yapamaz.
+4. Bozuk davet linkinde kullanıcı aynı ekranda davet kodu girerek devam edebilir.
+5. Label ve inputlar bitişik tasarlanmaz; form ritmi token spacing ile korunur.
 
 ## Davet Linki ve Kodu
-1. Agent veya full employee rol secer: kiraci veya ev sahibi.
-2. Kisi manuel girilir veya cihaz rehberinden tek kisi secilir.
-3. Rehberden yalniz secilen kisinin ad, telefon ve varsa e-posta bilgisi forma alinir.
-4. Agent takma ad alanini doldurur: `Bu kisi sizin rehberinizde nasil gorunsun?`
-5. Backend 24 saatlik tek kullanimlik link ve 8 karakterlik kod uretir.
-6. Link ve kod ayni daveti temsil eder; biri kullanilinca digeri de kullanilmis sayilir.
+1. Agent veya full employee rol seçer: kiracı veya ev sahibi.
+2. Kişi manuel girilir veya cihaz rehberinden tek kişi seçilir.
+3. Rehberden yalnız seçilen kişinin bilgisi forma alınır.
+4. Agent takma ad alanını doldurabilir.
+5. Backend tek kullanımlık link ve 8 karakterlik kod üretir.
+6. Link ve kod aynı daveti temsil eder; biri kullanılınca diğeri de kapanır.
 
-## Davetli Kaydi ve Pending
-1. Kullanici link veya kodla kayit formunu acar.
-2. Kullanici kendi profil adini, telefonunu, e-postasini ve sifresini girer.
-3. Rol davetten gelir; kullanici rol secemez.
-4. Yeni hesap `pending` baslar.
-5. Pending tenant/landlord sadece bekleme ekranini gorur; alt bar gorunur ama ana sayfa disi kilitlidir.
-6. Hatirlatma butonu agent + full employee alicilarina bildirim gonderir ve 24 saat cooldown uygular.
+## Pending ve Onay
+1. Kullanıcı link veya kodla kayıt formunu açar.
+2. Rol davetten gelir; kullanıcı rol seçemez.
+3. Yeni hesap `pending` başlar.
+4. Pending tenant/landlord sadece bekleme ekranını görür.
+5. Agent/full employee pending kullanıcıyı onaylayabilir veya reddedebilir.
+6. Agent takma adı görebilir ve düzenleyebilir; full employee göremez.
 
-## Onay ve Takma Ad
-1. Agent pending listesinde `Takma ad / Profil adi` gorur.
-2. Full employee pending kisiyi yonetebilir ama takma adi gormez.
-3. Agent takma adi sonradan duzenleyebilir; bu kullanicinin profil adini degistirmez.
-4. Onaylanan kullanici `active` olur ve rol listesine duser.
-5. Onayli ama mulksuz kullanici davet bekleme ekrani degil, mevcut mulk atanmadi deneyimini gorur.
+## Tenant Talepler
+1. Tenant alt barda `Talepler` ekranına gider; alt barda FAB yoktur.
+2. Arıza bildirimi ve dekont yükleme aksiyonları talepler yüzeyi içinden açılır.
 
-## Tenant Talepler Akisi
-1. Tenant alt barda `Talepler` ekranina gider; alt barda FAB yoktur.
-2. Ariza bildirimi ve dekont yukleme aksiyonlari talepler yuzeyi icinden acilir.
-
-## Landlord Talepler ve Arsiv Akisi
-1. Landlord alt barda `Talepler` ekranina gider; `Arsiv` ayri alt bar sekmesi degildir.
-2. `Aktif Talepler` sekmesinde bakim talepleri izlenir.
-3. `Dekontlar` sekmesinde kira/aidat/diger odeme dekontlari listelenir ve detay acilir.
-4. `Belgeler` sekmesinde mulk belgeleri listelenir ve signed URL ile acilir.
-5. Eski `/landlord/archive` linki uyumluluk icin talepler/dekontlar sekmesine yonlenir.
+## Landlord Talepler ve Arşiv
+1. Landlord alt barda `Talepler` ekranına gider; `Arşiv` ayrı alt bar sekmesi değildir.
+2. `Aktif Talepler` sekmesinde bakım talepleri izlenir.
+3. `Dekontlar` sekmesinde ödeme dekontları listelenir ve detay açılır.
+4. `Belgeler` sekmesinde mülk belgeleri listelenir ve signed URL ile açılır.
+5. Eski `/landlord/archive` linki talepler/dekontlar sekmesine yönlenir.

@@ -1,9 +1,9 @@
-# Veritabani Semasi
+# Veritabanı Şeması
 
-Bu dosya canli tablolarin kritik alanlarini ozetler.
+Bu dosya canlı tabloların kritik alanlarını özetler.
 
 ## users
-Onemli kolonlar:
+Önemli kolonlar:
 - `id`, `auth_id`, `email`, `full_name`, `phone`
 - `role`: `admin | agent | landlord | tenant | employee`
 - `status`: `pending | active`
@@ -14,20 +14,20 @@ Onemli kolonlar:
 - `created_at`, `updated_at`
 
 Not:
-- Davetle gelen tenant/landlord `pending` baslar.
-- Profil adi kullanicinin kendi adidir; takma ad burada tutulmaz.
+- Davetle gelen tenant/landlord `pending` başlar.
+- Profil adı kullanıcının kendi adıdır; takma ad burada tutulmaz.
 
 ## invites
-Agent kontrollu tenant/landlord davetleri.
+Agent kontrollü tenant/landlord davetleri.
 
-Onemli kolonlar:
+Önemli kolonlar:
 - `id`
 - `office_owner_id`
 - `created_by`
 - `role`: `tenant | landlord`
-- `contact_label`: agent takma adi / rehber adi
-- `token_hash`: link token hash'i
-- `code_hash`: davet kodu hash'i
+- `contact_label`: agent takma adı
+- `token_hash`
+- `code_hash`
 - `prefill_full_name`, `prefill_phone`, `prefill_email`
 - `expires_at`, `used_at`, `used_by`
 - `revoked_at`, `revoked_by`
@@ -36,12 +36,10 @@ Onemli kolonlar:
 
 Kurallar:
 - Ham token ve ham kod DB'de saklanmaz.
-- `contact_label` profil adi degildir.
-- Prefill alanlari yalniz kayit formunu doldurmaya yardim eder; kullanici kendi bilgilerini degistirebilir.
+- `contact_label` profil adı değildir.
+- Prefill alanları sadece formu doldurmaya yardım eder.
 
 ## invite_events
-Invite audit kayitlari.
-
 Event tipleri:
 - `created`
 - `registered`
@@ -52,8 +50,9 @@ Event tipleri:
 - `revoked`
 
 ## properties
-Aktif model halen `properties.tenant_id` ve `properties.landlord_id` uzerindedir. Coklu property assignment bu fazda yoktur.
+- Aktif model `properties.tenant_id` ve `properties.landlord_id` üzerindedir.
+- Çoklu property assignment bu fazda yoktur.
 
-## Canli Schema Kaynaklari
-- Fresh kurulum parcalari: `supabase/schema_parts/*`
-- Mevcut DB davet patch'i: `supabase/current_db_invites_patch.sql`
+## Canlı Kaynaklar
+- Fresh kurulum: `supabase/schema_parts/*`
+- Mevcut DB patch: `supabase/current_db_invites_patch.sql`
