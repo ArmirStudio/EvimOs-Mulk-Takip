@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sedan"
+  short_description: "UI/UX, frontend, accessibility, motion ve performans beyni"
+  default_prompt: "Use $sedan to choose the right operating mode, audit the current UI or code when available, solve UX problems rigorously, define or repair the design system, and produce stronger frontend solutions with accessibility and performance built in."

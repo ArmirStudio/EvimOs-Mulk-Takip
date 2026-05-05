@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "name": "EvimOs",
+    "slug": "evimos",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/evimos-splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FDF9F3"
+    },
+    "scheme": "emlak",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Take photos of receipts and maintenance issues",
+        "NSContactsUsageDescription": "Select one contact to prefill an EvimOs invite",
+        "NSPhotoLibraryUsageDescription": "Select photos from your gallery",
+        "NSMicrophoneUsageDescription": "Record audio for maintenance reports",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.emirsenocak.frontend"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#FDF9F3"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "READ_CONTACTS",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Select one contact to prefill an EvimOs invite"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/evimos-splash.png",
+          "imageWidth": 260,
+          "resizeMode": "contain",
+          "backgroundColor": "#FDF9F3"
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8b226d1c-0f74-4fe0-a871-187218a0c05c"
+      }
+    }
+  }
+}

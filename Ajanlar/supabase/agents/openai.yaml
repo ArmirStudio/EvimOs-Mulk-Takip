@@ -1,0 +1,4 @@
+interface:
+  display_name: "Supabase"
+  short_description: "Schema, RLS, migration, storage ve auth policy uzmani"
+  default_prompt: "Use $supabase to inspect the project's Supabase setup first, identify the schema and migration strategy, then produce safe SQL migrations, policies, storage rules, and rollout notes with client and backend impact covered."

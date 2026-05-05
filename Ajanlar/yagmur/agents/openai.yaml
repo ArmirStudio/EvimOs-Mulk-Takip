@@ -1,0 +1,4 @@
+interface:
+  display_name: "Yağmur"
+  short_description: "Frontend, mobile/web client ve UI implementation uzmani"
+  default_prompt: "Use $yagmur to inspect the project's frontend stack first, identify the routing, state, theme, and localization model, then implement robust UI, navigation, state, and API integration changes without breaking the existing architecture."
