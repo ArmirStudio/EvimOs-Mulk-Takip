@@ -136,18 +136,6 @@ export default function RegisterScreen() {
         containerStyle={styles.keyboardView}
         contentContainerStyle={styles.contentContainer}
       >
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            onPress={() => router.replace('/')}
-            style={styles.backButton}
-            accessibilityLabel="Acilis ekranina don"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={18} color={theme.colors.textPrimary} />
-            <Text style={styles.backButtonText}>Acilisa don</Text>
-          </TouchableOpacity>
-        </View>
-
         <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
           <View style={styles.heroGlow} />
           <View style={styles.heroBadge}>
@@ -352,6 +340,17 @@ export default function RegisterScreen() {
             </>
           ) : null}
 
+          <TouchableOpacity
+            onPress={() => router.replace('/')}
+            style={styles.backButton}
+            activeOpacity={0.82}
+            accessibilityLabel="Açılış ekranına dön"
+            accessibilityRole="button"
+          >
+            <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
+            <Text style={styles.backButtonText}>Açılışa dön</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={() => router.replace('/login' as never)} activeOpacity={0.75}>
             <Text style={styles.footnote}>Zaten hesabiniz varsa giris yapin.</Text>
           </TouchableOpacity>
@@ -372,20 +371,20 @@ const useStyles = createThemedStyles((theme) =>
       paddingBottom: theme.spacing.xxxl,
       gap: theme.spacing.lg,
     },
-    topBar: { paddingHorizontal: theme.spacing.lg, paddingTop: 0 },
     backButton: {
-      alignSelf: 'flex-start',
+      alignSelf: 'center',
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.xs,
-      paddingHorizontal: theme.spacing.sm,
+      minHeight: 44,
+      paddingHorizontal: theme.spacing.md,
       paddingVertical: theme.spacing.sm,
       borderRadius: theme.borderRadius.round,
       backgroundColor: publicSurface.chipBg,
     },
     backButtonText: {
       fontSize: theme.fontSize.sm,
-      color: theme.colors.textPrimary,
+      color: theme.colors.primary,
       fontWeight: theme.fontWeight.semibold,
     },
     heroCard: {

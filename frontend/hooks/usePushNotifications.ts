@@ -32,7 +32,14 @@ export function usePushNotifications(userId: string | undefined) {
   const router = useRouter();
 
   React.useEffect(() => {
-    if (!userId || !isSupabaseConfigured || isExpoGoRuntime()) return;
+    if (!userId || !isSupabaseConfigured) {
+      return;
+    }
+
+    if (isExpoGoRuntime()) {
+      console.info('Push notifications are disabled in Expo Go. Use an Android dev build or a physical device.');
+      return;
+    }
 
     registerForPushNotificationsAsync().then((token) => {
       setExpoPushToken(token);
@@ -150,7 +157,7 @@ async function registerForPushNotificationsAsync() {
       console.error('Error getting push token', error);
     }
   } else {
-    console.log('Must use physical device for Push Notifications');
+    console.info('Push notifications require a physical device.');
   }
 
   return token;

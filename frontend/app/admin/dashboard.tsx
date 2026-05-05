@@ -117,7 +117,7 @@ export default function AdminDashboardScreen() {
           </View>
         </View>
 
-        {/* Reklam Yönetimi Link — Sadece web'de göster */}
+        {/* Reklam Yonetimi Linki */}
         <TouchableOpacity
           style={styles.adManagementCard}
           onPress={() => Linking.openURL(resolveAdminWebUrl())}

@@ -687,7 +687,7 @@ export default function DashboardScreen() {
                 <View style={s.logoBox}>
                   <MaterialIcons name="domain" size={24} color={theme.colors.surface} />
                 </View>
-                <Text style={s.headerTitle}>{brand.appName}</Text>
+                <Text style={s.headerTitle} numberOfLines={2}>{brand.fullName}</Text>
               </View>
               <View style={s.headerRightRow}>
                 <TouchableOpacity style={s.headerBtn} onPress={handleOpenNotifications}>
@@ -1235,10 +1235,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   loading: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
 
   // Header
-  headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logoBox: { backgroundColor: theme.colors.primary, padding: 6, borderRadius: 8 },
-  headerTitle: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary },
+  headerTitle: { flexShrink: 1, fontSize: 16, lineHeight: 19, fontWeight: '700', color: theme.colors.textPrimary },
   headerBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center', ...shadow() },
 
   // Bildirim paneli

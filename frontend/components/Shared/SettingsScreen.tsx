@@ -16,6 +16,7 @@ import { mapPreferenceToBackendTheme } from '../../services/preferences';
 import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
 import { EvimosSVGLogo } from './EvimosSVGLogo';
+import { brand } from '../../constants/brand';
 
 const ROLE_LABELS: Record<string, string> = {
   agent:    'Emlakçı',
@@ -385,8 +386,8 @@ export default function SettingsScreen() {
       {/* SETTINGS FOOTER - BRANDING */}
       <View style={s.settingsFooter}>
         <EvimosSVGLogo size={80} variant="icon" isDarkMode={theme.colors.background === '#000'} />
-        <Text style={s.footerAppName}>EvimOs</Text>
-        <Text style={s.footerSubtitle}>Mülk Yönetim</Text>
+        <Text style={s.footerAppName}>{brand.fullName}</Text>
+        <Text style={s.footerSubtitle}>{brand.tagline}</Text>
         <Text style={s.footerVersion}>Sürüm 1.0.0</Text>
         <Text style={s.footerCopyright}>© 2024 EvimOs. Tüm hakları saklıdır.</Text>
       </View>
@@ -696,8 +697,8 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   modalText:       { fontSize: 14, lineHeight: 22, color: theme.colors.textSecondary },
   // ── Settings Footer ──
   settingsFooter:  { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 20, marginTop: 40, borderTopWidth: 1, borderTopColor: theme.colors.divider },
-  footerAppName:   { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, marginTop: 16 },
-  footerSubtitle:  { fontSize: 14, fontWeight: '500', color: theme.colors.textSecondary, marginTop: 4 },
+  footerAppName:   { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, marginTop: 16, textAlign: 'center' },
+  footerSubtitle:  { fontSize: 14, fontWeight: '500', color: theme.colors.textSecondary, marginTop: 4, textAlign: 'center' },
   footerVersion:   { fontSize: 12, color: theme.colors.textMuted, marginTop: 12 },
   footerCopyright: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, textAlign: 'center' },
 }));

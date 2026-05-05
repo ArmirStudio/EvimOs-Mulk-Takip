@@ -75,8 +75,8 @@ export default function LandingScreen() {
       <View style={styles.loadingContainer}>
         <View style={styles.loadingOrb} />
         <BrandLockup variant="mark" size="hero" align="center" />
-        <Text style={styles.loadingWordmark}>{brand.appName}</Text>
-        <Text style={styles.loadingSubtitle}>{brand.shortTitle}</Text>
+        <Text style={styles.loadingWordmark}>{brand.fullName}</Text>
+        <Text style={styles.loadingSubtitle}>{brand.tagline}</Text>
         <ActivityIndicator size="large" color={theme.colors.primary} style={styles.loadingSpinner} />
       </View>
     );
@@ -272,18 +272,20 @@ const useStyles = createThemedStyles((theme) =>
       backgroundColor: publicSurface.heroTint,
     },
     loadingWordmark: {
-      fontSize: 30,
+      maxWidth: 320,
+      fontSize: 26,
       fontWeight: theme.fontWeight.bold,
       color: theme.colors.primary,
-      letterSpacing: 0.5,
       marginTop: theme.spacing.md,
+      textAlign: 'center',
     },
     loadingSubtitle: {
+      maxWidth: 300,
       fontSize: theme.fontSize.sm,
+      lineHeight: 18,
       color: publicSurface.warmText,
       fontWeight: theme.fontWeight.semibold,
-      letterSpacing: 1.2,
-      textTransform: 'uppercase',
+      textAlign: 'center',
     },
     loadingSpinner: {
       marginTop: theme.spacing.lg,

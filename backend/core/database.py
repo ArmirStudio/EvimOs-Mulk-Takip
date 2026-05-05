@@ -20,7 +20,7 @@ SUPABASE_SERVICE_ROLE_KEY = _require_env("SUPABASE_SERVICE_ROLE_KEY")
 
 
 class _SupabaseProxy:
-    """Supabase client proxy — bağlantı koptuğunda refresh edilebilir."""
+    """Supabase client proxy; baglanti koptugunda refresh edilebilir."""
 
     def __init__(self):
         self._refresh()
@@ -32,5 +32,5 @@ class _SupabaseProxy:
         return getattr(self._client, name)
 
 
-# Service role client — backend iş mantığı için (RLS bypass eder)
+# Service role client; backend is mantigi icin (RLS bypass eder)
 supabase = _SupabaseProxy()

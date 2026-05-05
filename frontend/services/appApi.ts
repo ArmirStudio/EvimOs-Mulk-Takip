@@ -74,13 +74,7 @@ function buildApiUrl(path: string, query?: RequestOptions['query']) {
   return url;
 }
 
-function resolveApiBaseUrl() {
-  const explicitUrl = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
-  if (explicitUrl) {
-    const trimmed = explicitUrl.replace(/\/+$/, '');
-    return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
-  }
-
+function getExpoDevHost() {
   const constantsAny = Constants as any;
   const hostUri =
     constantsAny.expoConfig?.hostUri ||
@@ -88,9 +82,53 @@ function resolveApiBaseUrl() {
     constantsAny.manifest2?.extra?.expoClient?.hostUri ||
     constantsAny.manifest?.debuggerHost;
 
-  if (typeof hostUri === 'string' && hostUri.length > 0) {
-    const host = hostUri.split(':')[0];
-    return `http://${host}:8000/api`;
+  if (typeof hostUri !== 'string' || hostUri.length === 0) {
+    return null;
+  }
+
+  return hostUri.split(':')[0] || null;
+}
+
+function withApiSuffix(url: string) {
+  const trimmed = url.replace(/\/+$/, '');
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`;
+}
+
+function resolveLocalhostForNative(explicitUrl: string) {
+  try {
+    const parsed = new URL(explicitUrl);
+    const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+
+    if (!isLocalhost || Platform.OS === 'web') {
+      return explicitUrl;
+    }
+
+    const devHost = getExpoDevHost();
+    if (devHost) {
+      parsed.hostname = devHost;
+      return parsed.toString();
+    }
+
+    if (Platform.OS === 'android') {
+      parsed.hostname = '10.0.2.2';
+      return parsed.toString();
+    }
+  } catch {
+    // URL construction below will still surface invalid explicit config.
+  }
+
+  return explicitUrl;
+}
+
+function resolveApiBaseUrl() {
+  const explicitUrl = process.env.EXPO_PUBLIC_API_URL || process.env.EXPO_PUBLIC_BACKEND_URL;
+  if (explicitUrl) {
+    return withApiSuffix(resolveLocalhostForNative(explicitUrl));
+  }
+
+  const devHost = getExpoDevHost();
+  if (devHost) {
+    return `http://${devHost}:8000/api`;
   }
 
   if (Platform.OS === 'android') {
@@ -886,4 +924,3 @@ export const appApi = {
       method: 'DELETE',
     }),
 };
-}
