@@ -1,5 +1,10 @@
 # Proje Durumu
 
+## Mobil Layout QA Kaydi
+- Dashboard karsilama karti merkezlendi; `DashboardScreen` banner metni artik absolute katmanda degil, sabit/minimum yukseklikteki kart icinde ortalanir.
+- `/agent/create-property` alt CTA/footer boslugu giderildi; step 2-6 scroll icerigi footer yuksekligine gore padding alir.
+- `/agent/add-tenant`, `/agent/edit-property`, `/agent/create-user`, `/tenant/upload-receipt` ve `/tenant/maintenance-request` safe-area/footer bosluklari kucultuldu.
+
 Bu dosya canlı durum kaydıdır.
 
 ## Mevcut Durum
@@ -8,6 +13,7 @@ Bu dosya canlı durum kaydıdır.
 - `tsc --noEmit` repo genelinde Expo Router ve `@react-navigation/native-stack` tip çakışması nedeniyle başarısız.
 
 ## Son Değişiklikler
+- İnternet bağlantısı yok ekranı eklendi: `useNetworkStatus` hook, `NoInternetOverlay` bileşeni; `@react-native-community/netinfo` ile gerçek zamanlı izleme, pulse animasyonlu "Tekrar Dene" butonu.
 - Tenant, agent ve employee alt bar FAB aksiyonları kaldırıldı; admin FAB korundu.
 - Agent/employee profil erişimi alt bara indirildi; üst header profil ikonu kaldırıldı.
 - Profil ekranında `Profili Düzenle` menü satırı kaldırıldı; profil kartı düzenleme akışına gider.

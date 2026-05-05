@@ -1,5 +1,10 @@
 # Ekranlar ve Navigasyon
 
+## Form ve Wizard Layout Notlari
+- `/{role}/dashboard` ortak `DashboardScreen` kullanir; karsilama kartinda metin merkezde kalmali ve kart yuksekligi icerige gore cokmemelidir.
+- `/agent/create-property` step 2-6 alt CTA bari sabit footer olarak calisir; scroll icerigi olculen footer yuksekligine gore padding alir.
+- `/agent/add-tenant`, `/agent/edit-property`, `/agent/create-user`, `/tenant/upload-receipt` ve `/tenant/maintenance-request` ekranlari footer/safe-area boslugu acisindan ayni mobil QA kapsamindadir.
+
 Bu dosya canlı route haritasını ve rol bazlı erişimi özetler.
 
 ## Ana Route Haritası
