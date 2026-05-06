@@ -465,8 +465,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   filterChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     height: 34, paddingHorizontal: 12, borderRadius: 17,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1, borderColor: theme.colors.border,
+    borderWidth: 1, borderColor: theme.colors.divider,
   },
   filterChipActive: {
     backgroundColor: theme.colors.primary,
@@ -493,8 +492,8 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.md,
+    borderColor: theme.colors.divider,
+    ...theme.shadows.sm,
   },
 
   // Image

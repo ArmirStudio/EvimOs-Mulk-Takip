@@ -137,6 +137,8 @@ export default function TenantRequestsHubScreen() {
 
   const loadData = useCallback(async () => {
     if (!userData) {
+      setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -169,6 +171,13 @@ export default function TenantRequestsHubScreen() {
       }
     }, [loadData, userData, userLoading])
   );
+
+  useEffect(() => {
+    if (!userLoading && (!userData || userData.role !== 'tenant')) {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [userData, userLoading]);
 
   const items = useMemo(() => {
     const maintenanceItems: HubItem[] = maintenanceData.map((item: any) => {

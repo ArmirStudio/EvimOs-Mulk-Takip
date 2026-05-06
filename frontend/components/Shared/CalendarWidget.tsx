@@ -1,12 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { supabase } from '../../services/supabase';
 
-// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 type CalendarRole = 'agent' | 'landlord' | 'tenant' | 'employee' | 'staff' | 'manager' | 'admin';
 type EventType = 'rent' | 'dues' | 'renewal';
 
@@ -44,10 +48,19 @@ interface CalendarWidgetProps {
 
 type Theme = ReturnType<typeof useAppTheme>;
 
-// â”€â”€â”€ Constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MONTH_NAMES_TR = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
 ];
 const DAY_NAMES_TR = ['PT', 'SA', 'ÇAR', 'PER', 'CU', 'CM', 'PA'];
 
@@ -83,7 +96,6 @@ function getLegendItems(theme: Theme): { label: string; color: string }[] {
   ];
 }
 
-// â”€â”€â”€ Pure Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function generateCalendarDays(year: number, month: number): { day: number; isOverflow: boolean }[] {
   const firstDay = new Date(year, month, 1);
   let startDow = firstDay.getDay() - 1;
@@ -91,18 +103,19 @@ function generateCalendarDays(year: number, month: number): { day: number; isOve
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const prevMonthDays = new Date(year, month, 0).getDate();
-
   const days: { day: number; isOverflow: boolean }[] = [];
 
-  for (let i = startDow - 1; i >= 0; i--) {
+  for (let i = startDow - 1; i >= 0; i -= 1) {
     days.push({ day: prevMonthDays - i, isOverflow: true });
   }
-  for (let d = 1; d <= daysInMonth; d++) {
-    days.push({ day: d, isOverflow: false });
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    days.push({ day, isOverflow: false });
   }
+
   let nextDay = 1;
   while (days.length % 7 !== 0) {
-    days.push({ day: nextDay++, isOverflow: true });
+    days.push({ day: nextDay, isOverflow: true });
+    nextDay += 1;
   }
 
   return days;
@@ -118,71 +131,70 @@ function buildMonthEvents(properties: PropertyRow[], year: number, month: number
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const events: CalendarEvent[] = [];
 
-  for (const prop of properties) {
-    const propLabel = [prop.city, prop.district, prop.description]
-      .filter(Boolean)
-      .join(' â€“ ')
-      .slice(0, 32) || prop.address || 'Mülk';
+  for (const property of properties) {
+    const propertyName =
+      [property.city, property.district, property.description].filter(Boolean).join(' - ').slice(0, 32) ||
+      property.address ||
+      'Mülk';
+    const tenantUser = Array.isArray(property.tenant_user)
+      ? property.tenant_user[0]
+      : property.tenant_user;
+    const tenantName = tenantUser?.full_name ?? undefined;
+    const contractStartDate = property.contract_start ? new Date(property.contract_start) : null;
 
-    const tenant_user_data = Array.isArray(prop.tenant_user) ? prop.tenant_user[0] : prop.tenant_user;
-    const tenantName = tenant_user_data?.full_name ?? undefined;
-    const contractStartDate = prop.contract_start ? new Date(prop.contract_start) : null;
-
-    if (prop.rent_day) {
-      const day = Math.min(prop.rent_day, daysInMonth);
+    if (property.rent_day) {
+      const day = Math.min(property.rent_day, daysInMonth);
       const eventDate = new Date(year, month, day);
       if (!contractStartDate || eventDate >= contractStartDate) {
         events.push({
-          id: `rent-${prop.id}-${year}-${month}`,
+          id: `rent-${property.id}-${year}-${month}`,
           type: 'rent',
           date: eventDate,
-          propertyName: propLabel,
+          propertyName,
           tenantName,
-          amount: prop.monthly_rent ?? undefined,
+          amount: property.monthly_rent ?? undefined,
         });
       }
     }
 
-    if (prop.dues_day) {
-      const day = Math.min(prop.dues_day, daysInMonth);
+    if (property.dues_day) {
+      const day = Math.min(property.dues_day, daysInMonth);
       const eventDate = new Date(year, month, day);
       if (!contractStartDate || eventDate >= contractStartDate) {
         events.push({
-          id: `dues-${prop.id}-${year}-${month}`,
+          id: `dues-${property.id}-${year}-${month}`,
           type: 'dues',
           date: eventDate,
-          propertyName: propLabel,
+          propertyName,
           tenantName,
-          amount: prop.dues_amount ?? undefined,
+          amount: property.dues_amount ?? undefined,
         });
       }
     }
 
-    if (prop.contract_duration && prop.contract_start) {
-      const endDate = new Date(prop.contract_start);
-      endDate.setMonth(endDate.getMonth() + prop.contract_duration);
+    if (property.contract_duration && property.contract_start) {
+      const endDate = new Date(property.contract_start);
+      endDate.setMonth(endDate.getMonth() + property.contract_duration);
       if (endDate.getFullYear() === year && endDate.getMonth() === month) {
         events.push({
-          id: `renewal-${prop.id}`,
+          id: `renewal-${property.id}`,
           type: 'renewal',
           date: endDate,
-          propertyName: propLabel,
+          propertyName,
           tenantName,
         });
       }
     }
   }
 
-  events.sort((a, b) => a.date.getTime() - b.date.getTime());
-  return events;
+  return events.sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 function buildEventMap(events: CalendarEvent[]): Record<string, CalendarEvent[]> {
   const map: Record<string, CalendarEvent[]> = {};
-  for (const ev of events) {
-    const key = toDateKey(ev.date.getFullYear(), ev.date.getMonth(), ev.date.getDate());
-    if (!map[key]) map[key] = [];
-    map[key].push(ev);
+  for (const event of events) {
+    const key = toDateKey(event.date.getFullYear(), event.date.getMonth(), event.date.getDate());
+    map[key] = [...(map[key] ?? []), event];
   }
   return map;
 }
@@ -190,22 +202,24 @@ function buildEventMap(events: CalendarEvent[]): Record<string, CalendarEvent[]>
 function getDotColors(theme: Theme, eventsForDay: CalendarEvent[]): string[] {
   const seen = new Set<EventType>();
   const colors: string[] = [];
-  for (const ev of eventsForDay) {
-    if (!seen.has(ev.type)) {
-      seen.add(ev.type);
-      colors.push(getDotColor(theme, ev.type));
+
+  for (const event of eventsForDay) {
+    if (!seen.has(event.type)) {
+      seen.add(event.type);
+      colors.push(getDotColor(theme, event.type));
       if (colors.length === 3) break;
     }
   }
+
   return colors;
 }
 
 function getStatusBadge(theme: Theme, eventDate: Date): { label: string; color: string; bg: string } {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const evDay = new Date(eventDate);
-  evDay.setHours(0, 0, 0, 0);
-  const diff = Math.round((evDay.getTime() - today.getTime()) / 86400000);
+  const eventDay = new Date(eventDate);
+  eventDay.setHours(0, 0, 0, 0);
+  const diff = Math.round((eventDay.getTime() - today.getTime()) / 86400000);
 
   if (diff < 0) return { label: 'GECİKTİ', color: theme.colors.error, bg: theme.colors.errorLight };
   if (diff === 0) return { label: 'BUGÜN', color: theme.colors.primary, bg: theme.colors.primaryLight };
@@ -213,10 +227,9 @@ function getStatusBadge(theme: Theme, eventDate: Date): { label: string; color: 
   return { label: 'PLANLI', color: theme.colors.textMuted, bg: theme.colors.surface2 };
 }
 
-// â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CalendarWidget({ role, userId, propertyId, hideHeader }: CalendarWidgetProps) {
   const theme = useAppTheme();
-  const s = useStyles();
+  const styles = useStyles();
   const today = new Date();
   const [displayedMonth, setDisplayedMonth] = useState(today.getMonth());
   const [displayedYear, setDisplayedYear] = useState(today.getFullYear());
@@ -227,10 +240,19 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
   const collapsibleOpacity = useSharedValue(1);
 
   const fetchProperties = useCallback(async () => {
+    if (!userId && !propertyId) {
+      setRawProperties([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
       let query = supabase
         .from('properties')
-        .select('id, description, address, city, district, rent_day, dues_day, contract_duration, contract_start, created_at, monthly_rent, dues_amount, tenant_user:users!tenant_id(full_name)')
+        .select(
+          'id, description, address, city, district, rent_day, dues_day, contract_duration, contract_start, created_at, monthly_rent, dues_amount, tenant_user:users!tenant_id(full_name)',
+        )
         .eq('status', 'occupied');
 
       if (role === 'landlord') query = query.eq('landlord_id', userId);
@@ -243,52 +265,68 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
       }
 
       const { data, error } = await query;
-      if (!error && data) setRawProperties(data as PropertyRow[]);
-    } catch {
+      if (error) {
+        console.error('Error loading calendar properties:', error);
+        setRawProperties([]);
+        return;
+      }
+
+      setRawProperties((data ?? []) as PropertyRow[]);
+    } catch (error) {
+      console.error('Error loading calendar properties:', error);
+      setRawProperties([]);
     } finally {
       setLoading(false);
     }
-  }, [role, userId, propertyId]);
+  }, [propertyId, role, userId]);
 
   useEffect(() => {
-    if (userId || propertyId) fetchProperties();
-  }, [fetchProperties, userId, propertyId]);
+    fetchProperties();
+  }, [fetchProperties]);
 
-  const calendarDays = useMemo(() => generateCalendarDays(displayedYear, displayedMonth), [displayedYear, displayedMonth]);
-  const monthEvents = useMemo(() => buildMonthEvents(rawProperties, displayedYear, displayedMonth), [rawProperties, displayedYear, displayedMonth]);
+  const calendarDays = useMemo(
+    () => generateCalendarDays(displayedYear, displayedMonth),
+    [displayedMonth, displayedYear],
+  );
+  const monthEvents = useMemo(
+    () => buildMonthEvents(rawProperties, displayedYear, displayedMonth),
+    [displayedMonth, displayedYear, rawProperties],
+  );
   const eventMap = useMemo(() => buildEventMap(monthEvents), [monthEvents]);
 
   const goToPrevMonth = () => {
     if (displayedMonth === 0) {
       setDisplayedMonth(11);
-      setDisplayedYear(y => y - 1);
+      setDisplayedYear((year) => year - 1);
     } else {
-      setDisplayedMonth(m => m - 1);
+      setDisplayedMonth((month) => month - 1);
     }
+    setSelectedDay(null);
   };
 
   const goToNextMonth = () => {
     if (displayedMonth === 11) {
       setDisplayedMonth(0);
-      setDisplayedYear(y => y + 1);
+      setDisplayedYear((year) => year + 1);
     } else {
-      setDisplayedMonth(m => m + 1);
+      setDisplayedMonth((month) => month + 1);
     }
+    setSelectedDay(null);
   };
 
   const toggleCollapse = () => {
-    const newCollapsed = !isCollapsed;
-    setIsCollapsed(newCollapsed);
-    collapsibleOpacity.value = withTiming(newCollapsed ? 0 : 1, { duration: 300 });
+    const nextCollapsed = !isCollapsed;
+    setIsCollapsed(nextCollapsed);
+    collapsibleOpacity.value = withTiming(nextCollapsed ? 0 : 1, { duration: 300 });
   };
 
-  const collapsibleAnimStyle = useAnimatedStyle(() => ({
+  const collapsibleAnimatedStyle = useAnimatedStyle(() => ({
     opacity: collapsibleOpacity.value,
   }));
 
   if (loading) {
     return (
-      <View style={s.container}>
+      <View style={styles.container}>
         <ActivityIndicator size="small" color={theme.colors.primary} />
       </View>
     );
@@ -297,33 +335,38 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
   const todayDay = today.getDate();
   const todayMonth = today.getMonth();
   const todayYear = today.getFullYear();
+  const selectedEvents = selectedDay
+    ? monthEvents.filter((event) => event.date.getDate() === selectedDay)
+    : monthEvents;
 
   return (
-    <View style={s.container}>
+    <View style={styles.container}>
       {!hideHeader && (
-        <View style={s.header}>
-          <View style={s.headerLeft}>
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Text style={s.headerTitle}>Takvim</Text>
+              <Text style={styles.headerTitle}>Takvim</Text>
               <TouchableOpacity onPress={toggleCollapse} hitSlop={8}>
                 <MaterialIcons
-                  name={isCollapsed ? 'chevron-right' : 'chevron-down'}
+                  name={isCollapsed ? 'chevron-right' : 'expand-more'}
                   size={20}
                   color={theme.colors.textMuted}
                 />
               </TouchableOpacity>
             </View>
-            {!isCollapsed && <Text style={s.headerSubtitle}>Yaklaşan ödeme ve sözleşme tarihleri</Text>}
+            {!isCollapsed && (
+              <Text style={styles.headerSubtitle}>Yaklaşan ödeme ve sözleşme tarihleri</Text>
+            )}
           </View>
-          <View style={s.headerRight}>
-            <TouchableOpacity onPress={goToPrevMonth} hitSlop={8} style={s.navBtn}>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={goToPrevMonth} hitSlop={8} style={styles.navBtn}>
               <MaterialIcons name="chevron-left" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
-            <View style={s.monthYearBox}>
-              <Text style={s.monthText}>{MONTH_NAMES_TR[displayedMonth]}</Text>
-              <Text style={s.yearText}>{displayedYear}</Text>
+            <View style={styles.monthYearBox}>
+              <Text style={styles.monthText}>{MONTH_NAMES_TR[displayedMonth]}</Text>
+              <Text style={styles.yearText}>{displayedYear}</Text>
             </View>
-            <TouchableOpacity onPress={goToNextMonth} hitSlop={8} style={s.navBtn}>
+            <TouchableOpacity onPress={goToNextMonth} hitSlop={8} style={styles.navBtn}>
               <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -331,16 +374,16 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
       )}
 
       {hideHeader && (
-        <View style={[s.header, { justifyContent: 'center', marginBottom: 12 }]}>
-          <View style={s.headerRight}>
-            <TouchableOpacity onPress={goToPrevMonth} hitSlop={8} style={s.navBtn}>
+        <View style={[styles.header, { justifyContent: 'center', marginBottom: 12 }]}>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={goToPrevMonth} hitSlop={8} style={styles.navBtn}>
               <MaterialIcons name="chevron-left" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
-            <View style={s.monthYearBox}>
-              <Text style={s.monthText}>{MONTH_NAMES_TR[displayedMonth]}</Text>
-              <Text style={s.yearText}>{displayedYear}</Text>
+            <View style={styles.monthYearBox}>
+              <Text style={styles.monthText}>{MONTH_NAMES_TR[displayedMonth]}</Text>
+              <Text style={styles.yearText}>{displayedYear}</Text>
             </View>
-            <TouchableOpacity onPress={goToNextMonth} hitSlop={8} style={s.navBtn}>
+            <TouchableOpacity onPress={goToNextMonth} hitSlop={8} style={styles.navBtn}>
               <MaterialIcons name="chevron-right" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -348,143 +391,163 @@ export default function CalendarWidget({ role, userId, propertyId, hideHeader }:
       )}
 
       {!isCollapsed && (
-        <Animated.View style={[collapsibleAnimStyle, { originY: 0 }]}>
-          <View style={s.dayNamesRow}>
-          {DAY_NAMES_TR.map(name => (
-            <Text key={name} style={s.dayName}>{name}</Text>
-          ))}
-        </View>
-
-        <View style={s.calendarGrid}>
-        {calendarDays.map((cell, idx) => {
-          const { day, isOverflow } = cell;
-
-          if (isOverflow) {
-            return (
-              <View key={`ov-${idx}`} style={s.dayCell}>
-                <Text style={s.overflowDayText}>{day}</Text>
-              </View>
-            );
-          }
-
-          const isToday = day === todayDay && displayedMonth === todayMonth && displayedYear === todayYear;
-          const isSelected = selectedDay === day;
-          const dateKey = toDateKey(displayedYear, displayedMonth, day);
-          const eventsForDay = eventMap[dateKey] ?? [];
-          const dotColors = getDotColors(theme, eventsForDay);
-
-          return (
-            <TouchableOpacity
-              key={dateKey}
-              style={s.dayCell}
-              onPress={() => setSelectedDay(isSelected ? null : day)}
-              activeOpacity={0.7}
-            >
-              <View style={[s.dayInner, isToday && s.todayCell, isSelected && { backgroundColor: theme.colors.primary + '2E', borderWidth: 2, borderColor: theme.colors.primary }]}>
-                <Text style={[s.dayText, isToday && s.todayText, isSelected && { color: theme.colors.primary, fontWeight: '800' }]}>{day}</Text>
-              </View>
-              {dotColors.length > 0 && (
-                <View style={s.dotRow}>
-                  {dotColors.map((color, di) => (
-                    <View key={di} style={[s.eventDot, { backgroundColor: color }]} />
-                  ))}
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-        <View style={s.legend}>
-          {getLegendItems(theme).map(item => (
-            <View key={item.label} style={s.legendItem}>
-              <View style={[s.legendDot, { backgroundColor: item.color }]} />
-              <Text style={s.legendLabel}>{item.label}</Text>
-            </View>
-          ))}
-        </View>
-
-        {!hideHeader && (
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>{selectedDay ? `${selectedDay} ${MONTH_NAMES_TR[displayedMonth]} İşlemleri` : 'Yaklaşan İşlemler'}</Text>
-          <TouchableOpacity onPress={() => router.push(`/${role}/calendar` as any)}>
-            <Text style={s.seeAllBtn}>Tümünü Gör</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-        {(() => {
-          const displayedEvents = selectedDay
-            ? monthEvents.filter(e => e.date.getDate() === selectedDay)
-            : monthEvents;
-
-          return displayedEvents.length === 0 ? (
-          <View style={s.empty}>
-            <Text style={s.emptyText}>{selectedDay ? 'Bu gün planlanmış işlem yok' : 'Bu ay planlanmış işlem yok'}</Text>
+        <Animated.View style={collapsibleAnimatedStyle}>
+          <View style={styles.dayNamesRow}>
+            {DAY_NAMES_TR.map((name) => (
+              <Text key={name} style={styles.dayName}>
+                {name}
+              </Text>
+            ))}
           </View>
-        ) : (
-          <View style={s.eventList}>
-            {displayedEvents.map(event => {
-              const badge = getStatusBadge(theme, event.date);
-              const dateLabel = `${event.date.getDate()} ${MONTH_NAMES_TR[event.date.getMonth()]} ${event.date.getFullYear()}`;
+
+          <View style={styles.calendarGrid}>
+            {calendarDays.map((cell, index) => {
+              const { day, isOverflow } = cell;
+
+              if (isOverflow) {
+                return (
+                  <View key={`overflow-${index}`} style={styles.dayCell}>
+                    <Text style={styles.overflowDayText}>{day}</Text>
+                  </View>
+                );
+              }
+
+              const isToday =
+                day === todayDay && displayedMonth === todayMonth && displayedYear === todayYear;
+              const isSelected = selectedDay === day;
+              const dateKey = toDateKey(displayedYear, displayedMonth, day);
+              const eventsForDay = eventMap[dateKey] ?? [];
+              const dotColors = getDotColors(theme, eventsForDay);
+
               return (
-                <View key={event.id} style={s.eventCard}>
-                  <View style={[s.eventIconBox, { backgroundColor: getEventBg(theme, event.type) }]}>
-                    <MaterialIcons name={EVENT_ICON[event.type]} size={20} color={getDotColor(theme, event.type)} />
-                  </View>
-
-                  <View style={s.eventCardBody}>
-                    <View style={s.eventCardTop}>
-                      <Text style={s.eventCardTitle} numberOfLines={1}>
-                        {EVENT_TITLE[event.type]}
-                      </Text>
-                      <View style={[s.statusBadge, { backgroundColor: badge.bg }]}>
-                        <Text style={[s.statusBadgeText, { color: badge.color }]}>
-                          {badge.label}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <Text style={s.eventCardSub} numberOfLines={1}>
-                      {event.propertyName}
+                <TouchableOpacity
+                  key={dateKey}
+                  style={styles.dayCell}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedDay(isSelected ? null : day)}
+                >
+                  <View
+                    style={[
+                      styles.dayInner,
+                      isToday && styles.todayCell,
+                      isSelected && {
+                        backgroundColor: `${theme.colors.primary}2E`,
+                        borderColor: theme.colors.primary,
+                        borderWidth: 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayText,
+                        isToday && styles.todayText,
+                        isSelected && { color: theme.colors.primary, fontWeight: '800' },
+                      ]}
+                    >
+                      {day}
                     </Text>
-
-                    <View style={s.eventCardFooter}>
-                      {event.tenantName && role !== 'tenant' && (
-                        <View style={s.footerItem}>
-                          <MaterialIcons name="person" size={13} color={theme.colors.textMuted} />
-                          <Text style={s.footerText}>{event.tenantName}</Text>
-                        </View>
-                      )}
-                      <View style={s.footerItem}>
-                        <MaterialIcons name="calendar-today" size={13} color={theme.colors.textMuted} />
-                        <Text style={s.footerText}>{dateLabel}</Text>
-                      </View>
-                    </View>
                   </View>
-                </View>
+                  {dotColors.length > 0 && (
+                    <View style={styles.dotRow}>
+                      {dotColors.map((color, dotIndex) => (
+                        <View key={`${dateKey}-${dotIndex}`} style={[styles.eventDot, { backgroundColor: color }]} />
+                      ))}
+                    </View>
+                  )}
+                </TouchableOpacity>
               );
             })}
           </View>
-        );
-        })()}
+
+          <View style={styles.legend}>
+            {getLegendItems(theme).map((item) => (
+              <View key={item.label} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                <Text style={styles.legendLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+
+          {!hideHeader && (
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {selectedDay ? `${selectedDay} ${MONTH_NAMES_TR[displayedMonth]} İşlemleri` : 'Yaklaşan İşlemler'}
+              </Text>
+              <TouchableOpacity onPress={() => router.push(`/${role}/calendar` as never)}>
+                <Text style={styles.seeAllBtn}>Tümünü Gör</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {selectedEvents.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                {selectedDay ? 'Bu gün planlanmış işlem yok' : 'Bu ay planlanmış işlem yok'}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.eventList}>
+              {selectedEvents.map((event) => {
+                const badge = getStatusBadge(theme, event.date);
+                const dateLabel = `${event.date.getDate()} ${
+                  MONTH_NAMES_TR[event.date.getMonth()]
+                } ${event.date.getFullYear()}`;
+
+                return (
+                  <View key={event.id} style={styles.eventCard}>
+                    <View style={[styles.eventIconBox, { backgroundColor: getEventBg(theme, event.type) }]}>
+                      <MaterialIcons
+                        name={EVENT_ICON[event.type]}
+                        size={20}
+                        color={getDotColor(theme, event.type)}
+                      />
+                    </View>
+                    <View style={styles.eventCardBody}>
+                      <View style={styles.eventCardTop}>
+                        <Text style={styles.eventCardTitle} numberOfLines={1}>
+                          {EVENT_TITLE[event.type]}
+                        </Text>
+                        <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+                          <Text style={[styles.statusBadgeText, { color: badge.color }]}>
+                            {badge.label}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.eventCardSub} numberOfLines={1}>
+                        {event.propertyName}
+                      </Text>
+                      <View style={styles.eventCardFooter}>
+                        {event.tenantName && role !== 'tenant' && (
+                          <View style={styles.footerItem}>
+                            <MaterialIcons name="person" size={13} color={theme.colors.textMuted} />
+                            <Text style={styles.footerText}>{event.tenantName}</Text>
+                          </View>
+                        )}
+                        <View style={styles.footerItem}>
+                          <MaterialIcons name="calendar-today" size={13} color={theme.colors.textMuted} />
+                          <Text style={styles.footerText}>{dateLabel}</Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </Animated.View>
       )}
     </View>
   );
 }
 
-// â”€â”€â”€ Styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const useStyles = createThemedStyles((theme) => StyleSheet.create({
   container: {
     marginHorizontal: theme.spacing.lg,
     marginBottom: theme.spacing.xxl,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: theme.spacing.xl,
-    ...theme.shadows.md,
+    paddingVertical: theme.spacing.lg,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.divider,
   },
   header: {
     flexDirection: 'row',
@@ -653,12 +716,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: theme.spacing.md,
-    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.sm,
+    borderColor: theme.colors.divider,
   },
   eventIconBox: {
     width: 42,

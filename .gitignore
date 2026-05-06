@@ -41,6 +41,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+admin-web/.vite-logs/
 
 # OS / misc
 .DS_Store

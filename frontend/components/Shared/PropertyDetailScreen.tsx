@@ -736,8 +736,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     marginTop: -16,
     borderRadius: 18,
     padding: 16,
-    ...theme.shadows.md,
-    borderWidth: 1, borderColor: theme.colors.border,
+    ...theme.shadows.sm,
     zIndex: 10,
   },
   priceBandItem: { flex: 1, alignItems: 'center' },
@@ -746,14 +745,13 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   priceBandDivider: { width: 1, backgroundColor: theme.colors.border, marginHorizontal: 4 },
 
   // Content
-  content: { padding: 16, gap: 14, paddingBottom: 16 },
+  content: { paddingHorizontal: 16, paddingTop: 20, gap: 22, paddingBottom: 16 },
 
   // Card
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 18, padding: 16,
-    borderWidth: 1, borderColor: theme.colors.border,
-    ...theme.shadows.sm,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.divider,
   },
 
   // Section Header
@@ -795,12 +793,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // People
   personCard: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
-    backgroundColor: theme.colors.background,
-    borderRadius: 12, padding: 12,
-    borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: 12, paddingVertical: 10,
     marginBottom: 8,
   },
-  personCardDashed: { borderStyle: 'dashed', borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
+  personCardDashed: { paddingHorizontal: 12, borderWidth: 1, borderStyle: 'dashed', borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
   personAvatar: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   personInfo: { flex: 1 },
   personRole: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted, letterSpacing: 0.5 },
@@ -810,21 +806,22 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // Maintenance
   maintStatRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   maintStatCard: {
-    flex: 1, backgroundColor: theme.colors.surface2,
+    flex: 1,
     borderRadius: 12, paddingVertical: 10, alignItems: 'center',
+    borderWidth: 1, borderColor: theme.colors.divider,
   },
   maintStatValue: { fontSize: 20, fontWeight: '800' },
   maintStatLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase', marginTop: 3 },
   maintItem: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: theme.colors.surface2, borderRadius: 12, padding: 12,
+    borderRadius: 12, paddingVertical: 10,
   },
   maintItemIcon: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   maintItemTitle: { fontSize: 13, fontWeight: '700', color: theme.colors.textPrimary },
   maintItemMeta: { fontSize: 11, color: theme.colors.textMuted, marginTop: 3 },
   maintBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   maintBadgeText: { fontSize: 11, fontWeight: '700' },
-  maintEmpty: { backgroundColor: theme.colors.surface2, borderRadius: 12, padding: 14 },
+  maintEmpty: { borderRadius: 12, paddingVertical: 10 },
   maintEmptyText: { fontSize: 13, color: theme.colors.textMuted },
 
   // Calendar chip
@@ -852,10 +849,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   stickyBar: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     flexDirection: 'row', gap: 10,
-    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 28,
-    backgroundColor: theme.colors.background,
-    borderTopWidth: 1, borderTopColor: theme.colors.border,
-    ...theme.shadows.lg,
+    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24,
   },
   stickyRemoveBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

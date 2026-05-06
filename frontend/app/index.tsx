@@ -499,7 +499,7 @@ const useStyles = createThemedStyles((theme) =>
       fontWeight: theme.fontWeight.medium,
     },
     ctaSection: {
-      gap: theme.spacing.md,
+      gap: theme.spacing.md + 10,
       paddingTop: theme.spacing.sm,
     },
     warningCard: {

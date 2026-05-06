@@ -201,6 +201,8 @@ export default function MaintenanceScreen() {
 
   const loadRequests = useCallback(async () => {
     if (!userData) {
+      setLoading(false);
+      setRefreshing(false);
       return;
     }
 
@@ -289,6 +291,14 @@ export default function MaintenanceScreen() {
       }
     }, [loadArchiveData, loadRequests, userData, userLoading])
   );
+
+  useEffect(() => {
+    if (!userLoading && !userData) {
+      setLoading(false);
+      setRefreshing(false);
+      setArchiveLoading(false);
+    }
+  }, [userData, userLoading]);
 
   const summary = useMemo(() => {
     const pending = requests.filter((item) => item.status === 'pending').length;
@@ -1106,12 +1116,10 @@ const useStyles = createThemedStyles((theme) =>
     heroCard: {
       marginHorizontal: 16,
       marginBottom: 16,
-      padding: 20,
-      borderRadius: 24,
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      ...theme.shadows.md,
+      paddingVertical: 18,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: theme.colors.divider,
     },
     heroEyebrow: {
       fontSize: 11,
@@ -1128,9 +1136,8 @@ const useStyles = createThemedStyles((theme) =>
       flex: 1,
       paddingVertical: 14,
       borderRadius: 16,
-      backgroundColor: theme.colors.surface2,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.divider,
       alignItems: 'center',
     },
     heroStatValue: { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary },
@@ -1140,9 +1147,8 @@ const useStyles = createThemedStyles((theme) =>
       height: 38,
       paddingHorizontal: 16,
       borderRadius: 19,
-      backgroundColor: theme.colors.surface,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.divider,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -1205,11 +1211,10 @@ const useStyles = createThemedStyles((theme) =>
     badgeText: { fontSize: 11, fontWeight: '700' },
     nextActionCard: {
       marginTop: 12,
-      backgroundColor: theme.colors.surface2,
       borderRadius: 16,
-      padding: 12,
+      paddingVertical: 12,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: theme.colors.divider,
     },
     nextActionLabel: {
       fontSize: 11,

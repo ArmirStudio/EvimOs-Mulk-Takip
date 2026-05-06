@@ -474,6 +474,9 @@ export default function DashboardScreen() {
       const today = new Date().toISOString().split('T')[0];
       const response = await listDashboardCampaigns();
       const matched = response.campaigns || [];
+      if (__DEV__) {
+        console.log('[ads] dashboard campaigns loaded:', matched.length);
+      }
       // Agency bilgisini al (hedefleme için)
       setAdCampaigns(matched);
       setActiveInterstitial(null);
@@ -485,21 +488,32 @@ export default function DashboardScreen() {
 
       for (const ad of interstitials) {
         // 1. Başlangıç saati kontrolü (varsayılan 07:00)
-        const startHour = ad.start_hour ?? 7;
+        const startHour = Number(ad.start_hour ?? 7);
         if (currentHour < startHour) continue;
 
-        const { data: impression } = await supabase
-          .from('ad_impressions')
-          .select('show_count, last_shown_at')
-          .eq('ad_id', ad.id)
-          .eq('user_id', userData.id)
-          .eq('shown_date', today)
-          .maybeSingle();
+        let impression: any = null;
+        try {
+          const impressionResult = await supabase
+            .from('ad_impressions')
+            .select('show_count, last_shown_at')
+            .eq('ad_id', ad.id)
+            .eq('user_id', userData.id)
+            .eq('shown_date', today)
+            .maybeSingle();
+
+          impression = impressionResult.data;
+          if (impressionResult.error) {
+            console.warn('[ads] impression lookup failed:', impressionResult.error.message);
+          }
+        } catch (error) {
+          console.warn('[ads] impression lookup failed:', error);
+        }
 
         const count = impression?.show_count ?? 0;
+        const dailyFrequency = Number(ad.daily_frequency ?? 2);
 
         // 2. Günlük limit kontrolü
-        if (count >= (ad.daily_frequency || 2)) continue;
+        if (count >= dailyFrequency) continue;
 
         // 3. Minimum 2 saat aralığı kontrolü
         if (impression?.last_shown_at) {
@@ -509,19 +523,27 @@ export default function DashboardScreen() {
         }
 
         setActiveInterstitial(ad);
-        await supabase.from('ad_impressions').upsert(
-          {
-            ad_id: ad.id,
-            user_id: userData.id,
-            shown_date: today,
-            show_count: count + 1,
-            last_shown_at: now.toISOString(),
-          },
-          { onConflict: 'ad_id,user_id,shown_date' }
-        );
+        try {
+          const { error } = await supabase.from('ad_impressions').upsert(
+            {
+              ad_id: ad.id,
+              user_id: userData.id,
+              shown_date: today,
+              show_count: count + 1,
+              last_shown_at: now.toISOString(),
+            },
+            { onConflict: 'ad_id,user_id,shown_date' }
+          );
+          if (error) {
+            console.warn('[ads] impression upsert failed:', error.message);
+          }
+        } catch (error) {
+          console.warn('[ads] impression upsert failed:', error);
+        }
         break;
       }
-    } catch {
+    } catch (error) {
+      console.warn('[ads] dashboard campaign load failed:', error);
       setAdCampaigns([]);
       setActiveInterstitial(null);
     }
@@ -671,9 +693,6 @@ export default function DashboardScreen() {
           headerContent={
             <>
               <View style={s.headerLeft}>
-                <View style={s.logoBox}>
-                  <MaterialIcons name="domain" size={24} color={theme.colors.surface} />
-                </View>
                 <Text style={s.headerTitle} numberOfLines={2}>{brand.fullName}</Text>
               </View>
               <View style={s.headerRightRow}>
@@ -1219,7 +1238,6 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // Header
   headerLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8 },
   headerRightRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoBox: { backgroundColor: theme.colors.primary, padding: 6, borderRadius: 8 },
   headerTitle: { flexShrink: 1, fontSize: 16, lineHeight: 19, fontWeight: '700', color: theme.colors.textPrimary },
   headerBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, justifyContent: 'center', alignItems: 'center', ...theme.shadows.sm },
 
@@ -1250,7 +1268,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
 
   // Agent mini istatistik kartları
   miniStatsGrid: { flexDirection: 'row', gap: 12, marginTop: 16 },
-  miniStatCard: { flex: 1, backgroundColor: theme.colors.surface, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm },
+  miniStatCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
   miniStatValue: { fontSize: 18, fontWeight: '700', color: theme.colors.primary },
   miniStatLabel: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, textTransform: 'uppercase' },
 
@@ -1263,12 +1281,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // Landlord stat grid
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
   maintenancePanelCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.sm,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.divider,
   },
   maintenancePanelHeader: {
     flexDirection: 'row',
@@ -1289,20 +1305,19 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   maintenanceSummaryRow: { flexDirection: 'row', gap: 10 },
   maintenanceSummaryChip: {
     flex: 1,
-    backgroundColor: theme.colors.surface2,
     borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
   },
   maintenanceSummaryValue: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },
   maintenanceSummaryLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted, marginTop: 4, textTransform: 'uppercase' },
   reportCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.sm,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.divider,
   },
   reportCardHeader: {
     flexDirection: 'row',
@@ -1314,19 +1329,18 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   reportMetricRow: { flexDirection: 'row', gap: 10 },
   reportMetricCard: {
     flex: 1,
-    backgroundColor: theme.colors.surface2,
     borderRadius: 14,
     paddingVertical: 12,
     paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.divider,
   },
   reportMetricValue: { fontSize: 18, fontWeight: '800', color: theme.colors.textPrimary },
   reportMetricLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, lineHeight: 14 },
 
   // Agent aktivite listesi
   activityStack: { marginTop: 12, gap: 10 },
-  activityCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.primaryLight, ...theme.shadows.sm },
+  activityCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: theme.colors.divider },
   activityIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   activityInfo: { flex: 1 },
   activityTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.textSecondary },
@@ -1336,12 +1350,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
 
   // Tenant Evim kartı
   tenantHomeCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.md,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.divider,
   },
   tenantHomeHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
   tenantHomeIconBg: { width: 48, height: 48, borderRadius: 14, backgroundColor: theme.colors.primaryLight, justifyContent: 'center', alignItems: 'center' },
@@ -1411,11 +1423,8 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   contractDateText: { fontSize: 11, color: theme.colors.textMuted },
   supportCard: {
     marginBottom: 16,
-    backgroundColor: theme.colors.surface2,
     borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    paddingVertical: 12,
     gap: 10,
   },
   supportRow: {
@@ -1437,42 +1446,37 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.divider,
     alignItems: 'center',
     justifyContent: 'center',
   },
   tenantMaintenanceCard: {
     marginBottom: 16,
-    backgroundColor: theme.colors.surface2,
     borderRadius: 14,
-    padding: 12,
+    paddingVertical: 12,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.divider,
   },
   tenantMaintenanceLatest: {
     marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: theme.colors.surface,
     borderRadius: 12,
-    padding: 10,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.divider,
   },
   tenantNoHome: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   tenantNoHomeText: { fontSize: 14, color: theme.colors.textMuted, textAlign: 'center' },
 
   // Landlord grafik
   chartCard: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.sm,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: theme.colors.divider,
   },
   chartTitle: { fontSize: 14, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 16 },
   chartBars: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: 110, marginBottom: 16 },

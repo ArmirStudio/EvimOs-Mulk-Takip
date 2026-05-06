@@ -242,6 +242,16 @@ export default function TeamHubScreen() {
     }, [loadHubData, userData?.id, userLoading])
   );
 
+  useEffect(() => {
+    if (!userLoading && !userData?.id) {
+      setMembersLoading(false);
+      setTasksLoading(false);
+      setAnnouncementsLoading(false);
+      setMessagesLoading(false);
+      setReportLoading(false);
+    }
+  }, [userData?.id, userLoading]);
+
   useFocusEffect(
     useCallback(() => {
       if (!userLoading && userData?.id && canSeeReport && currentTab === 'report') {
@@ -579,7 +589,7 @@ export default function TeamHubScreen() {
     </View>
   );
 
-  if (userLoading || (membersLoading && !members.length && !membersError)) {
+  if (userLoading || (!!userData?.id && membersLoading && !members.length && !membersError)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />

@@ -11,6 +11,9 @@ type RequestOptions = {
   query?: Record<string, string | number | boolean | null | undefined>;
 };
 
+const API_REQUEST_TIMEOUT_MS = 15000;
+const API_TIMEOUT_MESSAGE = 'Backend bağlantısı zaman aşımına uğradı';
+
 type TeamMembersResponse = {
   members: any[];
   viewer: { is_manager: boolean; office_owner_id: string };
@@ -75,6 +78,25 @@ function buildApiUrl(path: string, query?: RequestOptions['query']) {
   });
 
   return url;
+}
+
+async function fetchWithTimeout(url: URL, init: RequestInit, timeoutMs = API_REQUEST_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url.toString(), {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      throw new Error(API_TIMEOUT_MESSAGE);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function getExpoDevHost() {
@@ -167,7 +189,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   let response: Response;
   try {
-    response = await fetch(url.toString(), {
+    response = await fetchWithTimeout(url, {
       method: options.method || 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -196,7 +218,7 @@ export async function publicApiRequest<T>(path: string, options: RequestOptions 
 
   let response: Response;
   try {
-    response = await fetch(url.toString(), {
+    response = await fetchWithTimeout(url, {
       method: options.method || 'GET',
       headers: {
         'Content-Type': 'application/json',

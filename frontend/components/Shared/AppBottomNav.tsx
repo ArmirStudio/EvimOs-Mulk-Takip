@@ -69,6 +69,10 @@ const FAB_ACTIONS: Partial<Record<Role, FabAction[]>> = {
 
 const HIDDEN_FOR_LOCAL_NAV: Record<string, true> = {
   '/admin/create-company': true,
+  '/agent/create-property': true,
+  '/agent/edit-property': true,
+  '/agent/create-maintenance': true,
+  '/agent/property-detail': true,
   '/agent/add-tenant': true,
   '/agent/contact-detail': true,
   '/agent/create-contact': true,
@@ -133,9 +137,9 @@ function AnimatedNavButton({ active, label, icon, locked, onPress }: AnimatedNav
 
   return (
     <Pressable onPress={onPress} style={styles.navButton}>
-      <Animated.View style={[styles.navInner, animatedStyle]}>
+      <Animated.View style={[styles.navInner, active && styles.navInnerActive, animatedStyle]}>
         <Ionicons name={displayIcon as IconName} size={22} color={color} />
-        <Text style={[styles.navLabel, { color }]}>{label}</Text>
+        <Text style={[styles.navLabel, active && styles.navLabelActive, { color }]}>{label}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -338,10 +342,11 @@ const useStyles = createThemedStyles((theme) =>
       zIndex: 100,
     },
     blurContainer: {
-      borderRadius: 24,
+      borderRadius: 999,
       overflow: 'hidden',
       borderWidth: 0.5,
       borderColor: theme.colors.copper,
+      backgroundColor: 'transparent',
     },
     navContainer: {
       flexDirection: 'row',
@@ -357,12 +362,29 @@ const useStyles = createThemedStyles((theme) =>
     navInner: {
       alignItems: 'center',
       justifyContent: 'center',
+      minHeight: 50,
+      minWidth: 56,
+      paddingHorizontal: 8,
       paddingVertical: 4,
+      borderRadius: 18,
       gap: 3,
+    },
+    navInnerActive: {
+      backgroundColor: theme.colors.primaryLight,
+      borderWidth: 1,
+      borderColor: `${theme.colors.success}55`,
+      shadowColor: theme.colors.success,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.22,
+      shadowRadius: 8,
+      elevation: 2,
     },
     navLabel: {
       fontSize: 10,
       fontWeight: '700',
+    },
+    navLabelActive: {
+      fontWeight: '800',
     },
     fabPlaceholder: {
       width: 64,

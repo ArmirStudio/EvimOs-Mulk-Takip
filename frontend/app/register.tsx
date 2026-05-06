@@ -137,224 +137,224 @@ export default function RegisterScreen() {
       >
         <View style={styles.contentContainer}>
           <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>Davetli kayıt</Text>
-          </View>
-          <BrandLockup size="section" variant="logo" align="left" />
-          <Text style={styles.heroTitle}>Emlak ofisinizin verdiği davet koduyla kaydolun.</Text>
-          <Text style={styles.heroSubtitle}>
-            Kod doğrulandıktan sonra rolünüz ve ofisiniz otomatik belirlenir. Hesap, emlakçı onayından sonra açılır.
-          </Text>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(70).duration(420)} style={styles.formCard}>
-          <Text style={styles.formTitle}>Kayıt Ol</Text>
-          <Text style={styles.formSubtitle}>Davet kodunuz yoksa emlak ofisinizden yeni davet isteyin.</Text>
-
-          {!isSupabaseConfigured && supabaseConfigurationErrorMessage ? (
-            <View style={styles.warningCard}>
-              <Ionicons name="warning-outline" size={18} color={theme.colors.warningText} />
-              <Text style={styles.warningText}>{supabaseConfigurationErrorMessage}</Text>
+            <View style={styles.heroGlow} />
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>Davetli kayıt</Text>
             </View>
-          ) : null}
+            <BrandLockup size="section" variant="logo" align="left" />
+            <Text style={styles.heroTitle}>Emlak ofisinizin verdiği davet koduyla kaydolun.</Text>
+            <Text style={styles.heroSubtitle}>
+              Kod doğrulandıktan sonra rolünüz ve ofisiniz otomatik belirlenir. Hesap, emlakçı onayından sonra açılır.
+            </Text>
+          </Animated.View>
 
-          {message ? (
-            <View style={styles.errorCard} accessibilityLiveRegion="polite">
-              <Ionicons name="alert-circle" size={18} color={theme.colors.error} />
-              <Text style={styles.errorText}>{message}</Text>
-            </View>
-          ) : null}
+          <Animated.View entering={FadeInUp.delay(70).duration(420)} style={styles.formCard}>
+            <Text style={styles.formTitle}>Kayıt Ol</Text>
+            <Text style={styles.formSubtitle}>Davet kodunuz yoksa emlak ofisinizden yeni davet isteyin.</Text>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Davet kodu</Text>
-            <Pressable
-              accessible={false}
-              style={inputStyle('code')}
-              onPress={() => focusAndScrollToInput(scrollRef, codeRef, 120)}
-            >
-              <Ionicons
-                name="key-outline"
-                size={20}
-                color={focused === 'code' ? theme.colors.primary : theme.colors.textMuted}
-              />
-              <TextInput
-                ref={codeRef}
-                style={styles.input}
-                placeholder="Örn: K7M2P9QA"
-                placeholderTextColor={theme.colors.textMuted}
-                value={code}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={12}
-                onChangeText={(value) => {
-                  setCode(normalizeInviteCode(value));
-                  setInvite(null);
-                  clearMessage();
-                }}
-                onFocus={() => {
-                  setFocused('code');
-                  scrollToInput(scrollRef, codeRef, 120);
-                }}
-                onBlur={() => setFocused(null)}
-                onSubmitEditing={handleLookup}
-              />
-            </Pressable>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.secondaryButton, !canLookup ? styles.buttonDisabled : null]}
-            onPress={handleLookup}
-            disabled={!canLookup}
-            activeOpacity={0.88}
-          >
-            {checking ? (
-              <ActivityIndicator color={theme.colors.primary} />
-            ) : (
-              <>
-                <Text style={styles.secondaryButtonText}>Kodu Doğrula</Text>
-                <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.primary} />
-              </>
-            )}
-          </TouchableOpacity>
-
-          {invite ? (
-            <View style={styles.inviteSummary}>
-              <Text style={styles.inviteSummaryTitle}>{invite.office_name}</Text>
-              <Text style={styles.inviteSummaryText}>
-                {invite.role === 'landlord' ? 'Ev sahibi' : 'Kiracı'} daveti bulundu. Aşağıdaki bilgileri kendi gerçek bilgilerinizle tamamlayın.
-              </Text>
-            </View>
-          ) : null}
-
-          {invite ? (
-            <>
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Ad Soyad</Text>
-                <Pressable accessible={false} style={inputStyle('full_name')} onPress={() => focusAndScrollToInput(scrollRef, nameRef, 180)}>
-                  <Ionicons name="person-outline" size={20} color={focused === 'full_name' ? theme.colors.primary : theme.colors.textMuted} />
-                  <TextInput
-                    ref={nameRef}
-                    style={styles.input}
-                    placeholder="Ad Soyad"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={form.full_name}
-                    onChangeText={(full_name) => setForm((prev) => ({ ...prev, full_name }))}
-                    onFocus={() => {
-                      setFocused('full_name');
-                      scrollToInput(scrollRef, nameRef, 180);
-                    }}
-                    onBlur={() => setFocused(null)}
-                    onSubmitEditing={() => focusAndScrollToInput(scrollRef, phoneRef, 220)}
-                  />
-                </Pressable>
+            {!isSupabaseConfigured && supabaseConfigurationErrorMessage ? (
+              <View style={styles.warningCard}>
+                <Ionicons name="warning-outline" size={18} color={theme.colors.warningText} />
+                <Text style={styles.warningText}>{supabaseConfigurationErrorMessage}</Text>
               </View>
+            ) : null}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Telefon</Text>
-                <Pressable accessible={false} style={inputStyle('phone')} onPress={() => focusAndScrollToInput(scrollRef, phoneRef, 220)}>
-                  <Ionicons name="call-outline" size={20} color={focused === 'phone' ? theme.colors.primary : theme.colors.textMuted} />
-                  <TextInput
-                    ref={phoneRef}
-                    style={styles.input}
-                    placeholder="+905321234567"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={form.phone}
-                    keyboardType="phone-pad"
-                    onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
-                    onFocus={() => {
-                      setFocused('phone');
-                      scrollToInput(scrollRef, phoneRef, 220);
-                    }}
-                    onBlur={() => {
-                      setFocused(null);
-                      setForm((prev) => ({ ...prev, phone: normalizeTurkishPhone(prev.phone) }));
-                    }}
-                    onSubmitEditing={() => focusAndScrollToInput(scrollRef, emailRef, 260)}
-                  />
-                </Pressable>
+            {message ? (
+              <View style={styles.errorCard} accessibilityLiveRegion="polite">
+                <Ionicons name="alert-circle" size={18} color={theme.colors.error} />
+                <Text style={styles.errorText}>{message}</Text>
               </View>
+            ) : null}
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>E-posta</Text>
-                <Pressable accessible={false} style={inputStyle('email')} onPress={() => focusAndScrollToInput(scrollRef, emailRef, 260)}>
-                  <Ionicons name="mail-outline" size={20} color={focused === 'email' ? theme.colors.primary : theme.colors.textMuted} />
-                  <TextInput
-                    ref={emailRef}
-                    style={styles.input}
-                    placeholder="ornek@eposta.com"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={form.email}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    onChangeText={(email) => setForm((prev) => ({ ...prev, email }))}
-                    onFocus={() => {
-                      setFocused('email');
-                      scrollToInput(scrollRef, emailRef, 260);
-                    }}
-                    onBlur={() => setFocused(null)}
-                    onSubmitEditing={() => focusAndScrollToInput(scrollRef, passwordRef, 300)}
-                  />
-                </Pressable>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Şifre</Text>
-                <Pressable accessible={false} style={inputStyle('password')} onPress={() => focusAndScrollToInput(scrollRef, passwordRef, 300)}>
-                  <Ionicons name="lock-closed-outline" size={20} color={focused === 'password' ? theme.colors.primary : theme.colors.textMuted} />
-                  <TextInput
-                    ref={passwordRef}
-                    style={styles.input}
-                    placeholder="Min. 8 karakter"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={form.password}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
-                    onFocus={() => {
-                      setFocused('password');
-                      scrollToInput(scrollRef, passwordRef, 300);
-                    }}
-                    onBlur={() => setFocused(null)}
-                    onSubmitEditing={handleRegister}
-                  />
-                </Pressable>
-              </View>
-
-              <TouchableOpacity
-                style={[styles.submitButton, !canSubmit ? styles.buttonDisabled : null]}
-                onPress={handleRegister}
-                disabled={!canSubmit}
-                activeOpacity={0.88}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Davet kodu</Text>
+              <Pressable
+                accessible={false}
+                style={inputStyle('code')}
+                onPress={() => focusAndScrollToInput(scrollRef, codeRef, 120)}
               >
-                {submitting ? (
-                  <ActivityIndicator color={theme.colors.textInverse} />
-                ) : (
-                  <>
-                    <Text style={styles.submitText}>Kayıt Ol</Text>
-                    <Ionicons name="arrow-forward" size={18} color={theme.colors.textInverse} />
-                  </>
-                )}
-              </TouchableOpacity>
-            </>
-          ) : null}
+                <Ionicons
+                  name="key-outline"
+                  size={20}
+                  color={focused === 'code' ? theme.colors.primary : theme.colors.textMuted}
+                />
+                <TextInput
+                  ref={codeRef}
+                  style={styles.input}
+                  placeholder="Örn: K7M2P9QA"
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={code}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={12}
+                  onChangeText={(value) => {
+                    setCode(normalizeInviteCode(value));
+                    setInvite(null);
+                    clearMessage();
+                  }}
+                  onFocus={() => {
+                    setFocused('code');
+                    scrollToInput(scrollRef, codeRef, 120);
+                  }}
+                  onBlur={() => setFocused(null)}
+                  onSubmitEditing={handleLookup}
+                />
+              </Pressable>
+            </View>
 
-          <TouchableOpacity
-            onPress={() => router.replace('/')}
-            style={styles.backButton}
-            activeOpacity={0.82}
-            accessibilityLabel="Açılış ekranına dön"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
-            <Text style={styles.backButtonText}>Açılışa dön</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.secondaryButton, !canLookup ? styles.buttonDisabled : null]}
+              onPress={handleLookup}
+              disabled={!canLookup}
+              activeOpacity={0.88}
+            >
+              {checking ? (
+                <ActivityIndicator color={theme.colors.primary} />
+              ) : (
+                <>
+                  <Text style={styles.secondaryButtonText}>Kodu Doğrula</Text>
+                  <Ionicons name="checkmark-circle-outline" size={18} color={theme.colors.primary} />
+                </>
+              )}
+            </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => router.replace('/login' as never)} activeOpacity={0.75}>
-            <Text style={styles.footnote}>Zaten hesabınız varsa giriş yapın.</Text>
-          </TouchableOpacity>
-        </Animated.View>
+            {invite ? (
+              <View style={styles.inviteSummary}>
+                <Text style={styles.inviteSummaryTitle}>{invite.office_name}</Text>
+                <Text style={styles.inviteSummaryText}>
+                  {invite.role === 'landlord' ? 'Ev sahibi' : 'Kiracı'} daveti bulundu. Aşağıdaki bilgileri kendi gerçek bilgilerinizle tamamlayın.
+                </Text>
+              </View>
+            ) : null}
+
+            {invite ? (
+              <>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Ad Soyad</Text>
+                  <Pressable accessible={false} style={inputStyle('full_name')} onPress={() => focusAndScrollToInput(scrollRef, nameRef, 180)}>
+                    <Ionicons name="person-outline" size={20} color={focused === 'full_name' ? theme.colors.primary : theme.colors.textMuted} />
+                    <TextInput
+                      ref={nameRef}
+                      style={styles.input}
+                      placeholder="Ad Soyad"
+                      placeholderTextColor={theme.colors.textMuted}
+                      value={form.full_name}
+                      onChangeText={(full_name) => setForm((prev) => ({ ...prev, full_name }))}
+                      onFocus={() => {
+                        setFocused('full_name');
+                        scrollToInput(scrollRef, nameRef, 180);
+                      }}
+                      onBlur={() => setFocused(null)}
+                      onSubmitEditing={() => focusAndScrollToInput(scrollRef, phoneRef, 220)}
+                    />
+                  </Pressable>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Telefon</Text>
+                  <Pressable accessible={false} style={inputStyle('phone')} onPress={() => focusAndScrollToInput(scrollRef, phoneRef, 220)}>
+                    <Ionicons name="call-outline" size={20} color={focused === 'phone' ? theme.colors.primary : theme.colors.textMuted} />
+                    <TextInput
+                      ref={phoneRef}
+                      style={styles.input}
+                      placeholder="+905321234567"
+                      placeholderTextColor={theme.colors.textMuted}
+                      value={form.phone}
+                      keyboardType="phone-pad"
+                      onChangeText={(phone) => setForm((prev) => ({ ...prev, phone }))}
+                      onFocus={() => {
+                        setFocused('phone');
+                        scrollToInput(scrollRef, phoneRef, 220);
+                      }}
+                      onBlur={() => {
+                        setFocused(null);
+                        setForm((prev) => ({ ...prev, phone: normalizeTurkishPhone(prev.phone) }));
+                      }}
+                      onSubmitEditing={() => focusAndScrollToInput(scrollRef, emailRef, 260)}
+                    />
+                  </Pressable>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>E-posta</Text>
+                  <Pressable accessible={false} style={inputStyle('email')} onPress={() => focusAndScrollToInput(scrollRef, emailRef, 260)}>
+                    <Ionicons name="mail-outline" size={20} color={focused === 'email' ? theme.colors.primary : theme.colors.textMuted} />
+                    <TextInput
+                      ref={emailRef}
+                      style={styles.input}
+                      placeholder="ornek@eposta.com"
+                      placeholderTextColor={theme.colors.textMuted}
+                      value={form.email}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      onChangeText={(email) => setForm((prev) => ({ ...prev, email }))}
+                      onFocus={() => {
+                        setFocused('email');
+                        scrollToInput(scrollRef, emailRef, 260);
+                      }}
+                      onBlur={() => setFocused(null)}
+                      onSubmitEditing={() => focusAndScrollToInput(scrollRef, passwordRef, 300)}
+                    />
+                  </Pressable>
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.fieldLabel}>Şifre</Text>
+                  <Pressable accessible={false} style={inputStyle('password')} onPress={() => focusAndScrollToInput(scrollRef, passwordRef, 300)}>
+                    <Ionicons name="lock-closed-outline" size={20} color={focused === 'password' ? theme.colors.primary : theme.colors.textMuted} />
+                    <TextInput
+                      ref={passwordRef}
+                      style={styles.input}
+                      placeholder="Min. 8 karakter"
+                      placeholderTextColor={theme.colors.textMuted}
+                      value={form.password}
+                      secureTextEntry
+                      autoCapitalize="none"
+                      onChangeText={(password) => setForm((prev) => ({ ...prev, password }))}
+                      onFocus={() => {
+                        setFocused('password');
+                        scrollToInput(scrollRef, passwordRef, 300);
+                      }}
+                      onBlur={() => setFocused(null)}
+                      onSubmitEditing={handleRegister}
+                    />
+                  </Pressable>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.submitButton, !canSubmit ? styles.buttonDisabled : null]}
+                  onPress={handleRegister}
+                  disabled={!canSubmit}
+                  activeOpacity={0.88}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color={theme.colors.textInverse} />
+                  ) : (
+                    <>
+                      <Text style={styles.submitText}>Kayıt Ol</Text>
+                      <Ionicons name="arrow-forward" size={18} color={theme.colors.textInverse} />
+                    </>
+                  )}
+                </TouchableOpacity>
+              </>
+            ) : null}
+
+            <TouchableOpacity
+              onPress={() => router.replace('/')}
+              style={styles.backButton}
+              activeOpacity={0.82}
+              accessibilityLabel="Açılış ekranına dön"
+              accessibilityRole="button"
+            >
+              <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
+              <Text style={styles.backButtonText}>Açılışa dön</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.replace('/login' as never)} activeOpacity={0.75}>
+              <Text style={styles.footnote}>Zaten hesabınız varsa giriş yapın.</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -370,7 +370,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: 60,
+      gap: 35,
     },
     backButton: {
       alignSelf: 'center',

@@ -57,7 +57,7 @@ function isPdfDocument(document?: Pick<DocumentRecord, 'title' | 'file_url' | 's
 
 const useStyles = createThemedStyles((theme) =>
   StyleSheet.create({
-    container: { marginTop: 20, paddingHorizontal: 20 },
+    container: { marginTop: 20 },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     title: { fontSize: 18, fontWeight: '700', color: theme.colors.textPrimary },
     addBtn: {
@@ -73,13 +73,11 @@ const useStyles = createThemedStyles((theme) =>
     docCard: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: theme.colors.surface,
       borderRadius: 12,
-      padding: 12,
+      paddingVertical: 12,
       marginBottom: 10,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      ...theme.shadows.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.divider,
     },
     iconContainer: {
       width: 44,

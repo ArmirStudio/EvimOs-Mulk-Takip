@@ -8,7 +8,7 @@
     "splash": {
       "image": "./assets/images/evimos-splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FDF9F3"
+      "backgroundColor": "#FFFFFF"
     },
     "scheme": "emlak",
     "userInterfaceStyle": "automatic",
@@ -27,7 +27,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FDF9F3"
+        "backgroundColor": "#FFFFFF"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -55,9 +55,13 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/evimos-splash.png",
-          "imageWidth": 260,
+          "imageWidth": 320,
           "resizeMode": "contain",
-          "backgroundColor": "#FDF9F3"
+          "backgroundColor": "#FFFFFF",
+          "dark": {
+            "image": "./assets/images/evimos-splash.png",
+            "backgroundColor": "#FFFFFF"
+          }
         }
       ],
       "expo-web-browser"

@@ -1,4 +1,5 @@
 import logging
+import unicodedata
 from datetime import datetime
 from typing import Any
 
@@ -22,10 +23,26 @@ def _normalize_string_list(value: Any) -> list[str]:
     return normalized
 
 
+def _normalize_text(value: Any) -> str | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    return unicodedata.normalize("NFKC", text).casefold()
+
+
+def _normalize_optional_id(value: Any) -> str | None:
+    text = str(value or "").strip()
+    return text or None
+
+
+def _dedupe_text(values: list[str | None]) -> list[str]:
+    return list(dict.fromkeys([value for value in values if value]))
+
+
 def _resolve_campaign_scope(current_user: dict) -> tuple[str | None, list[str], str | None]:
-    province = (current_user.get("city") or "").strip() or None
-    districts = _normalize_string_list([current_user.get("district")])
-    agency_id = current_user.get("agency_id")
+    province = _normalize_text(current_user.get("city"))
+    districts = _dedupe_text([_normalize_text(current_user.get("district"))])
+    agency_id = _normalize_optional_id(current_user.get("agency_id"))
 
     if agency_id:
         try:
@@ -38,14 +55,12 @@ def _resolve_campaign_scope(current_user: dict) -> tuple[str | None, list[str], 
                 .data
             )
             if agency:
-                province = (agency.get("location") or province or "").strip() or province
-                districts = list(
-                    dict.fromkeys(
-                        [
-                            *districts,
-                            *_normalize_string_list(agency.get("active_regions")),
-                        ]
-                    )
+                province = _normalize_text(agency.get("location")) or province
+                districts = _dedupe_text(
+                    [
+                        *districts,
+                        *[_normalize_text(region) for region in _normalize_string_list(agency.get("active_regions"))],
+                    ]
                 )
         except Exception as exc:
             logger.warning("Campaign scope agency lookup failed, falling back to user scope: %s", exc)
@@ -101,15 +116,22 @@ def _campaign_matches_user(
     districts: list[str],
     agency_id: str | None,
 ) -> bool:
-    target_roles = _normalize_string_list(campaign.get("target_roles"))
-    if target_roles and role not in target_roles:
+    normalized_role = _normalize_text(role)
+    target_roles = [_normalize_text(item) for item in _normalize_string_list(campaign.get("target_roles"))]
+    target_roles = [item for item in target_roles if item]
+    if target_roles and normalized_role not in target_roles:
         return False
 
-    target_provinces = _normalize_string_list(campaign.get("target_provinces"))
-    if target_provinces and (not province or province not in target_provinces):
+    target_provinces = [_normalize_text(item) for item in _normalize_string_list(campaign.get("target_provinces"))]
+    target_provinces = [item for item in target_provinces if item]
+    broad_province_target = len(set(target_provinces)) >= 81
+    if target_provinces and (not province or province not in target_provinces) and not (
+        not province and broad_province_target
+    ):
         return False
 
-    target_districts = _normalize_string_list(campaign.get("target_districts"))
+    target_districts = [_normalize_text(item) for item in _normalize_string_list(campaign.get("target_districts"))]
+    target_districts = [item for item in target_districts if item]
     if target_districts and not set(target_districts).intersection(districts):
         return False
 
@@ -250,11 +272,15 @@ def list_dashboard_campaigns(current_user: dict = Depends(get_current_user)):
     province, districts, agency_id = _resolve_campaign_scope(current_user)
     campaigns = _list_active_campaigns()
 
-    matched = [
+    date_matched = [
         campaign
         for campaign in campaigns
         if _campaign_is_active_today(campaign, today)
-        and _campaign_matches_user(
+    ]
+    matched = [
+        campaign
+        for campaign in date_matched
+        if _campaign_matches_user(
             campaign,
             role=current_user.get("role"),
             province=province,
@@ -262,5 +288,17 @@ def list_dashboard_campaigns(current_user: dict = Depends(get_current_user)):
             agency_id=agency_id,
         )
     ]
+
+    logger.info(
+        "Dashboard campaign delivery user=%s role=%s active=%s date_matched=%s target_matched=%s province=%s districts=%s agency=%s",
+        current_user.get("id"),
+        current_user.get("role"),
+        len(campaigns),
+        len(date_matched),
+        len(matched),
+        province,
+        len(districts),
+        agency_id,
+    )
 
     return {"campaigns": matched}

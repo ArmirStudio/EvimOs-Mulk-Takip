@@ -98,9 +98,6 @@ const useStyles = createThemedStyles((theme) =>
       gap: 12,
       paddingHorizontal: 16,
       paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
     },
     iconBtn: {
       width: 40,
@@ -136,9 +133,6 @@ const useStyles = createThemedStyles((theme) =>
       bottom: 0,
       paddingHorizontal: 16,
       paddingTop: 12,
-      backgroundColor: theme.colors.surface,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
     },
   })
 );

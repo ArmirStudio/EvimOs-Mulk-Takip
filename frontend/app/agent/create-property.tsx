@@ -1636,7 +1636,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     bottom: 0,
     flexDirection: 'row', gap: 12,
     paddingHorizontal: 16, paddingTop: 12,
-    backgroundColor: theme.colors.background,
-    borderTopWidth: 1, borderTopColor: theme.colors.border,
+    backgroundColor: 'transparent',
+    borderTopWidth: 0,
   },
 }));

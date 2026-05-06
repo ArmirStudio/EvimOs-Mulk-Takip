@@ -138,147 +138,147 @@ export default function LoginScreen() {
       >
         <View style={styles.contentContainer}>
           <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroBadge}>
-            <Text style={styles.heroBadgeText}>{brand.loginEyebrow}</Text>
-          </View>
-          <BrandLockup size="section" variant="logo" align="left" />
-          <Text style={styles.heroTitle}>{brand.loginTitle}</Text>
-          <Text style={styles.heroSubtitle}>{brand.loginSubtitle}</Text>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(70).duration(420)} style={styles.formCard}>
-          <Text style={styles.formTitle}>{tr.auth.signIn}</Text>
-          <Text style={styles.formSubtitle}>{brand.loginHelper}</Text>
-
-          {!isSupabaseConfigured && supabaseConfigurationErrorMessage ? (
-            <View style={styles.warningCard}>
-              <Ionicons name="warning-outline" size={18} color={theme.colors.warningText} />
-              <Text style={styles.warningText}>{supabaseConfigurationErrorMessage}</Text>
+            <View style={styles.heroGlow} />
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>{brand.loginEyebrow}</Text>
             </View>
-          ) : null}
+            <BrandLockup size="section" variant="logo" align="left" />
+            <Text style={styles.heroTitle}>{brand.loginTitle}</Text>
+            <Text style={styles.heroSubtitle}>{brand.loginSubtitle}</Text>
+          </Animated.View>
 
-          {errorMessage ? (
-            <View style={styles.errorCard} accessibilityLiveRegion="polite">
-              <Ionicons name="alert-circle" size={18} color={theme.colors.error} />
-              <Text style={styles.errorText}>{errorMessage}</Text>
+          <Animated.View entering={FadeInUp.delay(70).duration(420)} style={styles.formCard}>
+            <Text style={styles.formTitle}>{tr.auth.signIn}</Text>
+            <Text style={styles.formSubtitle}>{brand.loginHelper}</Text>
+
+            {!isSupabaseConfigured && supabaseConfigurationErrorMessage ? (
+              <View style={styles.warningCard}>
+                <Ionicons name="warning-outline" size={18} color={theme.colors.warningText} />
+                <Text style={styles.warningText}>{supabaseConfigurationErrorMessage}</Text>
+              </View>
+            ) : null}
+
+            {errorMessage ? (
+              <View style={styles.errorCard} accessibilityLiveRegion="polite">
+                <Ionicons name="alert-circle" size={18} color={theme.colors.error} />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>E-posta veya telefon</Text>
+              <Pressable
+                accessible={false}
+                style={[
+                  styles.inputContainer,
+                  focused === 'email' ? styles.inputFocused : null,
+                ]}
+                onPress={() => focusAndScrollToInput(scrollRef, emailInputRef, 120)}
+              >
+                <Ionicons
+                  name={getIoniconForContactIdentifier(email)}
+                  size={20}
+                  color={focused === 'email' ? theme.colors.primary : theme.colors.textMuted}
+                />
+                <TextInput
+                  ref={emailInputRef}
+                  style={styles.input}
+                  placeholder={tr.auth.emailOrPhonePlaceholder}
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    clearError();
+                  }}
+                  keyboardType="default"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  textContentType="username"
+                  autoComplete="username"
+                  returnKeyType="next"
+                  onFocus={() => {
+                    setFocused('email');
+                    scrollToInput(scrollRef, emailInputRef, 120);
+                  }}
+                  onBlur={() => setFocused(null)}
+                  onSubmitEditing={() => focusAndScrollToInput(scrollRef, passwordInputRef, 220)}
+                  accessibilityLabel="E-posta veya telefon giriş alanı"
+                />
+              </Pressable>
             </View>
-          ) : null}
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>E-posta veya telefon</Text>
-            <Pressable
-              accessible={false}
-              style={[
-                styles.inputContainer,
-                focused === 'email' ? styles.inputFocused : null,
-              ]}
-              onPress={() => focusAndScrollToInput(scrollRef, emailInputRef, 120)}
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>{tr.auth.password}</Text>
+              <Pressable
+                accessible={false}
+                style={[
+                  styles.inputContainer,
+                  focused === 'password' ? styles.inputFocused : null,
+                ]}
+                onPress={() => focusAndScrollToInput(scrollRef, passwordInputRef, 220)}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={focused === 'password' ? theme.colors.primary : theme.colors.textMuted}
+                />
+                <TextInput
+                  ref={passwordInputRef}
+                  style={styles.input}
+                  placeholder={tr.auth.password}
+                  placeholderTextColor={theme.colors.textMuted}
+                  value={password}
+                  onChangeText={(text) => {
+                    setPassword(text);
+                    clearError();
+                  }}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  textContentType="password"
+                  autoComplete="password"
+                  returnKeyType="done"
+                  onFocus={() => {
+                    setFocused('password');
+                    scrollToInput(scrollRef, passwordInputRef, 220);
+                  }}
+                  onBlur={() => setFocused(null)}
+                  onSubmitEditing={handleLogin}
+                  accessibilityLabel="Şifre giriş alanı"
+                />
+              </Pressable>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitButton, loading ? styles.submitButtonDisabled : null]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.88}
+              accessibilityLabel={tr.auth.signIn}
+              accessibilityRole="button"
             >
-              <Ionicons
-                name={getIoniconForContactIdentifier(email)}
-                size={20}
-                color={focused === 'email' ? theme.colors.primary : theme.colors.textMuted}
-              />
-              <TextInput
-                ref={emailInputRef}
-                style={styles.input}
-                placeholder={tr.auth.emailOrPhonePlaceholder}
-                placeholderTextColor={theme.colors.textMuted}
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  clearError();
-                }}
-                keyboardType="default"
-                autoCapitalize="none"
-                autoCorrect={false}
-                textContentType="username"
-                autoComplete="username"
-                returnKeyType="next"
-                onFocus={() => {
-                  setFocused('email');
-                  scrollToInput(scrollRef, emailInputRef, 120);
-                }}
-                onBlur={() => setFocused(null)}
-                onSubmitEditing={() => focusAndScrollToInput(scrollRef, passwordInputRef, 220)}
-                accessibilityLabel="E-posta veya telefon giriş alanı"
-              />
-            </Pressable>
-          </View>
+              {loading ? (
+                <ActivityIndicator color={theme.colors.textInverse} />
+              ) : (
+                <>
+                  <Text style={styles.submitText}>{tr.auth.signIn}</Text>
+                  <Ionicons name="arrow-forward" size={18} color={theme.colors.textInverse} />
+                </>
+              )}
+            </TouchableOpacity>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>{tr.auth.password}</Text>
-            <Pressable
-              accessible={false}
-              style={[
-                styles.inputContainer,
-                focused === 'password' ? styles.inputFocused : null,
-              ]}
-              onPress={() => focusAndScrollToInput(scrollRef, passwordInputRef, 220)}
+            <TouchableOpacity
+              onPress={() => router.replace('/')}
+              style={styles.backButton}
+              activeOpacity={0.82}
+              accessibilityLabel="Açılış ekranına dön"
+              accessibilityRole="button"
             >
-              <Ionicons
-                name="lock-closed-outline"
-                size={20}
-                color={focused === 'password' ? theme.colors.primary : theme.colors.textMuted}
-              />
-              <TextInput
-                ref={passwordInputRef}
-                style={styles.input}
-                placeholder={tr.auth.password}
-                placeholderTextColor={theme.colors.textMuted}
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  clearError();
-                }}
-                secureTextEntry
-                autoCapitalize="none"
-                textContentType="password"
-                autoComplete="password"
-                returnKeyType="done"
-                onFocus={() => {
-                  setFocused('password');
-                  scrollToInput(scrollRef, passwordInputRef, 220);
-                }}
-                onBlur={() => setFocused(null)}
-                onSubmitEditing={handleLogin}
-                accessibilityLabel="Şifre giriş alanı"
-              />
-            </Pressable>
-          </View>
+              <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
+              <Text style={styles.backButtonText}>Açılışa dön</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.submitButton, loading ? styles.submitButtonDisabled : null]}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.88}
-            accessibilityLabel={tr.auth.signIn}
-            accessibilityRole="button"
-          >
-            {loading ? (
-              <ActivityIndicator color={theme.colors.textInverse} />
-            ) : (
-              <>
-                <Text style={styles.submitText}>{tr.auth.signIn}</Text>
-                <Ionicons name="arrow-forward" size={18} color={theme.colors.textInverse} />
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => router.replace('/')}
-            style={styles.backButton}
-            activeOpacity={0.82}
-            accessibilityLabel="Açılış ekranına dön"
-            accessibilityRole="button"
-          >
-            <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
-            <Text style={styles.backButtonText}>Açılışa dön</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.footnote}>{brand.tagline}</Text>
-        </Animated.View>
+            <Text style={styles.footnote}>{brand.tagline}</Text>
+          </Animated.View>
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
@@ -315,7 +315,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: 60,
+      gap: 35,
     },
     heroCard: {
       position: 'relative',
