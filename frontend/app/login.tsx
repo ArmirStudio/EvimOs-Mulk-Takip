@@ -135,9 +135,9 @@ export default function LoginScreen() {
       <KeyboardAwareScrollView
         scrollRef={scrollRef}
         containerStyle={styles.keyboardView}
-        contentContainerStyle={styles.contentContainer}
       >
-        <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
+        <View style={styles.contentContainer}>
+          <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
           <View style={styles.heroGlow} />
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>{brand.loginEyebrow}</Text>
@@ -279,6 +279,7 @@ export default function LoginScreen() {
 
           <Text style={styles.footnote}>{brand.tagline}</Text>
         </Animated.View>
+        </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -314,7 +315,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: 35,
+      gap: 60,
     },
     heroCard: {
       position: 'relative',

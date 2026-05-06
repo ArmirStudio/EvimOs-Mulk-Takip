@@ -134,9 +134,9 @@ export default function RegisterScreen() {
       <KeyboardAwareScrollView
         scrollRef={scrollRef}
         containerStyle={styles.keyboardView}
-        contentContainerStyle={styles.contentContainer}
       >
-        <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
+        <View style={styles.contentContainer}>
+          <Animated.View entering={FadeInDown.duration(420)} style={styles.heroCard}>
           <View style={styles.heroGlow} />
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>Davetli kayıt</Text>
@@ -355,6 +355,7 @@ export default function RegisterScreen() {
             <Text style={styles.footnote}>Zaten hesabınız varsa giriş yapın.</Text>
           </TouchableOpacity>
         </Animated.View>
+        </View>
       </KeyboardAwareScrollView>
     </SafeAreaView>
   );
@@ -369,7 +370,7 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       paddingTop: theme.spacing.lg,
       paddingBottom: theme.spacing.xxxl,
-      gap: 35,
+      gap: 60,
     },
     backButton: {
       alignSelf: 'center',
