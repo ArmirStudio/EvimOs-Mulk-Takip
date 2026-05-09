@@ -24,8 +24,8 @@ export default function OfficeContactsPage() {
   const loadContacts = async () => {
     try {
       setLoading(true);
-      const response = await appApi.get('/office-contacts');
-      setContacts(response.data?.contacts || []);
+      const response = await appApi.listOfficeContacts();
+      setContacts(response.contacts || []);
     } catch (error) {
       console.error('Failed to load contacts:', error);
       Alert.alert('Hata', 'Ustalar yüklenemedi');

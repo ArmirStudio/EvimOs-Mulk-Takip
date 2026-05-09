@@ -12,6 +12,7 @@ import { tr } from '../../app/translations';
 import { supabase } from '../../services/supabase';
 import { useUserData } from '../../hooks/useUserData';
 import AnimatedScreen from './AnimatedScreen';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 type EventType = 'rent' | 'dues' | 'maintenance' | 'reminder';
 type EventStatus = 'pending' | 'paid' | 'overdue';
@@ -75,6 +76,7 @@ const getStatusBadge = (theme: any, status: EventStatus) => {
 export default function CalendarScreen() {
   const theme = useAppTheme();
   const s = useStyles();
+  const bottomNavInset = useGlobalBottomNavInset();
   const { userData, loading: userLoading } = useUserData();
   const today = new Date();
   const todayStr = toDateStr(today);
@@ -221,7 +223,7 @@ export default function CalendarScreen() {
             <View style={s.eventsHeader}><Text style={s.eventsTitle}>{selectedDate.split('-').reverse().join('.')}</Text></View>
           </>
         }
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: bottomNavInset }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={fetchEvents} />}
       />
       </SafeAreaView>

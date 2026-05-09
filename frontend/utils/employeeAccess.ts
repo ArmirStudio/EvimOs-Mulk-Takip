@@ -23,7 +23,11 @@ export function canManageOfficeRecords(user?: EmployeeAccessUser | null): boolea
 }
 
 export function canViewOfficeDirectory(user?: EmployeeAccessUser | null): boolean {
-  return user?.role === 'agent' || hasFullEmployeeAccess(user);
+  return user?.role === 'agent' || user?.role === 'employee';
+}
+
+export function canManageOfficeContacts(user?: EmployeeAccessUser | null): boolean {
+  return user?.role === 'agent' || user?.role === 'employee';
 }
 
 export function canUploadPropertyDocuments(user?: EmployeeAccessUser | null): boolean {

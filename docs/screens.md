@@ -22,12 +22,14 @@ Bu dosya canli route haritasini ve rol bazli erisim davranisini ozetler.
 | `/{role}/settings` | `frontend/app/{role}/settings.tsx` | `SettingsScreen.tsx` | Ayarlar |
 | `/{role}/profile-edit` | `frontend/app/{role}/profile-edit.tsx` | `ProfileEditScreen.tsx` | Profil duzenleme |
 | `/{role}/change-password` | `frontend/app/{role}/change-password.tsx` | `ChangePasswordScreen.tsx` | Sifre degistirme |
-| `/agent/team?tab=team|tasks|announcements|messages|report` | `frontend/app/agent/team.tsx` | `TeamHubScreen.tsx` | Ekip merkezi |
+| `/agent/team?tab=tasks|announcements|meetings|expenses` | `frontend/app/agent/team.tsx` | `TeamHubScreen.tsx` | Ekip merkezi, gorevler, duyurular, toplantilar ve giderler |
 | `/agent/team-member?id=` | `frontend/app/agent/team-member.tsx` | `TeamMemberDetailScreen.tsx` | Calisan detay |
 | `/agent/task-form?taskId=...&assigneeId=...` | `frontend/app/agent/task-form.tsx` | `TeamTaskFormScreen.tsx` | Team gorev formu |
+| `/agent/invite?role=tenant|landlord|employee` | `frontend/app/agent/invite.tsx` | - | Kiraci, ev sahibi ve calisan icin tek davet akisi |
+| `/agent/pending-invites` | `frontend/app/agent/pending-invites.tsx` | - | Bekleyen davetleri listeleme ve filtreleme |
+| `/agent/pending-invite-detail?id=` | `frontend/app/agent/pending-invite-detail.tsx` | - | Davet onay, ret ve employee yetki secimi |
 | `/agent/create-property` | `frontend/app/agent/create-property.tsx` | - | Mulk ekleme |
 | `/agent/edit-property?id=` | `frontend/app/agent/edit-property.tsx` | - | Mulk duzenleme |
-| `/agent/create-user` | `frontend/app/agent/create-user.tsx` | - | Landlord veya tenant olusturma |
 | `/agent/contact-detail` | `frontend/app/agent/contact-detail.tsx` | `ContactDetailScreen.tsx` | Rehber detay |
 | `/landlord/tenants` | `frontend/app/landlord/tenants.tsx` | `LandlordTenantsScreen.tsx` | Ev sahibinin kiraci listesi |
 | `/tenant/maintenance-request` | `frontend/app/tenant/maintenance-request.tsx` | - | Tenant ariza formu |
@@ -45,10 +47,14 @@ Not:
 ## Gizli Route'lar
 `AppBottomNav` icinde sekme olarak gorunmeyen fakat akisla gidilen route'lar:
 - `/admin/create-company`
-- `/agent/add-tenant`
 - `/agent/contact-detail`
+- `/agent/create-contact`
+- `/agent/edit-contact`
+- `/agent/invite`
+- `/agent/pending-invite-detail`
 - `/agent/team-member`
 - `/agent/task-form`
+- `/agent/team-messages`
 - `/landlord/property-detail`
 - `/landlord/tenants`
 - `/tenant/property-detail`
@@ -70,7 +76,8 @@ Not:
 - Ekibim
 
 Not:
-- Full employee FAB uzerinden property, landlord ve tenant create akislarini gorur.
+- Kiraci, ev sahibi ve calisan ekleme dogrudan kullanici olusturmaz; tek kanonik akis `/agent/invite` uzerindedir.
+- Mulk evragi, sozlesme ve dekont operasyonlari kisi olusturma ekranina baglanmaz; mulk detayinda kalir.
 - Limited employee icin FAB gizlidir.
 
 ### Landlord

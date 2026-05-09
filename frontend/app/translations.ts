@@ -392,7 +392,7 @@ export const tr = {
     usernameHint: 'İsim girdikçe oluşturulacak',
     regenerateHint: 'Yeniden oluşturmak için butona basın',
     passwordPlaceholder: 'Şifre girin',
-    passwordHint: 'Kullanıcı bu hesaba bu e-posta ve şifreyle giriş yapacaktır. Varsayılan şifre: 1234',
+    passwordHint: 'Kullanıcı hesabını davet linki veya davet kodu ile kendisi oluşturacaktır.',
     noLandlordsSub: 'İlk ev sahibinizi ekleyerek başlayın',
     noTenantsSub: 'İlk kiracınızı ekleyerek başlayın',
   },

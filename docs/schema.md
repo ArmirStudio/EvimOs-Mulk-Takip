@@ -87,5 +87,5 @@ Onemli kolonlar:
 - `updated_at`
 
 ## Canli Schema Kaynaklari
-- Fresh install: `supabase/00_MASTER_SCHEMA.sql`
-- Current DB patch: `supabase/current_db_user_settings_patch.sql`
+- Fresh install: `supabase/schema_parts/`
+- Current DB patch/migration zinciri: `supabase/migrations/`

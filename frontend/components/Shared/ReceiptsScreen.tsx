@@ -20,6 +20,7 @@ import { listReceipts } from '../../services/appApi';
 import { formatCurrency } from '../../utils/propertyHelpers';
 import { canReviewReceipt } from '../../utils/employeeAccess';
 import AnimatedScreen from './AnimatedScreen';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 type ReceiptFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -53,6 +54,7 @@ export default function ReceiptsScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const styles = useStyles();
+  const bottomNavInset = useGlobalBottomNavInset();
   const badgeStyles = getBadgeStyles(theme);
   const params = useLocalSearchParams<{ openId?: string; openType?: string }>();
 
@@ -261,7 +263,7 @@ export default function ReceiptsScreen() {
             data={filteredReceipts}
             renderItem={renderReceipt}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={[styles.listContent, filteredReceipts.length === 0 && { flex: 1 }]}
+            contentContainerStyle={[styles.listContent, filteredReceipts.length === 0 && { flex: 1 }, { paddingBottom: bottomNavInset }]}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}

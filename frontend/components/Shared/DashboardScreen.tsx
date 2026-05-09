@@ -17,7 +17,11 @@ import { supabase } from '../../services/supabase';
 import { useUserData } from '../../hooks/useUserData';
 import { DashboardStatCard } from './DashboardStatCard';
 import CalendarWidget from './CalendarWidget';
-import DashboardMarketingSection from './DashboardMarketingSection';
+import {
+  MarketingTrustSections,
+  RealEstateNewsRail,
+  SponsoredProjectsStrip,
+} from './DashboardMarketingSection';
 import InterstitialAdModal from './InterstitialAdModal';
 import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
@@ -728,6 +732,8 @@ export default function DashboardScreen() {
             </View>
           </Animated.View>
 
+          <SponsoredProjectsStrip campaigns={adCampaigns} />
+
           {/* ── AGENT: İSTATİSTİKLER ─────────────────────────────────────────── */}
           {(role === 'agent' || role === 'employee') && (
             <View style={s.sectionPx}>
@@ -761,6 +767,25 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+          )}
+
+          {(role === 'agent' || role === 'employee') && !dataLoading && agentStats.totalProperties === 0 && (
+            <View style={s.sectionPx}>
+              <TouchableOpacity
+                style={s.firstActionCard}
+                activeOpacity={0.88}
+                onPress={() => router.push('/agent/create-property' as any)}
+              >
+                <View style={s.firstActionIcon}>
+                  <MaterialIcons name="add-home-work" size={22} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.firstActionTitle}>İlk mülkünüzü ekleyin</Text>
+                  <Text style={s.firstActionText}>Portföy, takvim, görev ve rehber akışları ilk mülkten sonra dolmaya başlar.</Text>
+                </View>
+                <MaterialIcons name="arrow-forward" size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
             </View>
           )}
 
@@ -894,6 +919,20 @@ export default function DashboardScreen() {
                 />
               </View>
             </Animated.View>
+          )}
+
+          {role === 'landlord' && !dataLoading && (landlordStats?.total_properties || 0) === 0 && (
+            <View style={s.sectionPx}>
+              <View style={s.firstActionCard}>
+                <View style={s.firstActionIcon}>
+                  <MaterialIcons name="home-work" size={22} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.firstActionTitle}>Mülk ataması bekleniyor</Text>
+                  <Text style={s.firstActionText}>Ofisiniz mülk ataması yaptığında finans, dekont ve bakım akışları burada görünecek.</Text>
+                </View>
+              </View>
+            </View>
           )}
 
           {role === 'landlord' && (
@@ -1179,6 +1218,8 @@ export default function DashboardScreen() {
           )}
 
           {/* ── TAKVİM WİDGET (tüm roller) ───────────────────────────────────── */}
+          <RealEstateNewsRail campaigns={adCampaigns} />
+
           {userData && (
             <Animated.View entering={FadeInDown.delay(role === 'landlord' ? 300 : 200).duration(500)}>
               <CalendarWidget role={role as 'agent' | 'landlord' | 'tenant'} userId={userData.id} />
@@ -1217,7 +1258,7 @@ export default function DashboardScreen() {
           )}
 
           {/* ── PAZARLAMA BÖLÜMLERİ (tüm roller) ────────────────────────────── */}
-          <DashboardMarketingSection campaigns={adCampaigns} />
+          <MarketingTrustSections campaigns={adCampaigns} />
         </AnimatedHeaderScrollView>
       </View>
 
@@ -1271,6 +1312,27 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   miniStatCard: { flex: 1, borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.divider },
   miniStatValue: { fontSize: 18, fontWeight: '700', color: theme.colors.primary },
   miniStatLabel: { fontSize: 10, color: theme.colors.textMuted, marginTop: 2, textTransform: 'uppercase' },
+  firstActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: theme.colors.navGlass,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.sm,
+  },
+  firstActionIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.primaryLight,
+  },
+  firstActionTitle: { fontSize: 15, fontWeight: '800', color: theme.colors.textPrimary },
+  firstActionText: { marginTop: 3, fontSize: 12, lineHeight: 17, color: theme.colors.textSecondary },
 
   // Landlord finansal kart
   financialCard: { backgroundColor: theme.colors.dark, borderRadius: 16, padding: 20 },

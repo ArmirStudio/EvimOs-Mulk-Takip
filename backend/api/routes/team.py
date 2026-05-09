@@ -1223,6 +1223,20 @@ def get_team_task(task_id: str, current_user: dict = Depends(get_current_user)):
     return _serialize_task(task, user_map, property_map)
 
 
+@router.delete("/tasks/{task_id}")
+def delete_team_task(task_id: str, current_user: dict = Depends(get_current_user)):
+    office_owner_id = _require_manager(current_user)
+    task = _get_team_task_or_404(task_id)
+
+    if task.get("office_owner_id") != office_owner_id:
+        raise HTTPException(status_code=404, detail="Gorev bulunamadi")
+    if task.get("status") == TASK_STATUS_COMPLETED:
+        raise HTTPException(status_code=400, detail="Tamamlanan gorevler gecmiste tutulur, silinemez")
+
+    supabase.table("team_tasks").delete().eq("id", task_id).execute()
+    return {"success": True}
+
+
 @router.patch("/tasks/{task_id}")
 def update_team_task(task_id: str, request: UpdateTeamTaskRequest, current_user: dict = Depends(get_current_user)):
     office_owner_id = _require_manager(current_user)

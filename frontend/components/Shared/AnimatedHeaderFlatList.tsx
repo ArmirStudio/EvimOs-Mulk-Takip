@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 const TIMING_HIDE = { duration: 280, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
 const TIMING_SHOW = { duration: 320, easing: Easing.bezier(0.0, 0.0, 0.2, 1) };
@@ -51,6 +52,7 @@ export default function AnimatedHeaderFlatList({
   const theme = useAppTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const bottomNavInset = useGlobalBottomNavInset();
   const lastScrollY = useSharedValue(0);
   const headerTranslateY = useSharedValue(0);
   const totalHeaderHeight = headerHeight + insets.top + (transparentHeader ? 0 : 12);
@@ -126,6 +128,7 @@ export default function AnimatedHeaderFlatList({
           styles.listContent,
           { paddingTop: transparentHeader ? 0 : totalHeaderHeight },
           contentContainerStyle,
+          { paddingBottom: bottomNavInset },
         ]}
         refreshControl={refreshControl}
         ListHeaderComponent={ListHeaderComponent}

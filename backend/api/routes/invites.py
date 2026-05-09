@@ -182,6 +182,7 @@ def _public_invite_payload(invite: dict) -> dict:
         "prefill_full_name": invite.get("prefill_full_name"),
         "prefill_phone": invite.get("prefill_phone"),
         "prefill_email": invite.get("prefill_email"),
+        "employee_access_level": invite.get("employee_access_level"),
     }
 
 
@@ -192,6 +193,9 @@ def _register_invite(invite: dict, request: RegisterInviteRequest) -> dict:
     email = request.email.strip().lower()
     password = request.password.strip()
     phone = _normalize_phone(request.phone)
+    employee_access_level = invite.get("employee_access_level") if invite.get("role") == "employee" else None
+    if invite.get("role") == "employee" and employee_access_level not in {"full", "limited"}:
+        employee_access_level = "limited"
     if not full_name or not email or not password:
         raise HTTPException(status_code=400, detail="Tum alanlar zorunludur")
     if len(password) < 8:
@@ -207,6 +211,7 @@ def _register_invite(invite: dict, request: RegisterInviteRequest) -> dict:
                 "status": "pending",
                 "full_name": full_name,
                 "phone": phone or "",
+                "employee_access_level": employee_access_level or "",
             },
         })
     except Exception as exc:
@@ -240,6 +245,7 @@ def _register_invite(invite: dict, request: RegisterInviteRequest) -> dict:
             "status": "pending",
             "created_by": invite["office_owner_id"],
             "invited_via_invite_id": invite["id"],
+            "employee_access_level": employee_access_level,
         }).execute()
         profile = inserted.data[0]
     else:
@@ -250,6 +256,7 @@ def _register_invite(invite: dict, request: RegisterInviteRequest) -> dict:
             "status": "pending",
             "created_by": invite["office_owner_id"],
             "invited_via_invite_id": invite["id"],
+            "employee_access_level": employee_access_level,
             "updated_at": _iso(_now()),
         }).eq("id", profile["id"]).execute().data[0]
 
@@ -265,10 +272,10 @@ def _register_invite(invite: dict, request: RegisterInviteRequest) -> dict:
 
 def _pending_select():
     return (
-        "id, email, full_name, phone, role, status, created_at, created_by, "
+        "id, email, full_name, phone, role, status, created_at, created_by, employee_access_level, "
         "invited_via_invite_id, invites:invited_via_invite_id("
         "id, contact_label, role, office_owner_id, prefill_full_name, prefill_phone, prefill_email, "
-        "last_reminded_at, reminder_count, created_at)"
+        "employee_access_level, last_reminded_at, reminder_count, created_at)"
     )
 
 
@@ -317,6 +324,12 @@ def create_invite(request: CreateInviteRequest, current_user: dict = Depends(get
     contact_label = request.contact_label.strip()
     if not contact_label:
         raise HTTPException(status_code=400, detail="Rehber adi zorunludur")
+    if (
+        request.role == "employee"
+        and request.employee_access_level == "full"
+        and current_user.get("role") not in {"admin", "agent"}
+    ):
+        raise HTTPException(status_code=403, detail="Tam yetkili calisan davetini yalnizca agent olusturabilir")
 
     token = secrets.token_urlsafe(32)
     code = _generate_unique_invite_code()
@@ -331,6 +344,7 @@ def create_invite(request: CreateInviteRequest, current_user: dict = Depends(get
         "prefill_full_name": request.prefill_full_name.strip() if request.prefill_full_name else None,
         "prefill_phone": _normalize_phone(request.prefill_phone),
         "prefill_email": request.prefill_email.strip().lower() if request.prefill_email else None,
+        "employee_access_level": request.employee_access_level if request.role == "employee" else None,
         "expires_at": _iso(expires_at),
     }).execute()
     invite = result.data[0]
@@ -381,7 +395,7 @@ def list_pending_invites(role: str | None = None, current_user: dict = Depends(g
     query = supabase.table("users").select(_pending_select()).eq("status", "pending")
     if not is_admin(current_user):
         query = query.eq("created_by", owner_id)
-    if role in {"tenant", "landlord"}:
+    if role in {"tenant", "landlord", "employee"}:
         query = query.eq("role", role)
     users = query.order("created_at", desc=True).execute().data or []
     return {"pending": _hide_contact_label_for_non_agent(users, current_user)}
@@ -400,10 +414,36 @@ def update_pending_invite(user_id: str, request: UpdatePendingInviteRequest, cur
     invite = invite[0] if isinstance(invite, list) and invite else invite
 
     if request.action == "approve":
-        updated = supabase.table("users").update({
+        employee_access_level = None
+        if user.get("role") == "employee":
+            employee_access_level = (
+                request.employee_access_level
+                or (invite or {}).get("employee_access_level")
+                or user.get("employee_access_level")
+                or "limited"
+            )
+        update_payload = {
             "status": "active",
             "updated_at": _iso(_now()),
-        }).eq("id", user_id).execute().data[0]
+        }
+        if employee_access_level:
+            update_payload["employee_access_level"] = employee_access_level
+
+        updated = supabase.table("users").update(update_payload).eq("id", user_id).execute().data[0]
+        if updated.get("auth_id"):
+            try:
+                supabase.auth.admin.update_user_by_id(
+                    updated["auth_id"],
+                    {
+                        "user_metadata": {
+                            "role": updated.get("role"),
+                            "status": "active",
+                            "employee_access_level": updated.get("employee_access_level") or "",
+                        }
+                    },
+                )
+            except Exception:
+                pass
         _event(invite.get("id") if invite else None, "approved", actor_id=current_user.get("id"), target_user_id=user_id)
         return {"success": True, "user": updated}
 

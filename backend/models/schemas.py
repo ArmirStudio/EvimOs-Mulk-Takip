@@ -35,6 +35,7 @@ class CreateInviteRequest(BaseModel):
     prefill_full_name: Optional[str] = None
     prefill_phone: Optional[str] = None
     prefill_email: Optional[str] = None
+    employee_access_level: Optional[Literal["full", "limited"]] = None
 
 class LookupInviteCodeRequest(BaseModel):
     code: str
@@ -149,6 +150,24 @@ class MaintenanceLogRequest(BaseModel):
 
 class LandlordMaintenanceNoteRequest(BaseModel):
     note: str
+
+
+class AssignTechnicianRequest(BaseModel):
+    technician_id: str
+
+
+class CreateOfficeContactRequest(BaseModel):
+    full_name: str
+    phone: str
+    profession: str
+    email: Optional[str] = None
+
+
+class UpdateOfficeContactRequest(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    profession: Optional[str] = None
+    email: Optional[str] = None
 
 
 class CreateTeamTaskRequest(BaseModel):

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Linking,
@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Contacts from 'expo-contacts';
 
@@ -22,22 +22,37 @@ import { createInvite, type InviteRole } from '../../services/appApi';
 import { normalizeTurkishPhone } from '../../utils/phone';
 
 type EntryMethod = 'contacts' | 'manual';
+type EmployeeAccessLevel = 'full' | 'limited';
+
+const ROLE_OPTIONS: { value: InviteRole; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
+  { value: 'tenant', label: 'Kiracı', icon: 'person' },
+  { value: 'landlord', label: 'Ev Sahibi', icon: 'home' },
+  { value: 'employee', label: 'Çalışan', icon: 'badge' },
+];
 
 export default function InviteCreateScreen() {
   const theme = useAppTheme();
   const styles = useStyles();
-  const [role, setRole] = useState<InviteRole | null>(null);
+  const params = useLocalSearchParams<{ role?: string; name?: string; phone?: string; email?: string; access?: string }>();
+  const initialRole = useMemo<InviteRole | null>(() => {
+    return params.role === 'tenant' || params.role === 'landlord' || params.role === 'employee'
+      ? params.role
+      : null;
+  }, [params.role]);
+
+  const [role, setRole] = useState<InviteRole | null>(initialRole);
+  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<EmployeeAccessLevel>(params.access === 'full' ? 'full' : 'limited');
   const [entryMethod, setEntryMethod] = useState<EntryMethod>('manual');
-  const [contactLabel, setContactLabel] = useState('');
-  const [prefillName, setPrefillName] = useState('');
-  const [prefillPhone, setPrefillPhone] = useState('');
-  const [prefillEmail, setPrefillEmail] = useState('');
+  const [contactLabel, setContactLabel] = useState(typeof params.name === 'string' ? params.name : '');
+  const [prefillName, setPrefillName] = useState(typeof params.name === 'string' ? params.name : '');
+  const [prefillPhone, setPrefillPhone] = useState(typeof params.phone === 'string' ? params.phone : '');
+  const [prefillEmail, setPrefillEmail] = useState(typeof params.email === 'string' ? params.email : '');
   const [creating, setCreating] = useState(false);
   const [link, setLink] = useState('');
   const [code, setCode] = useState('');
 
   const canCreate = !!role && !!contactLabel.trim() && !creating;
-  const shareText = `Evimos davetiniz:\nLink: ${link}\nKod: ${code}\nKod ve link 24 saat gecerlidir.`;
+  const shareText = `Evimos davetiniz:\nLink: ${link}\nKod: ${code}\nKod ve link 24 saat geçerlidir.`;
 
   const handleCreate = async () => {
     if (!role || !canCreate) return;
@@ -49,11 +64,12 @@ export default function InviteCreateScreen() {
         prefill_full_name: prefillName.trim() || null,
         prefill_phone: normalizeTurkishPhone(prefillPhone) || null,
         prefill_email: prefillEmail.trim().toLowerCase() || null,
+        employee_access_level: role === 'employee' ? employeeAccessLevel : null,
       });
       setLink(response.link);
       setCode(response.code);
     } catch (error: any) {
-      Alert.alert('Davet olusturulamadi', error?.detail || error?.message || 'Lutfen tekrar deneyin.');
+      Alert.alert('Davet oluşturulamadı', error?.detail || error?.message || 'Lütfen tekrar deneyin.');
     } finally {
       setCreating(false);
     }
@@ -63,7 +79,7 @@ export default function InviteCreateScreen() {
     if (!link) return;
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(shareText);
-      Alert.alert('Kopyalandi', 'Davet linki ve kodu panoya kopyalandi.');
+      Alert.alert('Kopyalandı', 'Davet linki ve kodu panoya kopyalandı.');
       return;
     }
     await Share.share({ message: shareText });
@@ -97,7 +113,7 @@ export default function InviteCreateScreen() {
       if (Platform.OS === 'android') {
         const permission = await Contacts.requestPermissionsAsync();
         if (permission.status !== 'granted') {
-          Alert.alert('Izin gerekli', 'Rehber izni verilmedi. Manuel bilgi girisini kullanabilirsiniz.');
+          Alert.alert('İzin gerekli', 'Rehber izni verilmedi. Manuel bilgi girişini kullanabilirsiniz.');
           setEntryMethod('manual');
           return;
         }
@@ -118,7 +134,7 @@ export default function InviteCreateScreen() {
         setContactLabel(fullName);
       }
     } catch {
-      Alert.alert('Rehber acilamadi', 'Kisi secilemedi. Manuel bilgi girisini kullanabilirsiniz.');
+      Alert.alert('Rehber açılamadı', 'Kişi seçilemedi. Manuel bilgi girişini kullanabilirsiniz.');
       setEntryMethod('manual');
     }
   };
@@ -137,48 +153,76 @@ export default function InviteCreateScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.segment}>
-          {([
-            ['tenant', 'Kiracı', 'person'] as const,
-            ['landlord', 'Ev Sahibi', 'home'] as const,
-          ]).map(([value, label, icon]) => (
-            <TouchableOpacity
-              key={value}
-              style={[styles.segmentButton, role === value && styles.segmentButtonActive]}
-              onPress={() => setRole(value)}
-              activeOpacity={0.85}
-            >
-              <MaterialIcons name={icon} size={20} color={role === value ? theme.colors.textInverse : theme.colors.primary} />
-              <Text style={[styles.segmentText, role === value && styles.segmentTextActive]}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Kisi ekleme yontemi</Text>
-          <View style={styles.segment}>
-            {([
-              ['contacts', 'Rehberden Sec', 'contacts'] as const,
-              ['manual', 'Manuel Gir', 'edit'] as const,
-            ]).map(([value, label, icon]) => (
-              <TouchableOpacity
-                key={value}
-                style={[styles.segmentButton, entryMethod === value && styles.segmentButtonActive]}
-                onPress={() => {
-                  setEntryMethod(value);
-                  if (value === 'contacts') void handlePickContact();
-                }}
-                activeOpacity={0.85}
-              >
-                <MaterialIcons name={icon} size={20} color={entryMethod === value ? theme.colors.textInverse : theme.colors.primary} />
-                <Text style={[styles.segmentText, entryMethod === value && styles.segmentTextActive]}>{label}</Text>
-              </TouchableOpacity>
-            ))}
+        <View style={styles.glassCard}>
+          <Text style={styles.cardTitle}>Kimi davet ediyorsunuz?</Text>
+          <View style={styles.roleGrid}>
+            {ROLE_OPTIONS.map((item) => {
+              const active = role === item.value;
+              return (
+                <TouchableOpacity
+                  key={item.value}
+                  style={[styles.roleButton, active && styles.roleButtonActive]}
+                  onPress={() => setRole(item.value)}
+                  activeOpacity={0.85}
+                >
+                  <MaterialIcons name={item.icon} size={20} color={active ? theme.colors.textInverse : theme.colors.primary} />
+                  <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{item.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Secilen / davet edilecek kisi bilgisi</Text>
+        {role === 'employee' && (
+          <View style={styles.glassCard}>
+            <Text style={styles.cardTitle}>Çalışan yetkisi</Text>
+            <View style={styles.segment}>
+              {([
+                ['limited', 'Sınırlı'] as const,
+                ['full', 'Tam yetki'] as const,
+              ]).map(([value, label]) => {
+                const active = employeeAccessLevel === value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    style={[styles.segmentButton, active && styles.segmentButtonActive]}
+                    onPress={() => setEmployeeAccessLevel(value)}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            <Text style={styles.helpText}>Tam yetkili çalışan ofis kayıtlarını yönetebilir; sınırlı çalışan sadece atanan işlere odaklanır.</Text>
+          </View>
+        )}
+
+        <View style={styles.glassCard}>
+          <Text style={styles.cardTitle}>Kişi bilgisi</Text>
+          <View style={styles.segment}>
+            {([
+              ['contacts', 'Rehberden Seç', 'contacts'] as const,
+              ['manual', 'Manuel Gir', 'edit'] as const,
+            ]).map(([value, label, icon]) => {
+              const active = entryMethod === value;
+              return (
+                <TouchableOpacity
+                  key={value}
+                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
+                  onPress={() => {
+                    setEntryMethod(value);
+                    if (value === 'contacts') void handlePickContact();
+                  }}
+                  activeOpacity={0.85}
+                >
+                  <MaterialIcons name={icon} size={20} color={active ? theme.colors.textInverse : theme.colors.primary} />
+                  <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
           <TextInput
             style={styles.input}
             value={prefillName}
@@ -204,11 +248,11 @@ export default function InviteCreateScreen() {
             placeholder="E-posta (opsiyonel)"
             placeholderTextColor={theme.colors.textMuted}
           />
-          <Text style={styles.helpText}>Rehberden sadece sectiginiz kisinin bilgileri bu forma alinir; tum rehber aktarilmaz.</Text>
+          <Text style={styles.helpText}>Rehberden sadece seçtiğiniz kişinin bilgileri bu forma alınır; tüm rehber aktarılmaz.</Text>
         </View>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Bu kisi sizin rehberinizde nasil gorunsun?</Text>
+        <View style={styles.glassCard}>
+          <Text style={styles.cardTitle}>Rehber etiketi</Text>
           <TextInput
             style={styles.input}
             value={contactLabel}
@@ -216,7 +260,7 @@ export default function InviteCreateScreen() {
             placeholder="Örn: Ahmet Daire 5, Beşevler Kiracı"
             placeholderTextColor={theme.colors.textMuted}
           />
-          <Text style={styles.helpText}>Bu takma ad profil adi degildir; yalniz agent kontrol alaninda kullanilir.</Text>
+          <Text style={styles.helpText}>Bu takma ad profil adı değildir; yalnızca ofis kontrol alanında kullanılır.</Text>
         </View>
 
         <TouchableOpacity
@@ -230,10 +274,10 @@ export default function InviteCreateScreen() {
 
         {link ? (
           <View style={styles.resultBox}>
-            <Text style={styles.resultLabel}>24 saat gecerli tek kullanimlik link ve kod</Text>
+            <Text style={styles.resultLabel}>24 saat geçerli tek kullanımlık link ve kod</Text>
             <Text style={styles.linkText} numberOfLines={3}>{link}</Text>
             <Text style={styles.codeText}>Kod: {code}</Text>
-            <Text style={styles.helpText}>Kod sadece bu ekranda gosterilir. Kaybolursa yeni davet olusturun.</Text>
+            <Text style={styles.helpText}>Kod sadece bu ekranda gösterilir. Kaybolursa yeni davet oluşturun.</Text>
             <View style={styles.shareRow}>
               <TouchableOpacity style={styles.shareButton} onPress={handleWhatsapp}>
                 <MaterialIcons name="chat" size={18} color={theme.colors.primary} />
@@ -271,14 +315,40 @@ const useStyles = createThemedStyles((theme) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: theme.borderRadius.round,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.navGlass,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
     },
     headerTitle: { fontSize: theme.fontSize.xl, color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold },
     content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxxl, gap: theme.spacing.lg },
+    glassCard: {
+      borderRadius: theme.borderRadius.xl,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.navGlass,
+      padding: theme.spacing.lg,
+      gap: theme.spacing.md,
+      ...theme.shadows.sm,
+    },
+    cardTitle: { fontSize: theme.fontSize.base, color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold },
+    roleGrid: { flexDirection: 'row', gap: theme.spacing.sm },
+    roleButton: {
+      flex: 1,
+      minHeight: 70,
+      borderRadius: theme.borderRadius.lg,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: theme.spacing.xs,
+      paddingHorizontal: theme.spacing.sm,
+    },
+    roleButtonActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
     segment: { flexDirection: 'row', gap: theme.spacing.sm },
     segmentButton: {
       flex: 1,
-      minHeight: 52,
+      minHeight: 48,
       borderRadius: theme.borderRadius.lg,
       borderWidth: 1,
       borderColor: theme.colors.border,
@@ -290,10 +360,8 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.sm,
     },
     segmentButtonActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-    segmentText: { color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm },
+    segmentText: { color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm, textAlign: 'center' },
     segmentTextActive: { color: theme.colors.textInverse },
-    fieldGroup: { gap: theme.spacing.sm },
-    label: { fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, fontWeight: theme.fontWeight.semibold },
     helpText: { fontSize: theme.fontSize.xs, lineHeight: 17, color: theme.colors.textMuted },
     input: {
       minHeight: 56,
@@ -306,7 +374,7 @@ const useStyles = createThemedStyles((theme) =>
       fontSize: theme.fontSize.base,
     },
     primaryButton: {
-      minHeight: 54,
+      minHeight: 56,
       borderRadius: theme.borderRadius.lg,
       backgroundColor: theme.colors.primary,
       alignItems: 'center',
@@ -314,6 +382,7 @@ const useStyles = createThemedStyles((theme) =>
       flexDirection: 'row',
       gap: theme.spacing.sm,
       paddingHorizontal: theme.spacing.lg,
+      ...theme.shadows.md,
     },
     primaryButtonDisabled: { opacity: 0.55 },
     primaryButtonText: { color: theme.colors.textInverse, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.base },
@@ -321,9 +390,10 @@ const useStyles = createThemedStyles((theme) =>
       borderRadius: theme.borderRadius.xl,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.navGlass,
       padding: theme.spacing.lg,
       gap: theme.spacing.md,
+      ...theme.shadows.sm,
     },
     resultLabel: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, fontWeight: theme.fontWeight.semibold },
     linkText: { color: theme.colors.textPrimary, fontSize: theme.fontSize.sm, lineHeight: 20 },

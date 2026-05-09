@@ -1,7 +1,13 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  ImageBackground, Image, Linking,
+  Image,
+  ImageBackground,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import type { AdCampaign } from '@shared/campaign';
@@ -22,164 +28,156 @@ const shadow = (color = '#000', opacity = 0.05, radius = 4, elevation = 2) => ({
   elevation,
 });
 
-export default function DashboardMarketingSection({ campaigns }: Props) {
+function openCampaignLink(url?: string | null) {
+  if (!url) return;
+  Linking.canOpenURL(url)
+    .then((supported) => {
+      if (supported) return Linking.openURL(url);
+      console.warn('Cannot open URL:', url);
+      return undefined;
+    })
+    .catch((error) => console.error('Error opening URL:', error));
+}
+
+export function SponsoredProjectsStrip({ campaigns }: Props) {
   const theme = useAppTheme();
   const s = useStyles();
   const c = theme.colors.stitch;
+  const inlineAds = campaigns.filter((item) => item.type === 'inline_ad');
 
-  const inlineAds = campaigns.filter(a => a.type === 'inline_ad');
-  const news = campaigns.filter(a => a.type === 'news');
-  const testimonials = campaigns.filter(a => a.type === 'testimonial');
-  const services = campaigns.filter(a => a.type === 'service');
+  if (inlineAds.length === 0) return null;
 
-  const openLink = async (url?: string | null) => {
-    if (!url) return;
-    try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        console.warn('Cannot open URL:', url);
-      }
-    } catch (error) {
-      console.error('Error opening URL:', error);
-    }
-  };
+  return (
+    <View style={s.compactSection}>
+      <View style={s.sectionHeader}>
+        <Text style={s.sectionTitle}>{tr.agent.sponsoredProjects}</Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScrollCompact}>
+        {inlineAds.map((ad) => (
+          <TouchableOpacity
+            key={ad.id}
+            style={s.compactProjectCard}
+            onPress={() => openCampaignLink(ad.link_url)}
+            activeOpacity={ad.link_url ? 0.75 : 1}
+          >
+            {ad.image_url ? (
+              <ImageBackground source={{ uri: ad.image_url }} style={s.compactProjectImg} />
+            ) : (
+              <View style={[s.compactProjectImg, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="image-outline" size={24} color={c.textMuted} />
+              </View>
+            )}
+            <View style={s.compactProjectInfo}>
+              <Text style={s.compactProjectTitle} numberOfLines={1}>{ad.title}</Text>
+              {ad.body ? <Text style={s.compactProjectSub} numberOfLines={2}>{ad.body}</Text> : null}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
 
-  if (inlineAds.length === 0 && news.length === 0 && testimonials.length === 0 && services.length === 0) {
-    return null;
-  }
+export function RealEstateNewsRail({ campaigns }: Props) {
+  const theme = useAppTheme();
+  const s = useStyles();
+  const c = theme.colors.stitch;
+  const news = campaigns.filter((item) => item.type === 'news');
+
+  if (news.length === 0) return null;
+
+  return (
+    <View style={s.newsRailSection}>
+      <Text style={[s.sectionTitle, { paddingHorizontal: 16, marginBottom: 12 }]}>{tr.agent.news}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
+        {news.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={s.newsRailCard}
+            onPress={() => openCampaignLink(item.link_url)}
+            activeOpacity={item.link_url ? 0.75 : 1}
+          >
+            {item.image_url ? (
+              <Image source={{ uri: item.image_url }} style={s.newsRailImg} />
+            ) : (
+              <View style={[s.newsRailImg, { justifyContent: 'center', alignItems: 'center' }]}>
+                <Ionicons name="newspaper-outline" size={22} color={c.textMuted} />
+              </View>
+            )}
+            <View style={s.newsRailContent}>
+              <Text style={s.newsTitle} numberOfLines={1}>{item.title}</Text>
+              {item.body ? <Text style={s.newsSub} numberOfLines={2}>{item.body}</Text> : null}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+export function MarketingTrustSections({ campaigns }: Props) {
+  const theme = useAppTheme();
+  const s = useStyles();
+  const c = theme.colors.stitch;
+  const testimonials = campaigns.filter((item) => item.type === 'testimonial');
+  const services = campaigns.filter((item) => item.type === 'service');
 
   return (
     <>
-      {/* Inline Ads — Horizontal project cards */}
-      {inlineAds.length > 0 && (
-        <View style={s.section}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>{tr.agent.sponsoredProjects}</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
-            {inlineAds.map(ad => (
-              <TouchableOpacity
-                key={ad.id}
-                style={s.projectCard}
-                onPress={() => openLink(ad.link_url)}
-                activeOpacity={ad.link_url ? 0.7 : 1}
-              >
-                {ad.image_url ? (
-                  <ImageBackground source={{ uri: ad.image_url }} style={s.projectImg} />
-                ) : (
-                  <View style={[s.projectImg, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="image-outline" size={40} color={c.textMuted} />
-                  </View>
-                )}
-                <View style={s.projectInfo}>
-                  <Text style={s.projectTitle} numberOfLines={2}>{ad.title}</Text>
-                  {ad.body ? <Text style={s.projectSub} numberOfLines={2}>{ad.body}</Text> : null}
-                  {ad.link_url && (
-                    <TouchableOpacity style={s.projectBtn} onPress={() => openLink(ad.link_url)}>
-                      <Text style={s.projectBtnText}>{tr.agent.seeAll}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* News — Vertical stacked cards */}
-      {news.length > 0 && (
-        <View style={s.sectionPx}>
-          <Text style={[s.sectionTitle, { marginBottom: 12 }]}>{tr.agent.news}</Text>
-          <View style={s.newsStack}>
-            {news.map(item => (
-              <TouchableOpacity
-                key={item.id}
-                style={s.newsCard}
-                onPress={() => openLink(item.link_url)}
-                activeOpacity={item.link_url ? 0.7 : 1}
-              >
-                {item.image_url ? (
-                  <Image source={{ uri: item.image_url }} style={s.newsImg} />
-                ) : (
-                  <View style={[s.newsImg, { justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="newspaper-outline" size={28} color={c.textMuted} />
-                  </View>
-                )}
-                <View style={s.newsContent}>
-                  <View>
-                    <Text style={s.newsTitle} numberOfLines={1}>{item.title}</Text>
-                    {item.body ? <Text style={s.newsSub} numberOfLines={2}>{item.body}</Text> : null}
-                  </View>
-                  {item.link_url && (
-                    <TouchableOpacity onPress={() => openLink(item.link_url)}>
-                      <Text style={s.newsLink}>{tr.agent.readMore}</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {/* Testimonials — Horizontal scroll */}
       {testimonials.length > 0 && (
         <View style={s.section}>
           <Text style={[s.sectionTitle, { paddingHorizontal: 16, marginBottom: 12 }]}>
             {tr.content.happyClients}
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.hScroll}>
-            {testimonials.map(t => (
-              <View key={t.id} style={s.clientCard}>
+            {testimonials.map((item) => (
+              <View key={item.id} style={s.clientCard}>
                 <View style={s.clientHeader}>
-                  {t.client_avatar ? (
-                    <Image source={{ uri: t.client_avatar }} style={s.clientAvatar} />
+                  {item.client_avatar ? (
+                    <Image source={{ uri: item.client_avatar }} style={s.clientAvatar} />
                   ) : (
                     <View style={[s.clientAvatar, { backgroundColor: c.orange50, justifyContent: 'center', alignItems: 'center' }]}>
                       <Text style={{ fontWeight: '700', color: c.primary }}>
-                        {(t.client_name || t.title || '?').charAt(0).toUpperCase()}
+                        {(item.client_name || item.title || '?').charAt(0).toUpperCase()}
                       </Text>
                     </View>
                   )}
                   <View>
-                    <Text style={s.clientName}>{t.client_name || t.title}</Text>
+                    <Text style={s.clientName}>{item.client_name || item.title}</Text>
                     <View style={s.starsRow}>
-                      {Array.from({ length: Math.floor(t.client_rating || 5) }).map((_, i) => (
-                        <MaterialIcons key={i} name="star" size={12} color={c.orange400} />
+                      {Array.from({ length: Math.floor(item.client_rating || 5) }).map((_, index) => (
+                        <MaterialIcons key={index} name="star" size={12} color={c.orange400} />
                       ))}
-                      {(t.client_rating || 5) % 1 >= 0.5 && (
+                      {(item.client_rating || 5) % 1 >= 0.5 && (
                         <MaterialIcons name="star-half" size={12} color={c.orange400} />
                       )}
                     </View>
                   </View>
                 </View>
-                {t.body && <Text style={s.clientQuote}>&quot;{t.body}&quot;</Text>}
+                {item.body && <Text style={s.clientQuote}>&quot;{item.body}&quot;</Text>}
               </View>
             ))}
           </ScrollView>
         </View>
       )}
 
-      {/* Services — Horizontal partner logos */}
       {services.length > 0 && (
         <View style={{ paddingBottom: 32 }}>
           <Text style={s.partnersTitle}>{tr.agent.partners}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.partnersScroll}>
-            {services.map(svc => (
+            {services.map((service) => (
               <TouchableOpacity
-                key={svc.id}
+                key={service.id}
                 style={s.partnerItem}
-                onPress={() => openLink(svc.link_url)}
-                activeOpacity={svc.link_url ? 0.7 : 1}
+                onPress={() => openCampaignLink(service.link_url)}
+                activeOpacity={service.link_url ? 0.75 : 1}
               >
-                {svc.service_icon ? (
-                  <MaterialIcons name={svc.service_icon as any} size={24} color={c.textMuted} />
+                {service.service_icon ? (
+                  <MaterialIcons name={service.service_icon as any} size={24} color={c.textMuted} />
                 ) : (
                   <Ionicons name="business-outline" size={24} color={c.textMuted} />
                 )}
-                <Text style={s.partnerText}>{svc.title}</Text>
+                <Text style={s.partnerText}>{service.title}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -189,28 +187,40 @@ export default function DashboardMarketingSection({ campaigns }: Props) {
   );
 }
 
+export default function DashboardMarketingSection({ campaigns }: Props) {
+  const hasCampaigns = campaigns.some((item) =>
+    item.type === 'inline_ad' || item.type === 'news' || item.type === 'testimonial' || item.type === 'service'
+  );
+  if (!hasCampaigns) return null;
+  return (
+    <>
+      <SponsoredProjectsStrip campaigns={campaigns} />
+      <RealEstateNewsRail campaigns={campaigns} />
+      <MarketingTrustSections campaigns={campaigns} />
+    </>
+  );
+}
+
 const useStyles = createThemedStyles((theme) => {
   const c = theme.colors.stitch;
   return StyleSheet.create({
     section: { marginBottom: 24 },
-    sectionPx: { paddingHorizontal: 16, marginBottom: 24 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 16, marginBottom: 12 },
+    compactSection: { marginBottom: 18 },
+    newsRailSection: { marginTop: 4, marginBottom: 18 },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 16, marginBottom: 10 },
     sectionTitle: { fontSize: 18, fontWeight: '700', color: c.textBrown },
-    hScroll: { paddingHorizontal: 16, gap: 16 },
-    projectCard: { width: 280, backgroundColor: c.cardBg, borderRadius: 16, overflow: 'hidden', borderWidth: 1, borderColor: c.orange50, ...shadow() },
-    projectImg: { height: 160, width: '100%', backgroundColor: theme.colors.surface2 },
-    projectInfo: { padding: 16 },
-    projectTitle: { fontSize: 16, fontWeight: '700', color: c.textBrown, marginBottom: 4 },
-    projectSub: { fontSize: 12, color: c.textMuted, marginBottom: 16 },
-    projectBtn: { backgroundColor: c.primary, paddingVertical: 8, borderRadius: 8, alignItems: 'center', ...shadow(c.orange200, 0.4, 4, 3) },
-    projectBtnText: { color: c.cardBg, fontSize: 14, fontWeight: '700' },
-    newsStack: { gap: 12 },
-    newsCard: { flexDirection: 'row', backgroundColor: c.cardBg, padding: 12, borderRadius: 16, borderWidth: 1, borderColor: c.orange50, gap: 12, ...shadow() },
-    newsImg: { width: 96, height: 96, borderRadius: 8, backgroundColor: theme.colors.surface2 },
-    newsContent: { flex: 1, justifyContent: 'space-between', paddingVertical: 4 },
+    hScroll: { paddingHorizontal: 16, gap: 12 },
+    hScrollCompact: { paddingHorizontal: 16, gap: 10 },
+    compactProjectCard: { width: 236, minHeight: 108, flexDirection: 'row', backgroundColor: c.cardBg, borderRadius: 14, overflow: 'hidden', borderWidth: 1, borderColor: c.orange50, ...shadow() },
+    compactProjectImg: { width: 92, height: '100%', minHeight: 108, backgroundColor: theme.colors.surface2 },
+    compactProjectInfo: { flex: 1, minWidth: 0, padding: 12, justifyContent: 'center' },
+    compactProjectTitle: { fontSize: 14, fontWeight: '800', color: c.textBrown, marginBottom: 4 },
+    compactProjectSub: { fontSize: 12, lineHeight: 16, color: c.textMuted },
+    newsRailCard: { width: 268, minHeight: 92, flexDirection: 'row', backgroundColor: c.cardBg, padding: 10, borderRadius: 14, borderWidth: 1, borderColor: c.orange50, gap: 10, ...shadow() },
+    newsRailImg: { width: 72, height: 72, borderRadius: 10, backgroundColor: theme.colors.surface2 },
+    newsRailContent: { flex: 1, minWidth: 0, justifyContent: 'center' },
     newsTitle: { fontSize: 14, fontWeight: '700', color: c.textBrown },
-    newsSub: { fontSize: 12, color: c.textMuted, marginTop: 4 },
-    newsLink: { fontSize: 12, fontWeight: '700', color: c.primary },
+    newsSub: { fontSize: 12, color: c.textMuted, marginTop: 4, lineHeight: 16 },
     clientCard: { width: 260, backgroundColor: c.cardBg, padding: 16, borderRadius: 16, borderWidth: 1, borderColor: c.orange50, ...shadow() },
     clientHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
     clientAvatar: { width: 40, height: 40, borderRadius: 20 },

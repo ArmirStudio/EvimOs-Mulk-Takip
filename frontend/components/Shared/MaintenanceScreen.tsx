@@ -38,6 +38,7 @@ import { MaintenanceDetailView } from './MaintenanceDetailView';
 import AnimatedScreen from './AnimatedScreen';
 import BottomSheetModal from './BottomSheetModal';
 import { ReceiptDetailView } from './ReceiptDetailView';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 type MaintenanceFilter = 'all' | 'pending' | 'in_progress' | 'awaiting_tenant' | 'completed' | 'rejected';
 type LandlordTab = 'maintenance' | 'receipts' | 'documents';
@@ -126,6 +127,7 @@ export default function MaintenanceScreen() {
   const insets = useSafeAreaInsets();
   const theme = useAppTheme();
   const s = useStyles();
+  const bottomNavInset = useGlobalBottomNavInset();
   const params = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
@@ -734,7 +736,7 @@ export default function MaintenanceScreen() {
                 : renderArchiveEmpty('Henüz dekont yok', 'Dekont arşivi bu sekmede listelenecek.', 'receipt-long')
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.primary} />}
-            contentContainerStyle={[s.listContent, !archiveLoading && filteredReceipts.length === 0 && { flexGrow: 1 }]}
+            contentContainerStyle={[s.listContent, !archiveLoading && filteredReceipts.length === 0 && { flexGrow: 1 }, { paddingBottom: bottomNavInset }]}
             showsVerticalScrollIndicator={false}
           />
           <BottomSheetModal
@@ -787,7 +789,7 @@ export default function MaintenanceScreen() {
                 : renderArchiveEmpty('Henüz belge yok', 'Mülklerinize ait belgeler burada görünecek.', 'description')
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.primary} />}
-            contentContainerStyle={[s.listContent, !archiveLoading && filteredDocuments.length === 0 && { flexGrow: 1 }]}
+            contentContainerStyle={[s.listContent, !archiveLoading && filteredDocuments.length === 0 && { flexGrow: 1 }, { paddingBottom: bottomNavInset }]}
             showsVerticalScrollIndicator={false}
           />
         </View>
@@ -804,7 +806,7 @@ export default function MaintenanceScreen() {
         data={loading ? [] : filteredRequests}
         renderItem={renderRequest}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[s.listContent, !loading && filteredRequests.length === 0 && { flexGrow: 1 }]}
+        contentContainerStyle={[s.listContent, !loading && filteredRequests.length === 0 && { flexGrow: 1 }, { paddingBottom: bottomNavInset }]}
         ListHeaderComponent={
           <>
             <View style={s.header}>

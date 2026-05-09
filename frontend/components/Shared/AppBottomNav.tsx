@@ -73,11 +73,9 @@ const HIDDEN_FOR_LOCAL_NAV: Record<string, true> = {
   '/agent/edit-property': true,
   '/agent/create-maintenance': true,
   '/agent/property-detail': true,
-  '/agent/add-tenant': true,
   '/agent/contact-detail': true,
   '/agent/create-contact': true,
   '/agent/edit-contact': true,
-  '/agent/create-user': true,
   '/agent/invite': true,
   '/agent/pending-invite-detail': true,
   '/agent/team-member': true,
@@ -234,7 +232,7 @@ export default function AppBottomNav() {
       <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 16) }]}>
         <BlurView
           intensity={80}
-          tint={theme.resolvedTheme === 'dark' ? 'dark' : 'light'}
+          tint={theme.colors.background === theme.colors.dark ? 'dark' : 'light'}
           style={styles.blurContainer}
         >
           <View style={styles.navContainer}>
@@ -334,7 +332,17 @@ export default function AppBottomNav() {
   );
 }
 
-export const GLOBAL_NAV_BASE_HEIGHT = 80;
+export const GLOBAL_NAV_BASE_HEIGHT = 82;
+export const GLOBAL_NAV_EXTRA_GAP = 24;
+
+export function getGlobalBottomNavInset(bottomSafeArea = 0): number {
+  return GLOBAL_NAV_BASE_HEIGHT + Math.max(bottomSafeArea, 16) + GLOBAL_NAV_EXTRA_GAP;
+}
+
+export function useGlobalBottomNavInset(): number {
+  const insets = useSafeAreaInsets();
+  return getGlobalBottomNavInset(insets.bottom);
+}
 
 const useStyles = createThemedStyles((theme) =>
   StyleSheet.create({

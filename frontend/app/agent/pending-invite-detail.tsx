@@ -19,9 +19,18 @@ import {
   getPendingInviteDetail,
   rejectPendingInvite,
   updatePendingInviteLabel,
+  type InviteRole,
   type PendingInviteUser,
 } from '../../services/appApi';
 import { getUserData, type UserData } from '../../hooks/useUserData';
+
+type EmployeeAccessLevel = 'full' | 'limited';
+
+function getRoleLabel(role: InviteRole) {
+  if (role === 'landlord') return 'Ev Sahibi';
+  if (role === 'employee') return 'Çalışan';
+  return 'Kiracı';
+}
 
 export default function PendingInviteDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,6 +41,7 @@ export default function PendingInviteDetailScreen() {
   const [item, setItem] = useState<PendingInviteUser | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
   const [label, setLabel] = useState('');
+  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<EmployeeAccessLevel>('limited');
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -42,6 +52,7 @@ export default function PendingInviteDetailScreen() {
       const response = await getPendingInviteDetail(id);
       setItem(response.pending);
       setLabel(response.pending.invites?.contact_label || '');
+      setEmployeeAccessLevel(response.pending.invites?.employee_access_level === 'full' ? 'full' : 'limited');
     } catch (error: any) {
       Alert.alert('Kayıt bulunamadı', error?.detail || error?.message || 'Onay bekleyen kişi bulunamadı.');
       router.back();
@@ -51,14 +62,14 @@ export default function PendingInviteDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const handleApprove = async () => {
     if (!id || saving) return;
     setSaving(true);
     try {
-      await approvePendingInvite(id);
+      await approvePendingInvite(id, item?.role === 'employee' ? employeeAccessLevel : undefined);
       Alert.alert('Onaylandı', 'Kullanıcı hesabı aktif edildi.');
       router.replace('/agent/pending-invites' as never);
     } catch (error: any) {
@@ -141,25 +152,49 @@ export default function PendingInviteDetailScreen() {
             {!!item.phone && <Text style={styles.meta}>{item.phone}</Text>}
           </View>
           <View style={styles.roleBadge}>
-            <Text style={styles.roleBadgeText}>{item.role === 'landlord' ? 'Ev Sahibi' : 'Kiracı'}</Text>
+            <Text style={styles.roleBadgeText}>{getRoleLabel(item.role)}</Text>
           </View>
         </View>
 
+        {item.role === 'employee' ? (
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Çalışan yetkisi</Text>
+            <View style={styles.segment}>
+              {([
+                ['limited', 'Sınırlı'] as const,
+                ['full', 'Tam yetki'] as const,
+              ]).map(([value, text]) => {
+                const active = employeeAccessLevel === value;
+                return (
+                  <TouchableOpacity
+                    key={value}
+                    style={[styles.permissionChip, active && styles.permissionChipActive]}
+                    onPress={() => setEmployeeAccessLevel(value)}
+                    disabled={saving}
+                  >
+                    <Text style={[styles.permissionChipText, active && styles.permissionChipTextActive]}>{text}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         {canEditContactLabel ? (
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Rehber adı</Text>
-          <TextInput
-            style={styles.input}
-            value={label}
-            onChangeText={setLabel}
-            placeholder="Rehber adı"
-            placeholderTextColor={theme.colors.textMuted}
-          />
-          <TouchableOpacity style={styles.secondaryButton} onPress={handleSaveLabel} disabled={saving}>
-            <MaterialIcons name="save" size={18} color={theme.colors.primary} />
-            <Text style={styles.secondaryButtonText}>Rehber adını kaydet</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Rehber adı</Text>
+            <TextInput
+              style={styles.input}
+              value={label}
+              onChangeText={setLabel}
+              placeholder="Rehber adı"
+              placeholderTextColor={theme.colors.textMuted}
+            />
+            <TouchableOpacity style={styles.secondaryButton} onPress={handleSaveLabel} disabled={saving}>
+              <MaterialIcons name="save" size={18} color={theme.colors.primary} />
+              <Text style={styles.secondaryButtonText}>Rehber adını kaydet</Text>
+            </TouchableOpacity>
+          </View>
         ) : null}
 
         <TouchableOpacity style={styles.approveButton} onPress={handleApprove} disabled={saving}>
@@ -181,19 +216,24 @@ const useStyles = createThemedStyles((theme) =>
     safeArea: { flex: 1, backgroundColor: theme.colors.background },
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
-    iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.surface },
+    iconButton: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.navGlass, borderWidth: 1, borderColor: theme.colors.border },
     headerTitle: { fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, color: theme.colors.textPrimary },
     content: { padding: theme.spacing.lg, gap: theme.spacing.lg },
-    profileCard: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, borderRadius: theme.borderRadius.xl, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.lg },
+    profileCard: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, borderRadius: theme.borderRadius.xl, backgroundColor: theme.colors.navGlass, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.lg, ...theme.shadows.sm },
     avatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.primaryLight },
     avatarText: { color: theme.colors.primary, fontWeight: theme.fontWeight.bold },
     name: { fontSize: theme.fontSize.lg, color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold },
     meta: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, marginTop: 2 },
     roleBadge: { borderRadius: 999, paddingHorizontal: theme.spacing.sm, paddingVertical: 5, backgroundColor: theme.colors.surface2 },
     roleBadgeText: { fontSize: theme.fontSize.xs, color: theme.colors.textSecondary, fontWeight: theme.fontWeight.bold },
-    fieldGroup: { gap: theme.spacing.sm },
+    fieldGroup: { gap: theme.spacing.sm, borderRadius: theme.borderRadius.xl, backgroundColor: theme.colors.navGlass, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.lg },
     label: { fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, fontWeight: theme.fontWeight.semibold },
     input: { minHeight: 54, borderRadius: theme.borderRadius.lg, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, color: theme.colors.textPrimary, paddingHorizontal: theme.spacing.lg, fontSize: theme.fontSize.base },
+    segment: { flexDirection: 'row', gap: theme.spacing.sm },
+    permissionChip: { flex: 1, minHeight: 46, borderRadius: theme.borderRadius.lg, borderWidth: 1, borderColor: theme.colors.border, backgroundColor: theme.colors.surface, alignItems: 'center', justifyContent: 'center' },
+    permissionChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+    permissionChipText: { color: theme.colors.textSecondary, fontWeight: theme.fontWeight.bold },
+    permissionChipTextActive: { color: theme.colors.textInverse },
     secondaryButton: { minHeight: 46, borderRadius: theme.borderRadius.lg, backgroundColor: theme.colors.primaryLight, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: theme.spacing.sm },
     secondaryButtonText: { color: theme.colors.primary, fontWeight: theme.fontWeight.bold },
     approveButton: { minHeight: 54, borderRadius: theme.borderRadius.lg, backgroundColor: theme.colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: theme.spacing.sm },

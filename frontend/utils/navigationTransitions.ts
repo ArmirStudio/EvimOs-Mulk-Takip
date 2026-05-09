@@ -28,10 +28,8 @@ const WIZARD_ROUTES = new Set([
   'edit-company',
   'edit-agent',
   'create-agent',
-  'create-user',
   'create-property',
   'create-maintenance',
-  'add-tenant',
   'edit-property',
   'maintenance-request',
   'upload-receipt',
@@ -63,7 +61,7 @@ export function getMainSurfaceScreenOptions(
 ): NativeStackNavigationOptions {
   return {
     ...getSoftStackBaseOptions(theme),
-    animation: 'fade',
+    animation: 'none',
   };
 }
 

@@ -28,10 +28,8 @@ export default function AgentLayout() {
       <Stack.Screen name="maintenance/[id]" options={getDetailScreenOptions(theme)} />
       <Stack.Screen name="receipts/[id]" options={getDetailScreenOptions(theme)} />
 
-      <Stack.Screen name="create-user" options={getWizardScreenOptions(theme)} />
       <Stack.Screen name="create-property" options={getWizardScreenOptions(theme)} />
       <Stack.Screen name="create-maintenance" options={getWizardScreenOptions(theme)} />
-      <Stack.Screen name="add-tenant" options={getWizardScreenOptions(theme)} />
       <Stack.Screen name="edit-property" options={getWizardScreenOptions(theme)} />
       <Stack.Screen name="task-form" options={getWizardScreenOptions(theme)} />
       <Stack.Screen name="invite" options={getWizardScreenOptions(theme)} />

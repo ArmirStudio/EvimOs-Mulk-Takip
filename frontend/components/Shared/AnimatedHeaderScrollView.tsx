@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 const TIMING_HIDE = { duration: 280, easing: Easing.bezier(0.25, 0.1, 0.25, 1) };
 const TIMING_SHOW = { duration: 320, easing: Easing.bezier(0.0, 0.0, 0.2, 1) };
@@ -43,6 +44,7 @@ export default function AnimatedHeaderScrollView({
   const theme = useAppTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const bottomNavInset = useGlobalBottomNavInset();
   const lastScrollY = useSharedValue(0);
   const headerTranslateY = useSharedValue(0);
   const [stickySubHeaderHeight, setStickySubHeaderHeight] = useState(0);
@@ -133,6 +135,7 @@ export default function AnimatedHeaderScrollView({
           styles.scrollContent,
           { paddingTop: transparentHeader ? 0 : totalHeaderHeight + stickySubHeaderHeight },
           scrollContentStyle,
+          { paddingBottom: bottomNavInset },
         ]}
         refreshControl={refreshControl}
       >
@@ -165,7 +168,7 @@ const useStyles = createThemedStyles((theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
-      paddingBottom: 100,
+      paddingBottom: 120,
     },
   }),
 );

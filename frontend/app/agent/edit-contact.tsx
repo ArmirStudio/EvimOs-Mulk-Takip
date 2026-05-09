@@ -47,8 +47,8 @@ export default function EditContactPage() {
   const loadContact = async () => {
     try {
       setLoading(true);
-      const response = await appApi.get(`/office-contacts/${id}`);
-      const c = response.data?.contact;
+      const response = await appApi.getOfficeContact(id);
+      const c = (response as { contact?: Contact }).contact;
       if (c) {
         setContact(c);
         setFullName(c.full_name);

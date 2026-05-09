@@ -8,16 +8,18 @@ Bu dosya canli backend yuzeyini ve aktif user settings kontratini ozetler.
 
 ## Aktif Router'lar
 - `auth`
+- `invites`
 - `users`
 - `properties`
 - `receipts`
 - `maintenance`
+- `office-contacts`
 - `dashboard`
 - `team`
 - `admin`
 
 ## Users Endpointleri
-- `POST /api/users/create`
+- `POST /api/users/create` admin/server operasyonlari icin kalir; mobil agent onboarding bu endpointi kullanmaz.
 - `GET /api/users/list`
 - `GET /api/users/{user_id}`
 - `PATCH /api/users/{user_id}`
@@ -47,9 +49,9 @@ Kurallar:
   - `first_login BOOLEAN DEFAULT TRUE`
 
 ## Schema Kaynaklari
-- Kanonik kurulum dosyasi: `supabase/00_MASTER_SCHEMA.sql`
-- Canli DB patch'i: `supabase/current_db_user_settings_patch.sql`
+- Kanonik fresh schema parcasi: `supabase/schema_parts/`
+- Canli DB patch/migration zinciri: `supabase/migrations/`
 
 ## Notlar
-- Silinmis `supabase/NN_*.sql` migration zinciri artik canli referans degildir.
+- Mobil agent tarafinda tenant, landlord ve employee onboarding tek `POST /api/invites` akisi ile baslar.
 - User preference sync yeni endpoint acmadan mevcut `PATCH /api/users/{id}` uzerinden cozulur.

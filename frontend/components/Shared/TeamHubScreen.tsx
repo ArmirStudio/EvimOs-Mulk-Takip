@@ -2,9 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
   Modal,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
   RefreshControl,
@@ -26,8 +26,8 @@ import { tr } from '../../app/translations';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { useUserData } from '../../hooks/useUserData';
 import {
-  createUser,
   createTeamAnnouncement,
+  deleteTeamTask,
   getTeamTask,
   listExpenses,
   listTeamAnnouncements,
@@ -63,6 +63,7 @@ import LocationPicker from './LocationPicker';
 import TaskComposerSheet from './TaskComposerSheet';
 import TeamExpensesPanel from './TeamExpensesPanel';
 import TeamMeetingsPanel from './TeamMeetingsPanel';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 type AnnouncementAttachmentDraft = {
   uri: string;
@@ -83,6 +84,7 @@ export default function TeamHubScreen() {
   const theme = useAppTheme();
   const styles = useStyles();
   const insets = useSafeAreaInsets();
+  const bottomNavInset = useGlobalBottomNavInset();
   const params = useLocalSearchParams<{
     tab?: string;
     openTaskId?: string;
@@ -117,15 +119,6 @@ export default function TeamHubScreen() {
   const [expensesError, setExpensesError] = useState<string | null>(null);
   const [taskFilter, setTaskFilter] = useState<TaskFilter>('all');
 
-  const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
-  const [employeeSubmitting, setEmployeeSubmitting] = useState(false);
-  const [employeeFullName, setEmployeeFullName] = useState('');
-  const [employeeIdentifier, setEmployeeIdentifier] = useState('');
-  const [employeePhone, setEmployeePhone] = useState('');
-  const [employeeCity, setEmployeeCity] = useState('');
-  const [employeeDistrict, setEmployeeDistrict] = useState('');
-  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<'full' | 'limited'>('limited');
-
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<TeamTask | null>(null);
   const [taskModalLoading, setTaskModalLoading] = useState(false);
@@ -135,6 +128,15 @@ export default function TeamHubScreen() {
   const [taskComposerVisible, setTaskComposerVisible] = useState(false);
   const [taskComposerTaskId, setTaskComposerTaskId] = useState<string | null>(null);
   const [taskComposerAssigneeId, setTaskComposerAssigneeId] = useState<string | null>(null);
+
+  const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
+  const [employeeSubmitting, setEmployeeSubmitting] = useState(false);
+  const [employeeFullName, setEmployeeFullName] = useState('');
+  const [employeeIdentifier, setEmployeeIdentifier] = useState('');
+  const [employeePhone, setEmployeePhone] = useState('');
+  const [employeeCity, setEmployeeCity] = useState('');
+  const [employeeDistrict, setEmployeeDistrict] = useState('');
+  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<'full' | 'limited'>('limited');
 
   const [announcementModalVisible, setAnnouncementModalVisible] = useState(false);
   const [announcementSubmitting, setAnnouncementSubmitting] = useState(false);
@@ -323,23 +325,6 @@ export default function TeamHubScreen() {
     void loadHubData().finally(() => setRefreshing(false));
   };
 
-  const resetEmployeeForm = () => {
-    setEmployeeFullName('');
-    setEmployeeIdentifier('');
-    setEmployeePhone('');
-    setEmployeeCity('');
-    setEmployeeDistrict('');
-    setEmployeeAccessLevel('limited');
-  };
-
-  const closeEmployeeModal = () => {
-    if (employeeSubmitting) {
-      return;
-    }
-    setEmployeeModalVisible(false);
-    resetEmployeeForm();
-  };
-
   const closeTaskModal = () => {
     setSelectedTaskId(null);
     setSelectedTask(null);
@@ -354,6 +339,21 @@ export default function TeamHubScreen() {
     setTaskComposerTaskId(options?.taskId || null);
     setTaskComposerAssigneeId(options?.assigneeId || null);
     setTaskComposerVisible(true);
+  };
+
+  const resetEmployeeForm = () => {
+    setEmployeeFullName('');
+    setEmployeeIdentifier('');
+    setEmployeePhone('');
+    setEmployeeCity('');
+    setEmployeeDistrict('');
+    setEmployeeAccessLevel('limited');
+  };
+
+  const closeEmployeeModal = () => {
+    if (employeeSubmitting) return;
+    setEmployeeModalVisible(false);
+    resetEmployeeForm();
   };
 
   const closeTaskComposer = () => {
@@ -391,23 +391,14 @@ export default function TeamHubScreen() {
         ? (employeePhone.trim() || null)
         : trimmedIdentifier;
 
-      await createUser({
-        email: resolvedEmail,
-        password: '1234',
-        role: 'employee',
-        full_name: employeeFullName.trim(),
-        phone: resolvedPhone,
-        city: employeeCity.trim(),
-        district: employeeDistrict.trim(),
-        employee_access_level: employeeAccessLevel,
-      });
+      await Promise.resolve();
+      router.push(`/agent/invite?role=employee&name=${encodeURIComponent(employeeFullName.trim())}&phone=${encodeURIComponent(resolvedPhone || '')}&email=${encodeURIComponent(resolvedEmail)}&access=${employeeAccessLevel}` as never);
 
       setEmployeeModalVisible(false);
       resetEmployeeForm();
-      await Promise.allSettled([loadMembers(), loadAnnouncements()]);
-      Alert.alert('Çalışan Oluşturuldu', `Giriş: ${trimmedIdentifier}\nŞifre: 1234`);
+      Alert.alert('Davet akışı açıldı', 'Çalışan artık tek Davet Et ekranından davet ediliyor.');
     } catch (error: any) {
-      Alert.alert('Hata', error.message || 'Çalışan oluşturulamadı.');
+      Alert.alert('Hata', error.message || 'Davet ekranı açılamadı.');
     } finally {
       setEmployeeSubmitting(false);
     }
@@ -576,6 +567,33 @@ export default function TeamHubScreen() {
     }
   };
 
+  const handleDeleteTask = () => {
+    if (!selectedTask || taskModalSubmitting) return;
+    Alert.alert(
+      'Görevi kalıcı sil',
+      'Yanlış eklenen tamamlanmamış görev kalıcı olarak silinecek. Bu işlem geri alınamaz.',
+      [
+        { text: 'Vazgeç', style: 'cancel' },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setTaskModalSubmitting(true);
+              await deleteTeamTask(selectedTask.id);
+              closeTaskModal();
+              await loadTasks();
+            } catch (error: any) {
+              Alert.alert('Görev silinemedi', error?.detail || error?.message || 'Lütfen tekrar deneyin.');
+            } finally {
+              setTaskModalSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const visibleTabs: TeamTab[] = ['tasks', 'announcements', 'meetings', 'expenses'];
 
   const renderSectionStateCard = ({
@@ -616,7 +634,7 @@ export default function TeamHubScreen() {
     <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: 16 + insets.top }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 16 + insets.top, paddingBottom: bottomNavInset }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.colors.primary} />}
       >
         {/* ── Header ── */}
@@ -1071,6 +1089,12 @@ export default function TeamHubScreen() {
                       <Text style={styles.cancelText}>Iptal Et</Text>
                     </TouchableOpacity>
                   )}
+                  {isManager && ['pending', 'in_progress', 'cancelled'].includes(selectedTask.status) && (
+                    <TouchableOpacity style={styles.deleteLarge} onPress={handleDeleteTask} disabled={taskModalSubmitting}>
+                      <MaterialIcons name="delete-forever" size={16} color={theme.colors.error} />
+                      <Text style={styles.deleteText}>Kalıcı Sil</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               </>
             )}
@@ -1270,6 +1294,8 @@ const useStyles = createThemedStyles((theme) =>
     successLarge: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.success },
     cancelLarge: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.errorLight, borderWidth: 1, borderColor: `${theme.colors.error}55` },
     cancelText: { fontSize: 13, fontWeight: '700', color: theme.colors.error },
+    deleteLarge: { minHeight: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.error },
+    deleteText: { fontSize: 13, fontWeight: '700', color: theme.colors.error },
     fieldInput: { borderRadius: 16, backgroundColor: theme.colors.surface2, borderWidth: 1, borderColor: theme.colors.border, paddingHorizontal: 14, paddingVertical: 14, color: theme.colors.textPrimary, fontSize: 14 },
     bodyInput: { minHeight: 110, textAlignVertical: 'top' },
     switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },

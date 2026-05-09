@@ -17,6 +17,7 @@ import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
 import { EvimosSVGLogo } from './EvimosSVGLogo';
 import { brand } from '../../constants/brand';
+import { canViewOfficeDirectory } from '../../utils/employeeAccess';
 
 const ROLE_LABELS: Record<string, string> = {
   agent:    'Emlakçı',
@@ -76,6 +77,7 @@ export default function SettingsScreen() {
   const s = useStyles();
   const role = userData?.role ?? 'tenant';
   const isAgent = role === 'agent';
+  const canUseDirectory = canViewOfficeDirectory(userData);
   const routeRole = role === 'employee' ? 'agent' : role;
   const roleColor = getRoleColor(theme, role);
   const isDarkMode = theme.colors.background === theme.colors.dark;
@@ -126,8 +128,8 @@ export default function SettingsScreen() {
   }, []);
 
   useEffect(() => {
-    if (isAgent && activeTab === 'directory') loadContacts();
-  }, [activeTab, isAgent, loadContacts]);
+    if (canUseDirectory && activeTab === 'directory') loadContacts();
+  }, [activeTab, canUseDirectory, loadContacts]);
 
   const displayContacts = useMemo(() => {
     let list = contactFilter === 'all'
@@ -555,8 +557,8 @@ export default function SettingsScreen() {
     <AnimatedScreen type="fade">
       <View style={s.container}>
         <AnimatedHeaderScrollView
-          headerHeight={isAgent ? 104 : 56}
-          stickySubHeader={isAgent && activeTab === 'directory' ? (
+          headerHeight={canUseDirectory ? 104 : 56}
+          stickySubHeader={canUseDirectory && activeTab === 'directory' ? (
             <View style={s.dirFilterRow}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.dirFilterScroll}>
                 {[
@@ -586,26 +588,26 @@ export default function SettingsScreen() {
             <View style={{ width: '100%' }}>
               {/* Header */}
               <View style={s.header}>
-                {isAgent && activeTab === 'directory' ? (
+                {canUseDirectory && activeTab === 'directory' ? (
                   <TouchableOpacity style={s.headerBackBtn} onPress={() => setActiveTab('profile')} activeOpacity={0.85}>
                     <MaterialIcons name="arrow-back" size={20} color={theme.colors.textPrimary} />
                   </TouchableOpacity>
                 ) : (
                   <View style={s.headerBackSpacer} />
                 )}
-                <Text style={s.headerTitle}>{isAgent && activeTab === 'directory' ? 'Rehber' : 'Profil'}</Text>
-                {isAgent && activeTab === 'directory' && (
+                <Text style={s.headerTitle}>{canUseDirectory && activeTab === 'directory' ? 'Rehber' : 'Profil'}</Text>
+                {canUseDirectory && activeTab === 'directory' && (
                   <TouchableOpacity style={s.headerAddBtn} onPress={() => setShowAddTypeModal(true)} activeOpacity={0.85}>
                     <MaterialIcons name="person-add" size={20} color={theme.colors.textInverse} />
                   </TouchableOpacity>
                 )}
-                {(!isAgent || activeTab !== 'directory') && (
+                {(!canUseDirectory || activeTab !== 'directory') && (
                   <View style={s.headerBackSpacer} />
                 )}
               </View>
 
               {/* Tab Bar (sadece agent) */}
-              {isAgent && (
+              {canUseDirectory && (
                 <View style={s.tabBar}>
                   {(['profile', 'directory'] as const).map(tab => (
                     <TouchableOpacity
@@ -623,7 +625,7 @@ export default function SettingsScreen() {
               )}
             </View>
           }
-          refreshControl={<RefreshControl refreshing={isAgent && activeTab === 'directory' ? contactsLoading : false} onRefresh={() => loadContacts()} tintColor={theme.colors.primary} />}
+          refreshControl={<RefreshControl refreshing={canUseDirectory && activeTab === 'directory' ? contactsLoading : false} onRefresh={() => loadContacts()} tintColor={theme.colors.primary} />}
         >
           {activeTab === 'profile'
             ? renderProfileTab()

@@ -499,47 +499,41 @@ CREATE POLICY "office_contacts_tenant_read" ON public.office_contacts
   FOR SELECT USING (
     deleted_at IS NULL
     AND office_id IN (
-      SELECT u.agency_id FROM public.users u
-      WHERE u.id = public.get_current_user_id()
-        AND u.agency_id IS NOT NULL
-      UNION
       SELECT DISTINCT p.agent_id
       FROM public.properties p
       WHERE (p.tenant_id = public.get_current_user_id() OR p.landlord_id = public.get_current_user_id())
+        AND p.agent_id IS NOT NULL
     )
   );
 
--- Insert: Agent + Full Employee
+-- Insert: Agent + all Employee levels for office directory only
 CREATE POLICY "office_contacts_insert" ON public.office_contacts
   FOR INSERT WITH CHECK (
     office_id = public.get_current_office_owner_id()
-    AND (
-      public.get_current_user_role() = 'agent'
-      OR (
-        public.get_current_user_role() = 'employee'
-        AND public.is_full_employee()
-      )
-    )
+    AND created_by = public.get_current_user_id()
+    AND public.get_current_user_role() IN ('agent', 'employee')
   );
 
--- Update: Creator + Agent
+-- Update: Agent + all Employee levels within their office scope
 CREATE POLICY "office_contacts_update" ON public.office_contacts
   FOR UPDATE USING (
     office_id = public.get_current_office_owner_id()
-    AND (
-      created_by = public.get_current_user_id()
-      OR public.get_current_user_role() = 'agent'
-    )
+    AND public.get_current_user_role() IN ('agent', 'employee')
+  )
+  WITH CHECK (
+    office_id = public.get_current_office_owner_id()
+    AND public.get_current_user_role() IN ('agent', 'employee')
   );
 
--- Delete (soft): Creator + Agent
+-- Delete (soft): Agent + all Employee levels within their office scope
 CREATE POLICY "office_contacts_delete" ON public.office_contacts
   FOR UPDATE USING (
     office_id = public.get_current_office_owner_id()
-    AND (
-      created_by = public.get_current_user_id()
-      OR public.get_current_user_role() = 'agent'
-    )
+    AND public.get_current_user_role() IN ('agent', 'employee')
+  )
+  WITH CHECK (
+    office_id = public.get_current_office_owner_id()
+    AND public.get_current_user_role() IN ('agent', 'employee')
   );
 
 -- ── PROFESSIONS (Meslekler) ────────────────────

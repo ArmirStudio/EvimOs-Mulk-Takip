@@ -29,6 +29,10 @@ def can_manage_office_records(user: dict) -> bool:
     return is_admin(user) or is_agent(user) or is_full_employee(user)
 
 
+def can_manage_office_contacts(user: dict) -> bool:
+    return is_admin(user) or is_agent(user) or is_employee(user)
+
+
 def get_office_owner_id(user: dict) -> str | None:
     if is_employee(user):
         return user.get("created_by") or user.get("id")
@@ -235,4 +239,3 @@ def assert_can_upload_document(user: dict, property_doc: dict) -> None:
     if is_full_employee(user) and property_doc.get("agent_id") == get_office_owner_id(user):
         return
     raise HTTPException(status_code=403, detail="Belge yukleme yetkiniz yok")
-

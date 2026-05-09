@@ -125,21 +125,21 @@ export default function ChangePasswordScreen() {
   const canSubmit = !!currentPass && newPass.length >= 6 && isMatch && !saving;
 
   const handleChangePassword = async () => {
-    if (!currentPass.trim()) { Alert.alert('Gerekli Alan', tr.settings.currentPassword + ' boÅŸ bÄ±rakÄ±lamaz.'); return; }
+    if (!currentPass.trim()) { Alert.alert('Gerekli Alan', `${tr.settings.currentPassword} boş bırakılamaz.`); return; }
     if (newPass.length < 6) { Alert.alert('Hata', tr.settings.passwordMinLength); return; }
     if (!isMatch) { Alert.alert('Hata', tr.settings.passwordMismatch); return; }
 
     setSaving(true);
     try {
-      if (!userData?.email) throw new Error('Email bulunamadÄ±');
+      if (!userData?.email) throw new Error('E-posta bulunamadı');
       const { error: authError } = await supabase.auth.signInWithPassword({ email: userData.email, password: currentPass });
       if (authError) { Alert.alert('Hata', tr.settings.wrongCurrentPassword); return; }
       const { error: updateError } = await supabase.auth.updateUser({ password: newPass });
       if (updateError) throw updateError;
-      Alert.alert('BaÅŸarÄ±lÄ±', tr.settings.passwordChanged);
+      Alert.alert('Başarılı', tr.settings.passwordChanged);
       router.back();
     } catch (err: any) {
-      Alert.alert('Hata', err.message || 'Åifre deÄŸiÅŸtirilirken hata oluÅŸtu.');
+      Alert.alert('Hata', err.message || 'Şifre değiştirilirken hata oluştu.');
     } finally {
       setSaving(false);
     }
@@ -166,14 +166,14 @@ export default function ChangePasswordScreen() {
               <View style={s.lockIconBox}>
                 <MaterialIcons name="shield" size={44} color={theme.colors.primary} />
               </View>
-              <Text style={s.securityTitle}>HesabÄ±nÄ±zÄ± gÃ¼vende tutun</Text>
-              <Text style={s.securitySub}>GÃ¼Ã§lÃ¼ bir ÅŸifre belirleyin, dÃ¼zenli gÃ¼ncelleyin.</Text>
+              <Text style={s.securityTitle}>Hesabınızı güvende tutun</Text>
+              <Text style={s.securitySub}>Güçlü bir şifre belirleyin, düzenli güncelleyin.</Text>
             </View>
 
             <View style={s.body}>
               <View style={s.sectionHeader}>
                 <View style={s.sectionAccent} />
-                <Text style={s.sectionTitle}>ÅÄ°FRE GÃœNCELLE</Text>
+                <Text style={s.sectionTitle}>ŞİFRE GÜNCELLE</Text>
               </View>
 
               <PasswordField
@@ -232,7 +232,7 @@ export default function ChangePasswordScreen() {
                 <View style={[s.matchBanner, { backgroundColor: isMatch ? theme.colors.successLight : theme.colors.errorLight }]}>
                   <MaterialIcons name={isMatch ? 'check-circle' : 'cancel'} size={20} color={isMatch ? theme.colors.success : theme.colors.error} />
                   <Text style={[s.matchText, { color: isMatch ? theme.colors.successText : theme.colors.errorText }]}>
-                    {isMatch ? 'Åifreler eÅŸleÅŸiyor' : tr.settings.passwordMismatch}
+                    {isMatch ? 'Şifreler eşleşiyor' : tr.settings.passwordMismatch}
                   </Text>
                 </View>
               )}
@@ -242,7 +242,7 @@ export default function ChangePasswordScreen() {
                   ? <ActivityIndicator size="small" color={theme.colors.textInverse} />
                   : <>
                       <MaterialIcons name="lock" size={18} color={canSubmit ? theme.colors.textInverse : theme.colors.textMuted} style={{ marginRight: 8 }} />
-                      <Text style={[s.submitBtnText, !canSubmit && { color: theme.colors.textMuted }]}>Åifreyi GÃ¼ncelle</Text>
+                      <Text style={[s.submitBtnText, !canSubmit && { color: theme.colors.textMuted }]}>Şifreyi Güncelle</Text>
                     </>
                 }
               </TouchableOpacity>

@@ -1,8 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Linking,
   StyleSheet,
   Text,
@@ -101,6 +102,44 @@ function getAttachmentIcon(kind?: string | null): keyof typeof MaterialIcons.gly
   if (kind === 'image') return 'image';
   if (kind === 'document') return 'description';
   return 'attach-file';
+}
+
+function MessageImagePreview({
+  attachment,
+  onPress,
+}: {
+  attachment: TeamMessageAttachment;
+  onPress: () => void;
+}) {
+  const theme = useAppTheme();
+  const styles = useStyles();
+  const [uri, setUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    void createSignedStorageUrl('team-message-files', attachment.storage_path).then((url) => {
+      if (mounted) setUri(url);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [attachment.storage_path]);
+
+  return (
+    <TouchableOpacity style={styles.imageAttachmentWrap} onPress={onPress} activeOpacity={0.86}>
+      {uri ? (
+        <Image source={{ uri }} style={styles.imageAttachment} resizeMode="cover" />
+      ) : (
+        <View style={styles.imageAttachmentPlaceholder}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        </View>
+      )}
+      <View style={styles.imageAttachmentMeta}>
+        <MaterialIcons name="image" size={14} color={theme.colors.textInverse} />
+        <Text style={styles.imageAttachmentName} numberOfLines={1}>{attachment.file_name}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 }
 
 export default function TeamMessagesPanel({
@@ -220,26 +259,34 @@ export default function TeamMessagesPanel({
           {message.attachments?.length ? (
             <View style={styles.messageAttachments}>
               {message.attachments.map((attachment) => (
-                <TouchableOpacity
-                  key={attachment.id}
-                  style={styles.messageAttachmentChip}
-                  onPress={() => void handleOpenAttachment(attachment)}
-                  activeOpacity={0.8}
-                >
-                  <MaterialIcons
-                    name={getAttachmentIcon(attachment.kind)}
-                    size={17}
-                    color={theme.colors.primary}
+                attachment.kind === 'image' ? (
+                  <MessageImagePreview
+                    key={attachment.id}
+                    attachment={attachment}
+                    onPress={() => void handleOpenAttachment(attachment)}
                   />
-                  <View style={styles.attachmentTextBlock}>
-                    <Text style={styles.attachmentName} numberOfLines={1}>
-                      {attachment.file_name}
-                    </Text>
-                    <Text style={styles.attachmentMeta} numberOfLines={1}>
-                      {formatFileSize(attachment.size_bytes)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    key={attachment.id}
+                    style={styles.messageAttachmentChip}
+                    onPress={() => void handleOpenAttachment(attachment)}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons
+                      name={getAttachmentIcon(attachment.kind)}
+                      size={17}
+                      color={theme.colors.primary}
+                    />
+                    <View style={styles.attachmentTextBlock}>
+                      <Text style={styles.attachmentName} numberOfLines={1}>
+                        {attachment.file_name}
+                      </Text>
+                      <Text style={styles.attachmentMeta} numberOfLines={1}>
+                        {formatFileSize(attachment.size_bytes)}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )
               ))}
             </View>
           ) : null}
@@ -355,12 +402,16 @@ export default function TeamMessagesPanel({
       {draftAttachments.length > 0 && (
         <View style={styles.draftAttachments}>
           {draftAttachments.map((attachment) => (
-            <View key={attachment.id} style={styles.draftAttachmentChip}>
-              <MaterialIcons
-                name={getAttachmentIcon(attachment.kind)}
-                size={17}
-                color={theme.colors.primary}
-              />
+            <View key={attachment.id} style={[styles.draftAttachmentChip, attachment.kind === 'image' && styles.draftAttachmentChipImage]}>
+              {attachment.kind === 'image' ? (
+                <Image source={{ uri: attachment.uri }} style={styles.draftImageThumb} resizeMode="cover" />
+              ) : (
+                <MaterialIcons
+                  name={getAttachmentIcon(attachment.kind)}
+                  size={17}
+                  color={theme.colors.primary}
+                />
+              )}
               <View style={styles.attachmentTextBlock}>
                 <Text style={styles.attachmentName} numberOfLines={1}>
                   {attachment.name}
@@ -565,6 +616,46 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: 10,
       paddingVertical: 7,
     },
+    imageAttachmentWrap: {
+      width: 220,
+      maxWidth: '100%',
+      aspectRatio: 1.45,
+      borderRadius: 14,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      backgroundColor: theme.colors.surface2,
+    },
+    imageAttachment: {
+      width: '100%',
+      height: '100%',
+    },
+    imageAttachmentPlaceholder: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.surface2,
+    },
+    imageAttachmentMeta: {
+      position: 'absolute',
+      left: 8,
+      right: 8,
+      bottom: 8,
+      minHeight: 26,
+      borderRadius: 13,
+      paddingHorizontal: 8,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: 'rgba(0,0,0,0.48)',
+    },
+    imageAttachmentName: {
+      flex: 1,
+      minWidth: 0,
+      fontSize: 11,
+      fontWeight: '700',
+      color: theme.colors.textInverse,
+    },
     attachmentTextBlock: {
       flex: 1,
       minWidth: 0,
@@ -691,6 +782,15 @@ const useStyles = createThemedStyles((theme) =>
       backgroundColor: theme.colors.surface2,
       paddingHorizontal: 12,
       paddingVertical: 8,
+    },
+    draftAttachmentChipImage: {
+      minHeight: 54,
+    },
+    draftImageThumb: {
+      width: 42,
+      height: 42,
+      borderRadius: 10,
+      backgroundColor: theme.colors.surface,
     },
     composer: {
       flexDirection: 'row',

@@ -94,6 +94,8 @@ export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { userData, loading: userLoading } = useUserData();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [emptyState, setEmptyState] = useState<'tenant-unassigned' | null>(null);
   const [property, setProperty] = useState<any>(null);
   const [tenant, setTenant] = useState<any>(null);
   const [landlord, setLandlord] = useState<any>(null);
@@ -121,15 +123,27 @@ export default function PropertyDetailScreen() {
   };
 
   const loadPropertyData = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    setEmptyState(null);
+    setProperty(null);
     try {
       let resolvedId = id;
       if (!resolvedId && userRole === 'tenant' && userData?.id) {
         const { data: tenantProp } = await supabase
           .from('properties').select('id').eq('tenant_id', userData.id).maybeSingle();
         if (tenantProp?.id) resolvedId = tenantProp.id;
-        else { setLoading(false); return; }
+        else {
+          setEmptyState('tenant-unassigned');
+          setLoading(false);
+          return;
+        }
       }
-      if (!resolvedId) { setLoading(false); return; }
+      if (!resolvedId) {
+        setLoadError(tr.errors.loadFailed);
+        setLoading(false);
+        return;
+      }
 
       const { data: prop, error } = await supabase.from('properties').select('*').eq('id', resolvedId).single();
       if (error || !prop) throw error;
@@ -180,6 +194,7 @@ export default function PropertyDetailScreen() {
       }
     } catch (err) {
       console.error('Error loading property detail:', err);
+      setLoadError(err instanceof Error ? err.message : tr.errors.loadFailed);
     } finally {
       setLoading(false);
     }
@@ -250,12 +265,33 @@ export default function PropertyDetailScreen() {
   }
 
   if (!property) {
+    const isTenantEmpty = emptyState === 'tenant-unassigned';
     return (
       <View style={s.center}>
-        <Text style={{ color: theme.colors.textPrimary, fontWeight: 'bold' }}>{tr.errors.loadFailed}</Text>
-        <TouchableOpacity style={{ marginTop: 20 }} onPress={() => router.back()}>
-          <Text style={{ color: theme.colors.primary }}>{tr.common.back}</Text>
-        </TouchableOpacity>
+        <View style={s.stateCard}>
+          <MaterialIcons
+            name={isTenantEmpty ? 'home-work' : 'cloud-off'}
+            size={44}
+            color={isTenantEmpty ? theme.colors.primary : theme.colors.error}
+          />
+          <Text style={s.stateTitle}>
+            {isTenantEmpty ? 'Mülk ataması bekleniyor' : 'Mülk yüklenemedi'}
+          </Text>
+          <Text style={s.stateText}>
+            {isTenantEmpty
+              ? 'Ofisiniz size bir mülk atadığında Evim sekmesi burada dolacak.'
+              : loadError || 'Bağlantı veya yetki sebebiyle mülk bilgisi alınamadı.'}
+          </Text>
+          <View style={s.stateActions}>
+            <TouchableOpacity style={s.statePrimaryBtn} onPress={loadPropertyData} activeOpacity={0.85}>
+              <MaterialIcons name="refresh" size={18} color={theme.colors.textInverse} />
+              <Text style={s.statePrimaryText}>Tekrar Dene</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.stateSecondaryBtn} onPress={() => router.back()} activeOpacity={0.85}>
+              <Text style={s.stateSecondaryText}>{tr.common.back}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }
@@ -272,8 +308,6 @@ export default function PropertyDetailScreen() {
 
   // Parse room type from description (format: "3+1 | Açıklama")
   const roomType = property.description?.match(/\d+\+\d+|Stüdyo/)?.[0] || null;
-  const descriptionText = property.description?.replace(/^[\w+]+\s*\|\s*/, '') || null;
-
   return (
     <AnimatedScreen type="fade">
       <View style={s.container}>
@@ -440,12 +474,12 @@ export default function PropertyDetailScreen() {
               ) : canEditProperty ? (
                 <TouchableOpacity
                   style={[s.personCard, s.personCardDashed]}
-                  onPress={() => router.push(`/agent/add-tenant?propertyId=${property.id}` as any)}
+                  onPress={() => router.push(`/agent/invite?role=tenant&propertyId=${property.id}` as any)}
                 >
                   <View style={[s.personAvatar, { backgroundColor: theme.colors.primary }]}>
                     <MaterialIcons name="person-add" size={20} color="#fff" />
                   </View>
-                  <Text style={[s.personName, { color: theme.colors.primary }]}>{tr.menu.addTenant}</Text>
+                  <Text style={[s.personName, { color: theme.colors.primary }]}>Kiracı Davet Et</Text>
                 </TouchableOpacity>
               ) : null}
 
@@ -698,7 +732,41 @@ export default function PropertyDetailScreen() {
 
 const useStyles = createThemedStyles((theme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background, padding: 20 },
+  stateCard: {
+    width: '100%',
+    maxWidth: 420,
+    alignItems: 'center',
+    backgroundColor: theme.colors.navGlass,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 20,
+    padding: 22,
+    ...theme.shadows.sm,
+  },
+  stateTitle: { marginTop: 12, fontSize: 18, fontWeight: '800', color: theme.colors.textPrimary, textAlign: 'center' },
+  stateText: { marginTop: 8, fontSize: 14, lineHeight: 20, color: theme.colors.textSecondary, textAlign: 'center' },
+  stateActions: { flexDirection: 'row', gap: 10, marginTop: 18, flexWrap: 'wrap', justifyContent: 'center' },
+  statePrimaryBtn: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: theme.colors.primary,
+  },
+  statePrimaryText: { color: theme.colors.textInverse, fontWeight: '800' },
+  stateSecondaryBtn: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  stateSecondaryText: { color: theme.colors.textPrimary, fontWeight: '700' },
   scrollContent: { paddingBottom: 120 },
 
   // Header

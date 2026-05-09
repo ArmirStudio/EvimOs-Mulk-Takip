@@ -1,16 +1,22 @@
 from datetime import datetime
 from typing import Optional
+import re
+
 from fastapi import APIRouter, Depends, HTTPException
+
+from core.access import can_manage_office_contacts, get_office_owner_id
 from core.database import supabase
 from core.security import get_current_user
-from core.access import can_manage_office_records, get_office_owner_id
-import re
+from models.schemas import CreateOfficeContactRequest, UpdateOfficeContactRequest
 
 router = APIRouter(prefix="/office-contacts", tags=["contacts"])
 
 
+def _now() -> str:
+    return datetime.utcnow().isoformat()
+
+
 def _normalize_phone(phone: str) -> Optional[str]:
-    """Normalize Turkish phone numbers to +90XXXXXXXXXX format."""
     raw = (phone or "").strip()
     if not raw:
         return None
@@ -31,50 +37,53 @@ def _normalize_phone(phone: str) -> Optional[str]:
     return raw
 
 
+def _office_id(current_user: dict) -> str:
+    office_id = get_office_owner_id(current_user)
+    if not office_id:
+        raise HTTPException(status_code=403, detail="Ofis sahibi bulunamadı")
+    return office_id
+
+
 @router.post("/create")
 def create_contact(
-    full_name: str,
-    phone: str,
-    profession: str,
-    email: Optional[str] = None,
+    request: CreateOfficeContactRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Create a new office contact."""
-    if not can_manage_office_records(current_user):
+    if not can_manage_office_contacts(current_user):
         raise HTTPException(status_code=403, detail="Yetkiniz yok")
 
-    if not full_name.strip() or not phone.strip() or not profession.strip():
+    if not request.full_name.strip() or not request.phone.strip() or not request.profession.strip():
         raise HTTPException(status_code=400, detail="Ad, telefon ve meslek zorunludur")
 
-    normalized_phone = _normalize_phone(phone)
+    normalized_phone = _normalize_phone(request.phone)
     if not normalized_phone:
         raise HTTPException(status_code=400, detail="Geçersiz telefon numarası")
 
-    if email and email.strip():
-        if not re.match(r"^\S+@\S+\.\S+$", email.strip()):
-            raise HTTPException(status_code=400, detail="Geçersiz email adresi")
+    email = request.email.strip() if request.email and request.email.strip() else None
+    if email and not re.match(r"^\S+@\S+\.\S+$", email):
+        raise HTTPException(status_code=400, detail="Geçersiz e-posta adresi")
 
-    office_id = get_office_owner_id(current_user)
-
-    result = (
+    office_id = _office_id(current_user)
+    duplicate = (
         supabase.table("office_contacts")
         .select("id")
         .eq("office_id", office_id)
         .eq("phone", normalized_phone)
         .is_("deleted_at", "null")
         .execute()
+        .data
     )
-
-    if result.data:
+    if duplicate:
         raise HTTPException(status_code=400, detail="Bu telefon numarasıyla zaten bir usta var")
 
     contact = {
         "office_id": office_id,
-        "full_name": full_name.strip(),
+        "full_name": request.full_name.strip(),
         "phone": normalized_phone,
-        "email": email.strip() if email and email.strip() else None,
-        "profession": profession.strip(),
-        "created_at": datetime.utcnow().isoformat(),
+        "email": email,
+        "profession": request.profession.strip(),
+        "created_by": current_user["id"],
+        "created_at": _now(),
     }
 
     result = supabase.table("office_contacts").insert(contact).execute()
@@ -84,11 +93,10 @@ def create_contact(
     return {"contact": result.data[0]}
 
 
+@router.get("")
 @router.get("/")
 def list_contacts(current_user: dict = Depends(get_current_user)):
-    """List all office contacts for current user's office."""
-    office_id = get_office_owner_id(current_user)
-
+    office_id = _office_id(current_user)
     result = (
         supabase.table("office_contacts")
         .select("*")
@@ -96,7 +104,6 @@ def list_contacts(current_user: dict = Depends(get_current_user)):
         .order("created_at", desc=True)
         .execute()
     )
-
     return {"contacts": result.data or []}
 
 
@@ -105,9 +112,7 @@ def get_contact(
     contact_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Get a single office contact by ID."""
-    office_id = get_office_owner_id(current_user)
-
+    office_id = _office_id(current_user)
     result = (
         supabase.table("office_contacts")
         .select("*")
@@ -116,54 +121,46 @@ def get_contact(
         .maybe_single()
         .execute()
     )
-
     if not result.data:
         raise HTTPException(status_code=404, detail="Usta bulunamadı")
-
     return {"contact": result.data}
 
 
 @router.patch("/{contact_id}")
 def update_contact(
     contact_id: str,
-    full_name: Optional[str] = None,
-    phone: Optional[str] = None,
-    profession: Optional[str] = None,
-    email: Optional[str] = None,
+    request: UpdateOfficeContactRequest,
     current_user: dict = Depends(get_current_user),
 ):
-    """Update an office contact."""
-    if not can_manage_office_records(current_user):
+    if not can_manage_office_contacts(current_user):
         raise HTTPException(status_code=403, detail="Yetkiniz yok")
 
-    office_id = get_office_owner_id(current_user)
-
+    office_id = _office_id(current_user)
     contact = (
         supabase.table("office_contacts")
         .select("*")
         .eq("id", contact_id)
         .eq("office_id", office_id)
+        .is_("deleted_at", "null")
         .maybe_single()
         .execute()
         .data
     )
-
     if not contact:
         raise HTTPException(status_code=404, detail="Usta bulunamadı")
 
     update_data = {}
-
-    if full_name is not None:
-        if not full_name.strip():
+    if request.full_name is not None:
+        if not request.full_name.strip():
             raise HTTPException(status_code=400, detail="Ad boş olamaz")
-        update_data["full_name"] = full_name.strip()
+        update_data["full_name"] = request.full_name.strip()
 
-    if phone is not None:
-        normalized = _normalize_phone(phone)
+    if request.phone is not None:
+        normalized = _normalize_phone(request.phone)
         if not normalized:
             raise HTTPException(status_code=400, detail="Geçersiz telefon numarası")
 
-        existing = (
+        duplicate = (
             supabase.table("office_contacts")
             .select("id")
             .eq("office_id", office_id)
@@ -171,41 +168,39 @@ def update_contact(
             .neq("id", contact_id)
             .is_("deleted_at", "null")
             .execute()
+            .data
         )
-
-        if existing.data:
+        if duplicate:
             raise HTTPException(status_code=400, detail="Bu telefon numarasıyla zaten bir usta var")
-
         update_data["phone"] = normalized
 
-    if profession is not None:
-        if not profession.strip():
+    if request.profession is not None:
+        if not request.profession.strip():
             raise HTTPException(status_code=400, detail="Meslek boş olamaz")
-        update_data["profession"] = profession.strip()
+        update_data["profession"] = request.profession.strip()
 
-    if email is not None:
-        if email.strip():
-            if not re.match(r"^\S+@\S+\.\S+$", email.strip()):
-                raise HTTPException(status_code=400, detail="Geçersiz email adresi")
-            update_data["email"] = email.strip()
+    if request.email is not None:
+        email = request.email.strip()
+        if email:
+            if not re.match(r"^\S+@\S+\.\S+$", email):
+                raise HTTPException(status_code=400, detail="Geçersiz e-posta adresi")
+            update_data["email"] = email
         else:
             update_data["email"] = None
 
     if not update_data:
         return {"contact": contact}
 
-    update_data["updated_at"] = datetime.utcnow().isoformat()
-
+    update_data["updated_at"] = _now()
     result = (
         supabase.table("office_contacts")
         .update(update_data)
         .eq("id", contact_id)
+        .eq("office_id", office_id)
         .execute()
     )
-
     if not result.data:
         raise HTTPException(status_code=500, detail="Usta güncellenemedi")
-
     return {"contact": result.data[0]}
 
 
@@ -214,30 +209,32 @@ def delete_contact(
     contact_id: str,
     current_user: dict = Depends(get_current_user),
 ):
-    """Soft delete an office contact."""
-    if not can_manage_office_records(current_user):
+    if not can_manage_office_contacts(current_user):
         raise HTTPException(status_code=403, detail="Yetkiniz yok")
 
-    office_id = get_office_owner_id(current_user)
-
+    office_id = _office_id(current_user)
     contact = (
         supabase.table("office_contacts")
         .select("*")
         .eq("id", contact_id)
         .eq("office_id", office_id)
+        .is_("deleted_at", "null")
         .maybe_single()
         .execute()
         .data
     )
-
     if not contact:
         raise HTTPException(status_code=404, detail="Usta bulunamadı")
 
     result = (
         supabase.table("office_contacts")
-        .update({"deleted_at": datetime.utcnow().isoformat()})
+        .update({
+            "deleted_at": _now(),
+            "deleted_by": current_user["id"],
+            "updated_at": _now(),
+        })
         .eq("id", contact_id)
+        .eq("office_id", office_id)
         .execute()
     )
-
     return {"contact": result.data[0] if result.data else contact}

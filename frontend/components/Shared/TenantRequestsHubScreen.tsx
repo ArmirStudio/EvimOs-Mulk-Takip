@@ -29,6 +29,7 @@ import AnimatedScreen from './AnimatedScreen';
 import BottomSheetModal from './BottomSheetModal';
 import { MaintenanceDetailView } from './MaintenanceDetailView';
 import { ReceiptDetailView } from './ReceiptDetailView';
+import { useGlobalBottomNavInset } from './AppBottomNav';
 
 type SegmentKey = 'pending' | 'history';
 type KindFilter = 'all' | 'payments' | 'maintenance';
@@ -102,6 +103,7 @@ export default function TenantRequestsHubScreen() {
   const theme = useAppTheme();
   const s = useStyles();
   const insets = useSafeAreaInsets();
+  const bottomNavInset = useGlobalBottomNavInset();
   const badgeStyles = getBadgeStyles(theme);
   const { userData, loading: userLoading } = useUserData();
   const params = useLocalSearchParams<{ openId?: string; openType?: 'maintenance' | 'receipt'; focus?: 'payments' | 'maintenance' }>();
@@ -470,7 +472,7 @@ export default function TenantRequestsHubScreen() {
               </View>
             }
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={theme.colors.primary} />}
-            contentContainerStyle={[s.listContent, filteredItems.length === 0 && { flexGrow: 1 }]}
+            contentContainerStyle={[s.listContent, filteredItems.length === 0 && { flexGrow: 1 }, { paddingBottom: bottomNavInset }]}
             showsVerticalScrollIndicator={false}
           />
         )}

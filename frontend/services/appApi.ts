@@ -415,24 +415,6 @@ export function deleteProperty(propertyId: string) {
   });
 }
 
-export function createUser(payload: {
-  email: string;
-  password?: string | null;
-  role: string;
-  full_name: string;
-  phone?: string | null;
-  city?: string | null;
-  district?: string | null;
-  created_by?: string | null;
-  property_id?: string | null;
-  employee_access_level?: 'full' | 'limited' | null;
-}) {
-  return apiRequest<{ success: boolean; user_id: string }>('/users/create', {
-    method: 'POST',
-    body: payload,
-  });
-}
-
 export function getUserDetail(userId: string) {
   return apiRequest<{ user: any; properties: any[] }>(`/users/${userId}`);
 }
@@ -566,6 +548,12 @@ export function transitionTeamTask(
   return apiRequest<{ success: boolean; task: any }>(`/team/tasks/${taskId}/transition`, {
     method: 'POST',
     body: payload,
+  });
+}
+
+export function deleteTeamTask(taskId: string) {
+  return apiRequest<{ success: boolean }>(`/team/tasks/${taskId}`, {
+    method: 'DELETE',
   });
 }
 
@@ -727,6 +715,7 @@ export type PendingInviteUser = {
   role: InviteRole;
   status: 'pending' | 'active';
   created_at: string;
+  employee_access_level?: 'full' | 'limited' | null;
   invited_via_invite_id?: string | null;
   invites?: {
     id: string;
@@ -736,6 +725,7 @@ export type PendingInviteUser = {
     prefill_full_name?: string | null;
     prefill_phone?: string | null;
     prefill_email?: string | null;
+    employee_access_level?: 'full' | 'limited' | null;
     last_reminded_at?: string | null;
     reminder_count?: number;
     created_at: string;
@@ -751,6 +741,7 @@ export type PublicInvitePayload = {
   prefill_full_name?: string | null;
   prefill_phone?: string | null;
   prefill_email?: string | null;
+  employee_access_level?: 'full' | 'limited' | null;
 };
 
 export function createInvite(payload: {
@@ -759,6 +750,7 @@ export function createInvite(payload: {
   prefill_full_name?: string | null;
   prefill_phone?: string | null;
   prefill_email?: string | null;
+  employee_access_level?: 'full' | 'limited' | null;
 }) {
   return apiRequest<{ invite: any; token: string; code: string; link: string }>('/invites', {
     method: 'POST',
@@ -1053,7 +1045,7 @@ export const appApi = {
     }),
 
   getOfficeContact: (id: string) =>
-    apiRequest(`/office-contacts/${id}`, {
+    apiRequest<{ contact: any }>(`/office-contacts/${id}`, {
       method: 'GET',
     }),
 

@@ -33,9 +33,15 @@ Bu dosya mobil istemcideki canli veri akisi ve temel UI kurallarini ozetler.
 - Preference degisimi sonrasi `Kaydedildi` feedback'i gosterilir.
 - `ProfileEditScreen` manuel `user_data` JSON yazmaz; ortak session refresh kullanir.
 
+## Davet ve Operasyon Akislari
+- Mobil agent akisi tenant, landlord ve employee icin direkt kullanici olusturmaz.
+- Tek kanonik onboarding route'u `/agent/invite?role=tenant|landlord|employee` olur.
+- Kullanici listesi, mulk detayindaki kiraci aksiyonu ve ekip calisan ekleme akislari davet ekranina yonlenir.
+- Mulk sozlesme, dekont, aidat, kira gunu ve belge operasyonlari kisi olusturma ekranina baglanmaz; mulk detay sorumlulugunda kalir.
+
 ## Canli Supabase Dosyalari
-- Fresh install kaynagi: `supabase/00_MASTER_SCHEMA.sql`
-- Mevcut DB patch'i: `supabase/current_db_user_settings_patch.sql`
+- Fresh install kaynaklari: `supabase/schema_parts/`
+- Mevcut DB patch/migration zinciri: `supabase/migrations/`
 
 ## Paket 2 Hazirlik
 - `terms_accepted_at` ve `first_login` frontend runtime'ina bu turda baglanmadi.

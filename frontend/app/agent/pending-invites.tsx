@@ -24,7 +24,14 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all', label: 'Tümü' },
   { key: 'tenant', label: 'Kiracılar' },
   { key: 'landlord', label: 'Ev Sahipleri' },
+  { key: 'employee', label: 'Çalışanlar' },
 ];
+
+function getRoleLabel(role: InviteRole) {
+  if (role === 'landlord') return 'Ev Sahibi';
+  if (role === 'employee') return 'Çalışan';
+  return 'Kiracı';
+}
 
 export default function PendingInvitesScreen() {
   const theme = useAppTheme();
@@ -49,7 +56,7 @@ export default function PendingInvitesScreen() {
   }, [filter]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const canSeeContactLabel = currentUser?.role === 'agent';
@@ -81,7 +88,7 @@ export default function PendingInvitesScreen() {
           <View style={styles.nameRow}>
             <Text style={styles.name} numberOfLines={1}>{item.full_name || 'Profil adı yok'}</Text>
             <View style={styles.roleBadge}>
-              <Text style={styles.roleBadgeText}>{item.role === 'landlord' ? 'Ev Sahibi' : 'Kiracı'}</Text>
+              <Text style={styles.roleBadgeText}>{getRoleLabel(item.role)}</Text>
             </View>
           </View>
           {canSeeContactLabel ? (
@@ -125,7 +132,7 @@ export default function PendingInvitesScreen() {
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder={canSeeContactLabel ? 'Profil adi veya takma ad ara' : 'Profil adi ara'}
+          placeholder={canSeeContactLabel ? 'Profil adı veya takma ad ara' : 'Profil adı ara'}
           placeholderTextColor={theme.colors.textMuted}
         />
       </View>
@@ -140,7 +147,7 @@ export default function PendingInvitesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={data.length ? styles.listContent : styles.emptyContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); load(); }} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
           ListEmptyComponent={
             <View style={styles.empty}>
               <MaterialIcons name="pending-actions" size={42} color={theme.colors.textMuted} />
@@ -158,10 +165,10 @@ const useStyles = createThemedStyles((theme) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: theme.colors.background },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
-    iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.surface, alignItems: 'center', justifyContent: 'center' },
+    iconButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.colors.navGlass, borderWidth: 1, borderColor: theme.colors.border, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, color: theme.colors.textPrimary },
-    filterRow: { flexDirection: 'row', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md },
-    filterChip: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: 999, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border },
+    filterRow: { flexDirection: 'row', gap: theme.spacing.sm, paddingHorizontal: theme.spacing.lg, paddingBottom: theme.spacing.md, flexWrap: 'wrap' },
+    filterChip: { paddingHorizontal: theme.spacing.md, paddingVertical: theme.spacing.sm, borderRadius: 999, backgroundColor: theme.colors.navGlass, borderWidth: 1, borderColor: theme.colors.border },
     filterChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
     filterText: { color: theme.colors.textSecondary, fontWeight: theme.fontWeight.semibold },
     filterTextActive: { color: theme.colors.textInverse },
@@ -172,7 +179,7 @@ const useStyles = createThemedStyles((theme) =>
       borderRadius: theme.borderRadius.lg,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.navGlass,
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.sm,
@@ -182,7 +189,7 @@ const useStyles = createThemedStyles((theme) =>
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     listContent: { padding: theme.spacing.lg, paddingBottom: 120 },
     emptyContent: { flexGrow: 1, justifyContent: 'center', padding: theme.spacing.xl },
-    card: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, backgroundColor: theme.colors.surface, borderRadius: theme.borderRadius.lg, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.md, marginBottom: theme.spacing.md },
+    card: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.md, backgroundColor: theme.colors.navGlass, borderRadius: theme.borderRadius.xl, borderWidth: 1, borderColor: theme.colors.border, padding: theme.spacing.md, marginBottom: theme.spacing.md, ...theme.shadows.sm },
     avatar: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.primaryLight },
     avatarText: { color: theme.colors.primary, fontWeight: theme.fontWeight.bold },
     cardBody: { flex: 1, gap: 3 },

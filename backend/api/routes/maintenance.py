@@ -20,6 +20,7 @@ from core.database import supabase
 from core.notifications import notify_user
 from core.security import get_current_user
 from models.schemas import (
+    AssignTechnicianRequest,
     CreateMaintenanceRequest,
     LandlordMaintenanceNoteRequest,
     MaintenanceLogRequest,
@@ -371,21 +372,23 @@ def add_landlord_maintenance_note(
 @router.post("/{request_id}/assign-technician")
 def assign_technician(
     request_id: str,
-    technician_id: str,
+    request: AssignTechnicianRequest,
     current_user: dict = Depends(get_current_user),
 ):
     """Assign a technician from office contacts to a maintenance request."""
     maintenance_doc = get_maintenance_or_404(request_id)
     property_doc = get_property_or_404(maintenance_doc["property_id"])
-    assert_can_manage_maintenance(current_user, maintenance_doc)
+    assert_can_manage_maintenance(current_user, property_doc)
 
     office_owner_id = get_office_owner_id(current_user)
+    technician_id = request.technician_id
 
     technician = (
         supabase.table("office_contacts")
         .select("*")
         .eq("id", technician_id)
         .eq("office_id", office_owner_id)
+        .is_("deleted_at", "null")
         .maybe_single()
         .execute()
     ).data

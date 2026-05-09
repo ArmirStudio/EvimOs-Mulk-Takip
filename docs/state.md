@@ -2,25 +2,22 @@
 Bu dosya canli durum kaydidir.
 
 ## Mevcut Asama
-- Durum: Paket 1 settings/profile temizligi tamamlandi.
-- Son odak: disabled settings UI'yi kaldirmak, user preference sync'i backend'e almak ve docs'u sadeleştirmek.
+- Durum: Tek davet, temiz route ve operasyon ekranlari revizyonu uygulanıyor.
+- Son odak: tenant, landlord ve employee icin tek davet akisi; eski mobil direkt kullanici olusturma route'larini kaldirma; gorev, usta ve ofis mesajlari kontratlarini guclendirme.
 
 ## Bu Turda Tamamlananlar
-- Settings ekraninda disabled notification toggle'lari kaldirildi.
-- Bildirimler bolumu yalnizca `Yakinda` durumu ile sunuldu.
-- Currency ve theme tercihlerinin backend sync'i eklendi.
-- Session hydrate akisi `preferred_currency` ve `preferred_theme` alanlarini tasir hale geldi.
-- `ProfileEditScreen` manuel `user_data` JSON patch'inden cikarildi.
-- Fresh install ve current DB icin ayri schema kaynaklari netlestirildi:
-  - `supabase/00_MASTER_SCHEMA.sql`
-  - `supabase/current_db_user_settings_patch.sql`
+- `/agent/create-user` ve `/agent/add-tenant` mobil route'lari kaldirildi.
+- `/agent/invite` tenant, landlord ve employee rollerini tek ekranda destekler.
+- Employee davetinde `employee_access_level` secimi backend ve pending approval akisi boyunca tasinir.
+- Usta/rehber API'si JSON body kontratina ve ofis sahibi scope'una hizalandi.
+- Tamamlanmamis yanlis gorevler icin `DELETE /api/team/tasks/{task_id}` eklendi.
+- Ofis mesajlari gorsel ekleri sohbet icinde thumbnail olarak gosterir.
+- Canli Supabase kaynaklari `supabase/schema_parts/` ve `supabase/migrations/` altindadir.
 
 ## Acik Kalanlar
-- Push ve e-posta bildirimleri icin gercek persistence yok.
-- Paket 2'de ilk giris sozlesme modal'i, routing gate'i ve kabul kaydi eklenecek.
 - Repo genelindeki type/lint borcu tamamen temiz degil.
+- Admin web kendi admin endpointleriyle ayri kalir; mobil direkt onboarding kapatildi.
 
 ## Siradaki Isler
-- `terms_accepted_at` ve `first_login` alanlarini runtime'a baglamak
-- ToS acceptance modal'ini session akisina eklemek
-- Settings ve session akisina hedefli e2e veya smoke coverage eklemek
+- Mulk detayinda sozlesme/dekont/belge panelini daha gorunur ayirmak.
+- Davet, usta, gorev ve mesaj akislarina hedefli smoke coverage eklemek.

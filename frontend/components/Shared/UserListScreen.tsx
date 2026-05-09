@@ -36,18 +36,18 @@ const CONFIG: Record<UserRole, {
 }> = {
   tenant: {
     headerTitle: tr.users.tenant,
-    createRoute: '/agent/create-user?type=tenant',
+    createRoute: '/agent/invite?role=tenant',
     emptyText: tr.properties.noTenants,
     emptySub: tr.users.noTenantsSub,
-    emptyButtonText: tr.users.addTenant,
+    emptyButtonText: 'Kiracı Davet Et',
     emptyIcon: 'person-outline',
   },
   landlord: {
     headerTitle: tr.users.landlord,
-    createRoute: '/agent/create-user?type=landlord',
+    createRoute: '/agent/invite?role=landlord',
     emptyText: tr.users.noLandlords,
     emptySub: tr.users.noLandlordsSub,
-    emptyButtonText: tr.users.addLandlord,
+    emptyButtonText: 'Ev Sahibi Davet Et',
     emptyIcon: 'people-outline',
   },
 };
