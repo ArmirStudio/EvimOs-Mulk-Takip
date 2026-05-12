@@ -43,6 +43,9 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 10,
     overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   disabled: {
     opacity: 0.5,
@@ -51,7 +54,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     width: BUTTON_WIDTH,
     height: 50,
     borderRadius: 25,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.copper,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
@@ -65,9 +68,14 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    color: theme.colors.textInverse,
     fontWeight: '700',
     fontSize: 14,
+  },
+  rejectText: {
+    color: theme.colors.error,
+  },
+  approveText: {
+    color: theme.colors.success,
   },
 }));
 
@@ -115,13 +123,7 @@ export const ActionSlider: React.FC<ActionSliderProps> = ({
   }));
 
   const animatedContainerStyle = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(
-      translateX.value,
-      [-MAX_TRANSLATE, 0, MAX_TRANSLATE],
-      [theme.colors.error, theme.colors.surface2, theme.colors.success],
-    );
-
-    return { backgroundColor };
+    return {};
   });
 
   const animatedLeftTextStyle = useAnimatedStyle(() => {
@@ -138,19 +140,19 @@ export const ActionSlider: React.FC<ActionSliderProps> = ({
     <View style={styles.outerContainer}>
       <Animated.View style={[styles.container, animatedContainerStyle, disabled && styles.disabled]}>
         <Animated.View style={[styles.textContainer, animatedLeftTextStyle]}>
-          <MaterialIcons name="close" size={20} color={theme.colors.textInverse} />
-          <Text style={styles.text}>{rejectText}</Text>
+          <MaterialIcons name="close" size={20} color={theme.colors.error} />
+          <Text style={[styles.text, styles.rejectText]}>{rejectText}</Text>
         </Animated.View>
 
         <GestureDetector gesture={panGesture}>
           <Animated.View style={[styles.button, animatedButtonStyle]}>
-            <MaterialIcons name="swap-horiz" size={32} color={theme.colors.textSecondary} />
+            <MaterialIcons name="swap-horiz" size={32} color="#FFFFFF" />
           </Animated.View>
         </GestureDetector>
 
         <Animated.View style={[styles.textContainer, animatedRightTextStyle]}>
-          <Text style={styles.text}>{approveText}</Text>
-          <MaterialIcons name="check" size={20} color={theme.colors.textInverse} />
+          <Text style={[styles.text, styles.approveText]}>{approveText}</Text>
+          <MaterialIcons name="check" size={20} color={theme.colors.success} />
         </Animated.View>
       </Animated.View>
     </View>

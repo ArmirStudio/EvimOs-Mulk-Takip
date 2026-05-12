@@ -329,7 +329,7 @@ export default function PropertyDetailScreen() {
                   </TouchableOpacity>
                 )}
                 {canEditProperty && (
-                  <TouchableOpacity onPress={handleDelete} style={[s.floatBtn, { borderColor: `${theme.colors.error}40` }]}>
+                  <TouchableOpacity onPress={handleDelete} style={s.floatBtn}>
                     <MaterialIcons name="delete" size={20} color={theme.colors.error} />
                   </TouchableOpacity>
                 )}
@@ -771,13 +771,13 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
 
   // Header
   floatBtn: {
-    width: 38, height: 38, borderRadius: 19,
-    backgroundColor: theme.colors.navGlass,
-    borderWidth: 1, borderColor: theme.colors.border,
+    width: 44, height: 44, borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 0,
     justifyContent: 'center', alignItems: 'center',
-    ...theme.shadows.sm,
+    ...theme.shadows.md,
   },
-  headerActions: { flexDirection: 'row', gap: 8 },
+  headerActions: { flexDirection: 'row', gap: 10 },
 
   // Hero
   heroWrap: { width: '100%', aspectRatio: 4 / 3, position: 'relative' },
@@ -799,25 +799,27 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // Price Band
   priceBand: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.surface,
+    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginTop: -16,
-    borderRadius: 18,
-    padding: 16,
-    ...theme.shadows.sm,
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: theme.colors.divider,
+    ...theme.shadows.md,
     zIndex: 10,
   },
   priceBandItem: { flex: 1, alignItems: 'center' },
-  priceBandValue: { fontSize: 16, fontWeight: '800', color: theme.colors.textPrimary },
-  priceBandLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 3, fontWeight: '500' },
-  priceBandDivider: { width: 1, backgroundColor: theme.colors.border, marginHorizontal: 4 },
+  priceBandValue: { fontSize: 17, fontWeight: '800', color: theme.colors.textPrimary },
+  priceBandLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 4, fontWeight: '600', letterSpacing: 0.3 },
+  priceBandDivider: { width: 1, backgroundColor: theme.colors.border, marginHorizontal: 6 },
 
   // Content
   content: { paddingHorizontal: 16, paddingTop: 20, gap: 22, paddingBottom: 16 },
 
   // Card
   card: {
-    paddingBottom: 18,
+    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.divider,
   },
@@ -872,14 +874,15 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   personCallBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: theme.colors.surface2, alignItems: 'center', justifyContent: 'center' },
 
   // Maintenance
-  maintStatRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  maintStatRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   maintStatCard: {
     flex: 1,
-    borderRadius: 12, paddingVertical: 10, alignItems: 'center',
+    borderRadius: 14, paddingVertical: 12, alignItems: 'center',
     borderWidth: 1, borderColor: theme.colors.divider,
+    backgroundColor: theme.colors.surface,
   },
-  maintStatValue: { fontSize: 20, fontWeight: '800' },
-  maintStatLabel: { fontSize: 10, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase', marginTop: 3 },
+  maintStatValue: { fontSize: 22, fontWeight: '800', color: theme.colors.textPrimary },
+  maintStatLabel: { fontSize: 11, fontWeight: '700', color: theme.colors.textMuted, textTransform: 'uppercase', marginTop: 4, letterSpacing: 0.4 },
   maintItem: {
     flexDirection: 'row', alignItems: 'center', gap: 10,
     borderRadius: 12, paddingVertical: 10,

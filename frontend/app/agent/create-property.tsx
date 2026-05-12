@@ -427,8 +427,7 @@ export default function CreatePropertyWizard() {
         }
       }
 
-      if (propertyId) router.replace(`/agent/property-detail?id=${propertyId}` as any);
-      else router.replace('/agent/properties');
+      router.replace('/agent/properties');
     } catch {
       Alert.alert('Hata', 'Beklenmeyen bir hata oluştu.');
     } finally {
