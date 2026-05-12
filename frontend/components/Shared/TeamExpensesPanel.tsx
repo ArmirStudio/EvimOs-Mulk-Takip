@@ -17,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 
 import { createThemedStyles, useAppTheme } from '../../app/theme';
+import { DecimalCurrencyInput } from './DecimalCurrencyInput';
 import type { ExpenseCategory, OfficeExpense } from '../../services/teamTypes';
 import {
   EXPENSE_CATEGORY_COLORS,
@@ -371,16 +372,24 @@ export default function TeamExpensesPanel({ expenses, loading, error, currentUse
 
                 {/* Tutar — create: editable, edit: readonly */}
                 <Text style={styles.fieldLabel}>Tutar (₺) *</Text>
-                <TextInput
-                  style={[styles.amountInput, isEditMode && styles.amountInputDisabled]}
-                  value={isEditMode ? formatCurrency(Number(amount)) : amount}
-                  onChangeText={isEditMode ? undefined : setAmount}
-                  placeholder="0,00"
-                  placeholderTextColor={theme.colors.textMuted}
-                  keyboardType="decimal-pad"
-                  autoFocus={!isEditMode}
-                  editable={!isEditMode}
-                />
+                {isEditMode ? (
+                  <TextInput
+                    style={[styles.amountInput, styles.amountInputDisabled]}
+                    value={formatCurrency(Number(amount))}
+                    editable={false}
+                    placeholder="0,00"
+                    placeholderTextColor={theme.colors.textMuted}
+                  />
+                ) : (
+                  <DecimalCurrencyInput
+                    inputStyle={styles.amountInput}
+                    value={amount}
+                    onValueChange={setAmount}
+                    placeholder="0,00"
+                    placeholderTextColor={theme.colors.textMuted}
+                    autoFocus
+                  />
+                )}
                 {isEditMode && (
                   <Text style={styles.lockedHint}>Tutar ve kategori değiştirilemez</Text>
                 )}

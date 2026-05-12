@@ -55,20 +55,63 @@ function getRoleColor(theme: ReturnType<typeof useAppTheme>, role: string): { bg
 const getInitials = (name: string): string =>
   name?.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
-const TERMS_TEXT = `Bu uygulamayı kullanarak aşağıdaki kullanım şartlarını kabul etmiş sayılırsınız.
+const TERMS_SECTIONS = [
+  {
+    title: '1. Genel Hükümler',
+    body: 'Bu uygulama, Armir Studio tarafından geliştirilen EvimOs — Mülk Yönetim platformudur. Uygulamayı kullanarak aşağıdaki koşulları kabul etmiş sayılırsınız.',
+  },
+  {
+    title: '2. Hesap Sorumluluğu',
+    body: 'Hesabınızla gerçekleştirilen tüm işlemler size aittir. Hesap bilgilerinizi üçüncü şahıslarla paylaşmamanız, şifrenizi düzenli olarak güncellemeniz ve yetkisiz erişim durumunda Armir Studio\'yu derhal bilgilendirmeniz gerekmektedir.',
+  },
+  {
+    title: '3. Platform Kullanımı',
+    body: 'EvimOs; mülk, kira, dekont, bakım ve ekip kayıtlarını rolünüze göre yönetmenizi sağlar. Yanlış, eksik veya size ait olmayan kayıt oluşturmamak sizin sorumluluğunuzdadır. Platform yalnızca yasal amaçlarla kullanılabilir.',
+  },
+  {
+    title: '4. Fikri Mülkiyet',
+    body: 'Uygulama içeriği, tasarımı, yazılımı ve tüm bileşenleri Armir Studio\'nun fikri mülkiyetidir. İzinsiz kopyalanması, dağıtılması veya değiştirilmesi yasaktır.',
+  },
+  {
+    title: '5. Hizmet Değişiklikleri',
+    body: 'Armir Studio, önceden haber vermeksizin platformda değişiklik yapma, hizmetleri askıya alma veya sonlandırma hakkını saklı tutar. Kullanım koşullarında yapılacak değişiklikler uygulama içinden bildirilecektir.',
+  },
+  {
+    title: '6. Sorumluluk Sınırlaması',
+    body: 'Platform "olduğu gibi" sunulmaktadır. Armir Studio, teknik aksaklıklar, veri kaybı veya platform kullanımından doğan dolaylı zararlardan sorumlu tutulamaz.',
+  },
+  {
+    title: 'İletişim',
+    body: 'Armir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nTelefon: [Eklenecek]',
+  },
+];
 
-1. Uygulama, mülk yönetimi amacıyla kullanılmak üzere tasarlanmıştır.
-2. Kullanıcı bilgilerinin gizliliği korunmaktadır.
-3. Uygulama üzerinden yapılan işlemler kayıt altına alınmaktadır.
-4. Yetkisiz kullanım yasaktır ve yasal işlem başlatılabilir.
-
-Daha fazla bilgi için destek ekibimizle iletişime geçin.`;
-
-const PRIVACY_TEXT = `Gizlilik Politikası
-
-Kişisel verileriniz KVKK kapsamında korunmaktadır. Toplanan veriler yalnızca uygulama hizmetlerinin sunulması amacıyla kullanılır ve üçüncü taraflarla paylaşılmaz.
-
-Verilerinizin silinmesini talep etmek için destek ekibimizle iletişime geçebilirsiniz.`;
+const PRIVACY_SECTIONS = [
+  {
+    title: 'Veri Sorumlusu',
+    body: '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla hareket eden Armir Studio, kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemektedir.\n\nArmir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nVergi No: [Eklenecek]',
+  },
+  {
+    title: 'İşlenen Kişisel Veriler',
+    body: '• Ad, soyad, e-posta adresi, telefon numarası\n• Konum bilgileri (şehir, ilçe)\n• Mülk ve kira kayıtları, dekontlar\n• Uygulama içi işlem geçmişi ve operasyon hareketleri\n• Profil fotoğrafı ve iletişim tercihleri',
+  },
+  {
+    title: 'Veri İşleme Amaçları',
+    body: 'Kişisel verileriniz; uygulama işlevlerinin yerine getirilmesi, yetki kontrolü, müşteri desteği, yasal yükümlülüklerin karşılanması ve hizmet kalitesinin iyileştirilmesi amacıyla işlenmektedir.',
+  },
+  {
+    title: 'Veri Güvenliği',
+    body: 'Verileriniz, endüstri standardı şifreleme ve güvenlik önlemleriyle korunmaktadır. Yetkisiz erişime karşı teknik ve idari tedbirler alınmaktadır. Verileriniz üçüncü taraflarla yalnızca yasal zorunluluk veya açık rızanız bulunduğu durumlarda paylaşılmaktadır.',
+  },
+  {
+    title: 'Haklarınız (KVKK Madde 11)',
+    body: 'Kişisel verilerinize ilişkin; bilgi talep etme, düzeltme isteme, silme veya yok etme talep etme, işlemeye itiraz etme ve zararın giderilmesini talep etme haklarına sahipsiniz. Bu haklarınızı kullanmak için destek@armirstudio.com adresine başvurabilirsiniz.',
+  },
+  {
+    title: 'Veri Saklama Süresi',
+    body: 'Kişisel verileriniz, ilgili mevzuatta öngörülen süreler ve hizmet ilişkisinin devamı süresince saklanmaktadır. İlişkinin sona ermesinin ardından yasal yükümlülükler kapsamında belirlenen süreler dışında silinmektedir.',
+  },
+];
 
 export default function SettingsScreen() {
   const { userData, reload } = useUserData();
@@ -645,8 +688,17 @@ export default function SettingsScreen() {
                   <MaterialIcons name="close" size={22} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
               </View>
-              <ScrollView style={s.modalBody} showsVerticalScrollIndicator={false}>
-                <Text style={s.modalText}>{legalModal === 'terms' ? TERMS_TEXT : PRIVACY_TEXT}</Text>
+              <ScrollView style={s.modalBody} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+                {(legalModal === 'terms' ? TERMS_SECTIONS : PRIVACY_SECTIONS).map((section, i) => (
+                  <View key={i} style={s.modalSection}>
+                    <Text style={s.modalSectionTitle}>{section.title}</Text>
+                    <Text style={s.modalSectionBody}>{section.body}</Text>
+                  </View>
+                ))}
+                <View style={s.modalLogoFooter}>
+                  <EvimosSVGLogo size={100} variant="full" isDarkMode={isDarkMode} />
+                  <Text style={s.modalFooterCopy}>© 2025 Armir Studio. Tüm hakları saklıdır.</Text>
+                </View>
               </ScrollView>
             </View>
           </View>
@@ -760,6 +812,11 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   modalClose:      { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.colors.surface2, justifyContent: 'center', alignItems: 'center' },
   modalBody:       { padding: 20 },
   modalText:       { fontSize: 14, lineHeight: 22, color: theme.colors.textSecondary },
+  modalSection:    { marginBottom: 20 },
+  modalSectionTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.textPrimary, marginBottom: 6 },
+  modalSectionBody: { fontSize: 14, lineHeight: 22, color: theme.colors.textSecondary },
+  modalLogoFooter: { alignItems: 'center', paddingTop: 24, marginTop: 8, borderTopWidth: 1, borderTopColor: theme.colors.divider, gap: 8 },
+  modalFooterCopy: { fontSize: 11, color: theme.colors.textMuted, textAlign: 'center' },
   // ── Settings Footer ──
   settingsFooter:  { alignItems: 'center', paddingVertical: 32, paddingHorizontal: 20, marginTop: 40, borderTopWidth: 1, borderTopColor: theme.colors.divider },
   footerAppName:   { fontSize: 20, fontWeight: '700', color: theme.colors.textPrimary, marginTop: 16, textAlign: 'center' },
