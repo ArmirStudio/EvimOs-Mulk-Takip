@@ -127,6 +127,16 @@ def _assert_can_patch_user(current_user: dict, target_user: dict, requested_fiel
     _assert_can_update_user(current_user, target_user)
 
 
+def _delete_auth_user_if_present(auth_id: str | None) -> None:
+    if not auth_id:
+        return
+
+    try:
+        supabase.auth.admin.delete_user(auth_id)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail="Auth kullanicisi silinemedi") from exc
+
+
 @router.post("/create")
 def create_user(request: CreateUserRequest, current_user: dict = Depends(get_current_user)):
     office_owner_id = get_office_owner_id(current_user)
@@ -418,5 +428,6 @@ def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
             'updated_at': now,
         }).eq('employee_id', user_id).execute()
 
+    _delete_auth_user_if_present(target_user.get("auth_id"))
     supabase.table('users').delete().eq('id', user_id).execute()
     return {"success": True}

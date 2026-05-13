@@ -415,5 +415,11 @@ class AdminCampaignUpdatePayload(BaseModel):
     target_agency_ids: Optional[List[str]] = None
 
 
+class CampaignEventRequest(BaseModel):
+    event_type: Literal["click", "link_open"]
+    placement: Optional[str] = None
+    metadata: Optional[dict] = None
+
+
 class AdminToggleActiveRequest(BaseModel):
     active: bool

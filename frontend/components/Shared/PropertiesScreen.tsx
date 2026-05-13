@@ -463,8 +463,8 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   // Filters
   filterScroll: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
   filterChip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    height: 34, paddingHorizontal: 12, borderRadius: 17,
+    flexDirection: 'row', alignItems: 'center', gap: 7,
+    height: 36, paddingHorizontal: 12, borderRadius: 18,
     borderWidth: 1, borderColor: theme.colors.divider,
   },
   filterChipActive: {
@@ -505,7 +505,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   },
   statusBadge: {
     position: 'absolute', top: 12, left: 12,
-    flexDirection: 'row', alignItems: 'center', gap: 4,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: 20,
   },
@@ -525,16 +525,16 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     paddingHorizontal: 14, paddingBottom: 12, paddingTop: 20,
   },
   imageTitle: { fontSize: 16, fontWeight: '700', color: theme.colors.white, marginBottom: 2 },
-  imageLocation: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  imageLocation: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   imageLocationText: { fontSize: 12, color: theme.colors.white, fontWeight: '500', opacity: 0.85 },
 
   // Content
   content: { padding: 14, gap: 12 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
+    flexDirection: 'row', alignItems: 'center', gap: 7,
     backgroundColor: theme.colors.surface2,
-    paddingHorizontal: 10, paddingVertical: 5,
+    paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 10,
   },
   chipHighlight: {
@@ -567,7 +567,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     borderWidth: 1, borderColor: theme.colors.border,
   },
   detailBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: theme.colors.primaryLight,
     paddingHorizontal: 12, paddingVertical: 7,
     borderRadius: 16,

@@ -76,6 +76,14 @@ CREATE INDEX IF NOT EXISTS idx_ad_campaigns_active      ON public.ad_campaigns(a
 -- ad_impressions
 CREATE INDEX IF NOT EXISTS idx_ad_impressions_user_date ON public.ad_impressions(user_id, shown_date);
 
+-- ad_interactions
+CREATE INDEX IF NOT EXISTS idx_ad_interactions_ad_created
+  ON public.ad_interactions(ad_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ad_interactions_user_created
+  ON public.ad_interactions(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ad_interactions_type_date
+  ON public.ad_interactions(event_type, shown_date);
+
 -- team_tasks
 CREATE INDEX IF NOT EXISTS idx_team_tasks_office_scheduled
   ON public.team_tasks(office_owner_id, scheduled_at ASC);

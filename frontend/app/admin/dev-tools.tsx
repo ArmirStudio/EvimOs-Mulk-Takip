@@ -130,7 +130,7 @@ export default function AdminDevToolsScreen() {
           </View>
           <Text style={styles.title}>Gelistirme Araclari</Text>
           <Text style={styles.subtitle}>
-            Supabase'de manuel olusan kullanicilari test icin role ve agent altina baglayin.
+            Supabase&apos;de manuel olusan kullanicilari test icin role ve agent altina baglayin.
           </Text>
         </View>
 

@@ -11,6 +11,7 @@ from core.access import (
     get_property_or_404,
     get_receipt_property_id_list,
 )
+from core.storage import extract_storage_path, remove_storage_objects
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -139,6 +140,48 @@ def _build_property_payload(
 
     return property_doc
 
+
+def _append_storage_path(cleanup: dict[str, list[str]], bucket: str, value: str | None) -> None:
+    path = extract_storage_path(bucket, value)
+    if path and path not in cleanup[bucket]:
+        cleanup[bucket].append(path)
+
+
+def _build_property_storage_cleanup(
+    *,
+    property_doc: dict,
+    receipts: list[dict],
+    maintenance_requests: list[dict],
+    property_documents: list[dict],
+) -> dict[str, list[str]]:
+    cleanup = {
+        "property-images": [],
+        "receipts": [],
+        "maintenance-photos": [],
+        "property-documents": [],
+    }
+
+    images = property_doc.get("images") or []
+    if isinstance(images, list):
+        for value in images:
+            _append_storage_path(cleanup, "property-images", value)
+
+    for receipt in receipts:
+        _append_storage_path(cleanup, "receipts", receipt.get("storage_path"))
+        _append_storage_path(cleanup, "receipts", receipt.get("document_url"))
+
+    for request in maintenance_requests:
+        photo_urls = request.get("photo_urls") or []
+        if isinstance(photo_urls, list):
+            for value in photo_urls:
+                _append_storage_path(cleanup, "maintenance-photos", value)
+
+    for document in property_documents:
+        _append_storage_path(cleanup, "property-documents", document.get("storage_path"))
+        _append_storage_path(cleanup, "property-documents", document.get("file_url"))
+
+    return cleanup
+
 @router.post("/create")
 def create_property(request: CreatePropertyRequest, current_user: dict = Depends(get_current_user)):
     office_owner_id = _require_property_manager(current_user)
@@ -237,10 +280,45 @@ def delete_property(property_id: str, current_user: dict = Depends(get_current_u
     assert_can_manage_property(current_user, property_doc)
     _require_property_manager(current_user)
 
+    receipts = (
+        supabase.table("receipts")
+        .select("storage_path, document_url")
+        .eq("property_id", property_id)
+        .execute()
+        .data
+        or []
+    )
+    maintenance_requests = (
+        supabase.table("maintenance_requests")
+        .select("photo_urls")
+        .eq("property_id", property_id)
+        .execute()
+        .data
+        or []
+    )
+    property_documents = (
+        supabase.table("property_documents")
+        .select("storage_path, file_url")
+        .eq("property_id", property_id)
+        .execute()
+        .data
+        or []
+    )
+
+    storage_cleanup = _build_property_storage_cleanup(
+        property_doc=property_doc,
+        receipts=receipts,
+        maintenance_requests=maintenance_requests,
+        property_documents=property_documents,
+    )
+    for bucket, paths in storage_cleanup.items():
+        remove_storage_objects(bucket, paths)
+
     related_cleanup = [
         ("calendar_events", "property_id"),
         ("receipts", "property_id"),
         ("maintenance_requests", "property_id"),
+        ("property_documents", "property_id"),
         ("notifications", "related_id"),
     ]
     for table, column in related_cleanup:

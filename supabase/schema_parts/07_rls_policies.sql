@@ -355,6 +355,13 @@ CREATE POLICY "impressions_self_update" ON public.ad_impressions
   FOR UPDATE USING (user_id = public.get_current_user_id());
 
 
+-- ── AD_INTERACTIONS ─────────────────────────────────────────
+DROP POLICY IF EXISTS "ad_interactions_admin_read" ON public.ad_interactions;
+
+CREATE POLICY "ad_interactions_admin_read" ON public.ad_interactions
+  FOR SELECT USING (public.get_current_user_role() = 'admin');
+
+
 -- ── TEAM_TASKS ──────────────────────────────────────────────
 -- Uyari: 24_team_hub.sql'de team_tasks icin RLS tanimlanmamisti.
 -- Bu eksiklik burada giderildi.

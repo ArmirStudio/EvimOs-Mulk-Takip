@@ -119,9 +119,9 @@ const useStyles = createThemedStyles((theme) =>
     userName: { fontSize: theme.fontSize.base, fontWeight: theme.fontWeight.semibold, color: theme.colors.textPrimary, marginBottom: 2 },
     contactLabel: { fontSize: theme.fontSize.xs, color: theme.colors.textMuted, marginBottom: 4 },
     userUsername: { fontSize: theme.fontSize.sm, color: theme.colors.textSecondary, marginBottom: 4 },
-    phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+    phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
     userPhone: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted },
-    propertyRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    propertyRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     propertyDot: { width: 6, height: 6, borderRadius: 3 },
     propertyText: { fontSize: theme.fontSize.xs, color: theme.colors.successText, fontWeight: theme.fontWeight.medium },
   })

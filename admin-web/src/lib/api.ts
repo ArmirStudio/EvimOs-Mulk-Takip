@@ -1,4 +1,4 @@
-import type { AdCampaign, CampaignType } from '@shared/campaign';
+import type { AdCampaign, AdCampaignStats, CampaignType } from '@shared/campaign';
 
 import { supabase } from './supabase';
 
@@ -103,6 +103,10 @@ export function getAdminSession() {
 
 export function listAdminCampaigns() {
   return apiRequest<{ campaigns: AdCampaign[] }>('/admin/campaigns');
+}
+
+export function listAdminCampaignStats() {
+  return apiRequest<{ stats: AdCampaignStats[] }>('/admin/campaigns/stats');
 }
 
 export function getAdminCampaign(campaignId: string) {

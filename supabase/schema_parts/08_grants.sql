@@ -17,6 +17,9 @@ GRANT ALL    ON public.ad_campaigns TO service_role;
 GRANT SELECT, INSERT, UPDATE ON public.ad_impressions TO authenticated;
 GRANT ALL                    ON public.ad_impressions TO service_role;
 
+-- ad_interactions: istemciler backend uzerinden yazar, admin backend uzerinden okur
+GRANT ALL ON public.ad_interactions TO service_role;
+
 -- receipt_events: authenticated okur/ekler
 GRANT SELECT, INSERT ON public.receipt_events TO authenticated;
 GRANT SELECT, INSERT ON public.receipt_events TO anon;
@@ -27,9 +30,21 @@ GRANT SELECT, INSERT, UPDATE ON public.maintenance_logs TO authenticated;
 GRANT SELECT, INSERT, UPDATE ON public.maintenance_logs TO anon;
 GRANT ALL                    ON public.maintenance_logs TO service_role;
 
--- users: client profil okumasi RLS ile sinirli, push_token guncellemesi kolon bazli
+-- users: client profil okumasi RLS ile sinirli, self-update kolon bazli.
+-- Rol, status, auth baglantisi ve ofis baglantisi yalniz backend service_role ile degisir.
+REVOKE ALL ON TABLE public.users FROM anon;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON TABLE public.users FROM authenticated;
 GRANT SELECT ON TABLE public.users TO authenticated;
-GRANT UPDATE (push_token) ON TABLE public.users TO authenticated;
+GRANT UPDATE (
+  full_name,
+  phone,
+  city,
+  district,
+  avatar_url,
+  push_token,
+  preferred_currency,
+  preferred_theme
+) ON TABLE public.users TO authenticated;
 
 -- invites: backend service_role yazar; authenticated yalniz ofis kapsaminda okur
 GRANT SELECT ON public.invites, public.invite_events TO authenticated;

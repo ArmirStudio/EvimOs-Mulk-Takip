@@ -120,6 +120,7 @@ export default function SettingsScreen() {
   const s = useStyles();
   const role = userData?.role ?? 'tenant';
   const isAgent = role === 'agent';
+  const isLandlord = role === 'landlord';
   const canUseDirectory = canViewOfficeDirectory(userData);
   const routeRole = role === 'employee' ? 'agent' : role;
   const roleColor = getRoleColor(theme, role);
@@ -344,6 +345,14 @@ export default function SettingsScreen() {
             {renderMenuItem('person-add-alt-1', 'Kullanıcı Davet Et', () => router.push('/agent/invite' as any))}
             <View style={s.menuDivider} />
             {renderMenuItem('pending-actions', 'Bekleyen Davetler', () => router.push('/agent/pending-invites' as any))}
+            <View style={s.menuDivider} />
+            {renderMenuItem('bar-chart', 'Raporlar & Analizler', () => router.push('/agent/reports' as any))}
+          </>
+        )}
+        {isLandlord && (
+          <>
+            <View style={s.menuDivider} />
+            {renderMenuItem('bar-chart', 'Raporlar & Analizler', () => router.push('/landlord/reports' as any))}
           </>
         )}
       </View>
@@ -754,7 +763,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   addFormCard:     { backgroundColor: theme.colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 16 },
   empCard:         { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: theme.colors.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: theme.colors.border, marginBottom: 10 },
   empHeaderRow:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  empActionPill:   { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: theme.colors.primaryLight },
+  empActionPill:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: theme.colors.primaryLight },
   empActionText:   { fontSize: 12, fontWeight: '700', color: theme.colors.primary },
   empName:         { flex: 1, fontSize: 15, fontWeight: '700', color: theme.colors.textPrimary },
   empEmail:        { fontSize: 13, color: theme.colors.textMuted, marginTop: 2 },

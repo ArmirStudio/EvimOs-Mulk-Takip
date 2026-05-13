@@ -458,6 +458,12 @@ export default function TeamHubScreen() {
       let attachmentKind: AnnouncementAttachmentDraft['kind'] | null = null;
 
       if (announcementAttachment) {
+        const officeOwnerId = userData?.role === 'employee'
+          ? userData.created_by
+          : userData?.id;
+        if (!officeOwnerId || !userData?.id) {
+          throw new Error('Ofis bilgisi bulunamadi.');
+        }
         const preparedAttachment = await prepareUploadAsset({
           uri: announcementAttachment.uri,
           name: announcementAttachment.name,
@@ -466,7 +472,7 @@ export default function TeamHubScreen() {
         const ext = preparedAttachment.name.includes('.') ? preparedAttachment.name.split('.').pop() : 'bin';
         const upload = await uploadFileToSupabaseStorage({
           bucket: 'announcement-files',
-          path: `${userData?.id || 'office'}/${Date.now()}.${ext}`,
+          path: `${officeOwnerId}/${userData.id}/${Date.now()}.${ext}`,
           fileUri: preparedAttachment.uri,
           contentType: preparedAttachment.mimeType,
         });

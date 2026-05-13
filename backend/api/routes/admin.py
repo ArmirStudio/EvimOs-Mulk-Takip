@@ -742,6 +742,61 @@ def list_admin_campaigns(current_user: dict = Depends(get_current_user)):
     return {"campaigns": campaigns}
 
 
+@router.get("/campaigns/stats")
+def list_admin_campaign_stats(current_user: dict = Depends(get_current_user)):
+    _require_admin(current_user)
+    campaigns = (
+        supabase.table("ad_campaigns")
+        .select("id, title, type")
+        .execute()
+        .data
+        or []
+    )
+    stats_by_campaign: dict[str, dict[str, Any]] = {
+        campaign["id"]: {
+            "campaign_id": campaign["id"],
+            "title": campaign.get("title"),
+            "type": campaign.get("type"),
+            "impressions": 0,
+            "clicks": 0,
+            "link_opens": 0,
+        }
+        for campaign in campaigns
+        if campaign.get("id")
+    }
+
+    impressions = (
+        supabase.table("ad_impressions")
+        .select("ad_id, show_count")
+        .execute()
+        .data
+        or []
+    )
+    for item in impressions:
+        ad_id = item.get("ad_id")
+        if ad_id not in stats_by_campaign:
+            continue
+        stats_by_campaign[ad_id]["impressions"] += int(item.get("show_count") or 0)
+
+    interactions = (
+        supabase.table("ad_interactions")
+        .select("ad_id, event_type")
+        .execute()
+        .data
+        or []
+    )
+    for item in interactions:
+        ad_id = item.get("ad_id")
+        if ad_id not in stats_by_campaign:
+            continue
+        if item.get("event_type") == "click":
+            stats_by_campaign[ad_id]["clicks"] += 1
+        elif item.get("event_type") == "link_open":
+            stats_by_campaign[ad_id]["link_opens"] += 1
+
+    return {"stats": list(stats_by_campaign.values())}
+
+
 @router.get("/campaigns/{campaign_id}")
 def get_admin_campaign(campaign_id: str, current_user: dict = Depends(get_current_user)):
     _require_admin(current_user)

@@ -3,10 +3,11 @@ import unicodedata
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 
 from core.database import supabase
 from core.security import get_current_user
+from models.schemas import CampaignEventRequest
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 logger = logging.getLogger(__name__)
@@ -95,6 +96,21 @@ def _list_active_campaigns() -> list[dict]:
     except Exception as exc:
         logger.warning("Dashboard campaign query skipped, returning empty list: %s", exc)
         return []
+
+
+def _fetch_campaign(campaign_id: str) -> dict | None:
+    try:
+        return (
+            supabase.table("ad_campaigns")
+            .select("*")
+            .eq("id", campaign_id)
+            .maybe_single()
+            .execute()
+            .data
+        )
+    except Exception as exc:
+        logger.warning("Dashboard campaign lookup failed: %s", exc)
+        return None
 
 
 def _campaign_is_active_today(campaign: dict, today: str) -> bool:
@@ -302,3 +318,43 @@ def list_dashboard_campaigns(current_user: dict = Depends(get_current_user)):
     )
 
     return {"campaigns": matched}
+
+
+@router.post("/campaigns/{campaign_id}/events")
+def record_campaign_event(
+    campaign_id: str,
+    request: CampaignEventRequest,
+    current_user: dict = Depends(get_current_user),
+):
+    today = datetime.utcnow().date().isoformat()
+    campaign = _fetch_campaign(campaign_id)
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Kampanya bulunamadi")
+
+    province, districts, agency_id = _resolve_campaign_scope(current_user)
+    if not _campaign_is_active_today(campaign, today) or not _campaign_matches_user(
+        campaign,
+        role=current_user.get("role"),
+        province=province,
+        districts=districts,
+        agency_id=agency_id,
+    ):
+        raise HTTPException(status_code=403, detail="Kampanya bu kullanici icin uygun degil")
+
+    link_url = str(campaign.get("link_url") or "").strip() or None
+    if request.event_type == "link_open" and not link_url:
+        raise HTTPException(status_code=400, detail="Kampanya linki bulunamadi")
+
+    placement = str(request.placement or "").strip()[:80] or None
+    metadata = request.metadata if isinstance(request.metadata, dict) else {}
+    supabase.table("ad_interactions").insert({
+        "ad_id": campaign_id,
+        "user_id": current_user.get("id"),
+        "event_type": request.event_type,
+        "placement": placement,
+        "link_url": link_url,
+        "shown_date": today,
+        "metadata": metadata,
+    }).execute()
+
+    return {"success": True, "link_url": link_url}

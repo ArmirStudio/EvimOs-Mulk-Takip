@@ -711,6 +711,23 @@ export function listDashboardCampaigns() {
   return apiRequest<{ campaigns: any[] }>('/dashboard/campaigns');
 }
 
+export function recordCampaignEvent(
+  campaignId: string,
+  payload: {
+    event_type: 'click' | 'link_open';
+    placement?: string;
+    metadata?: Record<string, unknown>;
+  }
+) {
+  return apiRequest<{ success: boolean; link_url?: string | null }>(
+    `/dashboard/campaigns/${campaignId}/events`,
+    {
+      method: 'POST',
+      body: payload,
+    }
+  );
+}
+
 export function resolveLoginIdentifier(identifier: string) {
   return publicApiRequest<{ email: string; resolved: boolean }>('/auth/resolve-identifier', {
     method: 'POST',

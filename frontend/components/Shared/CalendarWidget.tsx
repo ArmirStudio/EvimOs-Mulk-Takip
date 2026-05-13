@@ -718,6 +718,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     gap: theme.spacing.md,
     borderRadius: theme.borderRadius.lg,
     paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
     borderWidth: 1,
     borderColor: theme.colors.divider,
   },

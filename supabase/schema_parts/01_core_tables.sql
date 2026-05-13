@@ -7,7 +7,7 @@
 -- Siralama: agencies -> users -> properties -> receipts ->
 --   maintenance_requests -> notifications -> calendar_events ->
 --   property_documents -> receipt_events -> maintenance_logs ->
---   ad_campaigns -> ad_impressions ->
+--   ad_campaigns -> ad_impressions -> ad_interactions ->
 --   team_tasks -> announcements -> announcement_recipients ->
 --   team_messages
 -- ============================================================
@@ -344,7 +344,20 @@ CREATE TABLE IF NOT EXISTS public.ad_impressions (
   UNIQUE(ad_id, user_id, shown_date)
 );
 
--- ── 1.13 team_tasks ──────────────────────────────────────────
+-- ── 1.13 ad_interactions ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.ad_interactions (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id       UUID NOT NULL REFERENCES public.ad_campaigns(id) ON DELETE CASCADE,
+  user_id     UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  event_type  TEXT NOT NULL CHECK (event_type IN ('click', 'link_open')),
+  placement   TEXT,
+  link_url    TEXT,
+  shown_date  DATE NOT NULL DEFAULT CURRENT_DATE,
+  metadata    JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ── 1.14 team_tasks ──────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS public.team_tasks (
   id                   UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   office_owner_id      UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,

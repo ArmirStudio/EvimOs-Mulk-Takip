@@ -793,7 +793,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   dotActive: { width: 20, height: 6, borderRadius: 3, backgroundColor: '#fff' },
   heroFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 18, paddingBottom: 16 },
   heroTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 },
-  heroLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  heroLocationRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   heroLocation: { fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: '500' },
 
   // Price Band

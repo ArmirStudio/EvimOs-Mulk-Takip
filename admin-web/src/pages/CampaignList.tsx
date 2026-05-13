@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { type AdCampaign, CAMPAIGN_TYPE_ICONS, CAMPAIGN_TYPE_LABELS } from '@shared/campaign';
+import {
+  type AdCampaign,
+  type AdCampaignStats,
+  CAMPAIGN_TYPE_ICONS,
+  CAMPAIGN_TYPE_LABELS,
+} from '@shared/campaign';
 import {
   deleteAdminCampaign,
   duplicateAdminCampaign,
   listAdminCampaigns,
+  listAdminCampaignStats,
   toggleAdminCampaign,
 } from '../lib/api';
 
 export default function CampaignList() {
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
+  const [statsByCampaign, setStatsByCampaign] = useState<Record<string, AdCampaignStats>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
   const [duplicating, setDuplicating] = useState<string | null>(null);
@@ -23,8 +30,14 @@ export default function CampaignList() {
   const fetchCampaigns = async () => {
     setLoading(true);
     try {
-      const response = await listAdminCampaigns();
+      const [response, statsResponse] = await Promise.all([
+        listAdminCampaigns(),
+        listAdminCampaignStats(),
+      ]);
       setCampaigns(response.campaigns || []);
+      setStatsByCampaign(
+        Object.fromEntries((statsResponse.stats || []).map((item) => [item.campaign_id, item]))
+      );
     } catch (error) {
       console.error('Fetch error:', error);
     } finally {
@@ -170,6 +183,7 @@ export default function CampaignList() {
             <col />
             <col style={{ width: 140 }} />
             <col style={{ width: 120 }} />
+            <col style={{ width: 150 }} />
             <col style={{ width: 60 }} />
             <col style={{ width: 90 }} />
             <col style={{ width: 120 }} />
@@ -180,13 +194,16 @@ export default function CampaignList() {
               <th>Kampanya Detayi</th>
               <th>Hedefleme</th>
               <th>Tarih Araligi</th>
+              <th>Istatistik</th>
               <th>Sira</th>
               <th>Durum</th>
               <th>Islem</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCampaigns.map((campaign) => (
+            {filteredCampaigns.map((campaign) => {
+              const stats = statsByCampaign[campaign.id];
+              return (
               <tr key={campaign.id}>
                 <td>
                   <div className="flex items-center gap-8">
@@ -214,6 +231,16 @@ export default function CampaignList() {
                   <div style={{ fontSize: 13, fontWeight: 500 }}>{formatDate(campaign.start_date)}</div>
                   <div className="muted" style={{ fontSize: 11 }}>
                     {formatDate(campaign.end_date)}
+                  </div>
+                </td>
+                <td>
+                  <div className="flex flex-col gap-4">
+                    <span style={{ fontSize: 12, fontWeight: 700 }}>
+                      {stats?.impressions ?? 0} gosterim
+                    </span>
+                    <span className="muted" style={{ fontSize: 11 }}>
+                      {stats?.clicks ?? 0} tik / {stats?.link_opens ?? 0} link
+                    </span>
                   </div>
                 </td>
                 <td style={{ textAlign: 'center', fontWeight: 700 }}>{campaign.sort_order}</td>
@@ -269,7 +296,8 @@ export default function CampaignList() {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       )}

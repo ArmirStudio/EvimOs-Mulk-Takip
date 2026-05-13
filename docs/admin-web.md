@@ -7,6 +7,7 @@
 - create, update, delete
 - aktiflik toggle
 - duplicate
+- kampanya gosterim, tiklama ve link acma istatistiklerini gosterme
 - medya upload
 - canli mobil preview
 - admin oturum dogrulamasi
@@ -40,6 +41,7 @@
 ## Endpointler
 - `GET /api/admin/session`
 - `GET /api/admin/campaigns`
+- `GET /api/admin/campaigns/stats`
 - `GET /api/admin/campaigns/{id}`
 - `POST /api/admin/campaigns`
 - `PATCH /api/admin/campaigns/{id}`

@@ -20,6 +20,7 @@ ALTER TABLE public.receipt_events        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.maintenance_logs      ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ad_campaigns          ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ad_impressions        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ad_interactions       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.team_tasks            ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcements         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.announcement_recipients ENABLE ROW LEVEL SECURITY;

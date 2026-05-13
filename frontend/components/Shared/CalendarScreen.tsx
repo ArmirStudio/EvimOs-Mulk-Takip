@@ -258,7 +258,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   eventSubtitle: { fontSize: 12, color: theme.colors.textSecondary },
   eventTenant: { fontSize: 12, color: theme.colors.textMuted },
   eventAmount: { fontSize: 16, fontWeight: '700' },
-  statusPill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginTop: 4 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, marginTop: 4 },
   statusPillText: { fontSize: 10, fontWeight: '600' },
   markPaidBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: theme.colors.border },
   markPaidText: { fontSize: 13, fontWeight: '600', color: theme.colors.success }

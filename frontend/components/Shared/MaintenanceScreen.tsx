@@ -1022,7 +1022,7 @@ const useStyles = createThemedStyles((theme) =>
     receiptSummaryPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 6,
       backgroundColor: theme.colors.successLight,
       borderRadius: 999,
       paddingHorizontal: 10,
@@ -1245,7 +1245,7 @@ const useStyles = createThemedStyles((theme) =>
     footerItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 5,
+      gap: 6,
     },
     cardDate: { fontSize: 12, color: theme.colors.textMuted },
     emptyContainer: {

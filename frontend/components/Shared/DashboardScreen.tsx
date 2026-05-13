@@ -11,7 +11,7 @@ import type { AdCampaign } from '@shared/campaign';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { tr } from '../../app/translations';
 import { brand } from '../../constants/brand';
-import { getTeamReport, listDashboardCampaigns } from '../../services/appApi';
+import { listDashboardCampaigns, recordCampaignEvent } from '../../services/appApi';
 import { formatCurrency } from '../../utils/propertyHelpers';
 import { supabase } from '../../services/supabase';
 import { useUserData } from '../../hooks/useUserData';
@@ -28,7 +28,6 @@ import AnimatedScreen from './AnimatedScreen';
 import PendingApprovalScreen from './PendingApprovalScreen';
 import { getOfficeOwnerId, hasFullEmployeeAccess } from '../../utils/employeeAccess';
 import { getMaintenanceNextAction, getMaintenanceStatusMeta, getMaintenanceStatusTone } from '../../utils/maintenancePresentation';
-import type { TeamReportPayload } from '../../services/teamTypes';
 
 // ─── Rol bazlı banner alt yazıları ───────────────────────────────────────────
 const BANNER_SUB: Record<string, string> = {
@@ -170,8 +169,6 @@ export default function DashboardScreen() {
   // Ad campaigns state
   const [adCampaigns, setAdCampaigns] = useState<AdCampaign[]>([]);
   const [activeInterstitial, setActiveInterstitial] = useState<AdCampaign | null>(null);
-  const [teamReportPreview, setTeamReportPreview] = useState<TeamReportPayload | null>(null);
-  const [teamReportPreviewLoading, setTeamReportPreviewLoading] = useState(false);
 
   // Ekrana odaklanıldığında kullanıcı verisini yenile
   useFocusEffect(
@@ -447,31 +444,6 @@ export default function DashboardScreen() {
     }
   }, []);
 
-  // ── Kampanya fetch + hedefleme ─────────────────────────────────────────────
-  const fetchTeamReportPreview = useCallback(async () => {
-    if (!userData || !['agent', 'employee'].includes(userData.role)) {
-      setTeamReportPreviewLoading(false);
-      setTeamReportPreview(null);
-      return;
-    }
-
-    if (userData.role === 'employee' && !hasFullEmployeeAccess(userData)) {
-      setTeamReportPreviewLoading(false);
-      setTeamReportPreview(null);
-      return;
-    }
-
-    try {
-      setTeamReportPreviewLoading(true);
-      const payload = await getTeamReport('this_week');
-      setTeamReportPreview(payload);
-    } catch {
-      setTeamReportPreview(null);
-    } finally {
-      setTeamReportPreviewLoading(false);
-    }
-  }, [userData]);
-
   const fetchAdCampaigns = useCallback(async () => {
     if (!userData?.id || !userData?.role) return;
     try {
@@ -553,6 +525,27 @@ export default function DashboardScreen() {
     }
   }, [userData?.id, userData?.role]);
 
+  const handleCampaignEvent = useCallback(
+    async (campaign: AdCampaign, eventType: 'click' | 'link_open', placement: string) => {
+      if (!userData?.id || !campaign.id) return;
+      try {
+        await recordCampaignEvent(campaign.id, {
+          event_type: eventType,
+          placement,
+          metadata: {
+            campaign_type: campaign.type,
+            user_role: userData.role,
+          },
+        });
+      } catch (error) {
+        if (__DEV__) {
+          console.warn('[ads] campaign event failed:', error);
+        }
+      }
+    },
+    [userData?.id, userData?.role]
+  );
+
   useEffect(() => {
     if (!userData) return;
     if ((userData.role === 'tenant' || userData.role === 'landlord') && userData.status === 'pending') {
@@ -565,14 +558,12 @@ export default function DashboardScreen() {
     } else if (userData.role === 'tenant') {
       fetchTenantProperty(userData.id);
     }
-    fetchTeamReportPreview();
     fetchAdCampaigns();
-  }, [userData, fetchAgentData, fetchLandlordData, fetchTenantProperty, fetchTeamReportPreview, fetchAdCampaigns]);
+  }, [userData, fetchAgentData, fetchLandlordData, fetchTenantProperty, fetchAdCampaigns]);
 
   const onRefresh = () => {
     setRefreshing(true);
     reloadUser();
-    fetchTeamReportPreview();
     fetchAdCampaigns();
   };
 
@@ -598,8 +589,6 @@ export default function DashboardScreen() {
       : 'tenant';
   const bannerTitle = `Hoş Geldin ${getDisplayName(userData?.full_name, userData?.email)}`;
   const bannerSub = getTodayGreetingDate() || (BANNER_SUB[role] ?? BANNER_SUB.tenant);
-  const canViewReport = role === 'agent' || (role === 'employee' && hasFullEmployeeAccess(currentUser));
-
   if ((role === 'tenant' || role === 'landlord') && currentUser.status === 'pending') {
     return (
       <AnimatedScreen type="fade">
@@ -732,7 +721,7 @@ export default function DashboardScreen() {
             </View>
           </Animated.View>
 
-          <SponsoredProjectsStrip campaigns={adCampaigns} />
+          <SponsoredProjectsStrip campaigns={adCampaigns} onCampaignEvent={handleCampaignEvent} />
 
           {/* ── AGENT: İSTATİSTİKLER ─────────────────────────────────────────── */}
           {(role === 'agent' || role === 'employee') && (
@@ -819,36 +808,21 @@ export default function DashboardScreen() {
             </Animated.View>
           )}
 
-          {canViewReport && (
-            <Animated.View entering={FadeInDown.delay(220).duration(500)} style={s.sectionPx}>
+          {(role === 'agent' || role === 'employee') && (
+            <Animated.View entering={FadeInDown.delay(290).duration(500)} style={s.sectionPx}>
               <TouchableOpacity
-                style={s.reportCard}
+                style={s.reportsBannerCard}
                 activeOpacity={0.88}
-                onPress={() => router.push('/agent/team?tab=report' as any)}
+                onPress={() => router.push('/agent/reports' as any)}
               >
-                <View style={s.reportCardHeader}>
-                  <View>
-                    <Text style={s.chartTitle}>Haftalik Rapor</Text>
-                    <Text style={s.maintenancePanelSub}>Ekip, portfoy ve operasyon sagligini gercek veriden izleyin.</Text>
-                  </View>
-                  <View style={s.maintenancePanelLink}>
-                    <MaterialIcons name="arrow-forward" size={18} color={theme.colors.primary} />
-                  </View>
+                <View style={s.reportsBannerIcon}>
+                  <MaterialIcons name="bar-chart" size={22} color={theme.colors.primary} />
                 </View>
-                <View style={s.reportMetricRow}>
-                  {teamReportPreviewLoading ? (
-                    <ActivityIndicator size="small" color={theme.colors.primary} />
-                  ) : teamReportPreview ? (
-                    teamReportPreview.sections.teamPerformance.metrics.slice(0, 3).map((metric) => (
-                      <View key={metric.label} style={s.reportMetricCard}>
-                        <Text style={s.reportMetricValue}>{metric.value}</Text>
-                        <Text style={s.reportMetricLabel}>{metric.label}</Text>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={s.emptyText}>Rapor verisi henüz hazır değil.</Text>
-                  )}
+                <View style={{ flex: 1 }}>
+                  <Text style={s.reportsBannerTitle}>Raporlar & Analizler</Text>
+                  <Text style={s.reportsBannerSub}>Doluluk, gelir, gecikme ve ekip skorları</Text>
                 </View>
+                <MaterialIcons name="arrow-forward-ios" size={16} color={theme.colors.primary} />
               </TouchableOpacity>
             </Animated.View>
           )}
@@ -1003,6 +977,25 @@ export default function DashboardScreen() {
                   </View>
                 )}
               </View>
+            </Animated.View>
+          )}
+
+          {role === 'landlord' && (
+            <Animated.View entering={FadeInDown.delay(270).duration(500)} style={s.sectionPx}>
+              <TouchableOpacity
+                style={s.reportsBannerCard}
+                activeOpacity={0.88}
+                onPress={() => router.push('/landlord/reports' as any)}
+              >
+                <View style={s.reportsBannerIcon}>
+                  <MaterialIcons name="bar-chart" size={22} color={theme.colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.reportsBannerTitle}>Raporlar & Analizler</Text>
+                  <Text style={s.reportsBannerSub}>Kira geliri, doluluk ve bakım özeti</Text>
+                </View>
+                <MaterialIcons name="arrow-forward-ios" size={16} color={theme.colors.primary} />
+              </TouchableOpacity>
             </Animated.View>
           )}
 
@@ -1218,7 +1211,7 @@ export default function DashboardScreen() {
           )}
 
           {/* ── TAKVİM WİDGET (tüm roller) ───────────────────────────────────── */}
-          <RealEstateNewsRail campaigns={adCampaigns} />
+          <RealEstateNewsRail campaigns={adCampaigns} onCampaignEvent={handleCampaignEvent} />
 
           {userData && (
             <Animated.View entering={FadeInDown.delay(role === 'landlord' ? 300 : 200).duration(500)}>
@@ -1258,7 +1251,7 @@ export default function DashboardScreen() {
           )}
 
           {/* ── PAZARLAMA BÖLÜMLERİ (tüm roller) ────────────────────────────── */}
-          <MarketingTrustSections campaigns={adCampaigns} />
+          <MarketingTrustSections campaigns={adCampaigns} onCampaignEvent={handleCampaignEvent} />
         </AnimatedHeaderScrollView>
       </View>
 
@@ -1266,6 +1259,7 @@ export default function DashboardScreen() {
       <InterstitialAdModal
         visible={!!activeInterstitial}
         ad={activeInterstitial}
+        onCampaignEvent={handleCampaignEvent}
         onClose={() => setActiveInterstitial(null)}
       />
     </AnimatedScreen>
@@ -1396,9 +1390,10 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: theme.colors.divider,
+    alignItems: 'center',
   },
   reportMetricValue: { fontSize: 18, fontWeight: '800', color: theme.colors.textPrimary },
-  reportMetricLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, lineHeight: 14 },
+  reportMetricLabel: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, lineHeight: 14, textAlign: 'center' },
 
   // Agent aktivite listesi
   activityStack: { marginTop: 12, gap: 10 },
@@ -1551,4 +1546,27 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   occupancyBarBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: theme.colors.surface2, overflow: 'hidden' },
   occupancyBarFill: { height: 6, borderRadius: 3, backgroundColor: theme.colors.success },
   occupancyPercent: { fontSize: 12, fontWeight: '700', color: theme.colors.successText, width: 36, textAlign: 'right' },
+  reportsBannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 16,
+    borderRadius: 18,
+    backgroundColor: theme.colors.primaryLight,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.primary,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...theme.shadows.sm,
+  },
+  reportsBannerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.colors.background,
+  },
+  reportsBannerTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.textPrimary },
+  reportsBannerSub: { fontSize: 12, color: theme.colors.textSecondary, marginTop: 2 },
 }));

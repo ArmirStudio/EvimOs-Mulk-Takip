@@ -28,6 +28,14 @@ Bu dosya implementation odagini anlatir. Rol matrisi ve uygulama erisim davranis
 - Kampanya CRUD tamamen admin-web + backend kombinasyonundadir.
 - Mobil reklam delivery read akisi artik backend `GET /api/dashboard/campaigns` ile filtrelenir.
 - Interstitial impression kaydi istemcide `ad_impressions` tablosuna yazilir.
+- Reklam tiklama ve link acma olaylari backend `POST /api/dashboard/campaigns/{campaign_id}/events` uzerinden `ad_interactions` tablosuna yazilir.
+- `ad_interactions` icin istemciye dogrudan grant verilmez; yazma backend `service_role`, okuma admin backend akisi ile yapilir.
+- Admin-web kampanya istatistikleri backend `GET /api/admin/campaigns/stats` uzerinden gelir.
+
+## Storage Sistemi
+- Hassas veya ofis/kullanici scope'lu bucketlar private tutulur.
+- `receipts`, `property-documents`, `maintenance-photos`, `tenant-documents`, `team-message-files`, `task-photos` ve `announcement-files` policy'leri bucket geneline acik degil, path ve DB scope kontrolleri ile sinirlidir.
+- `ad-media`, `avatars` ve `agency-branding` public medya bucketlari backend upload guard'i ile kullanilir.
 
 ## Team ve Notification
 - Team gorevleri ve duyurular backend tarafinda notification uretir.

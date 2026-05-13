@@ -379,9 +379,9 @@ const useStyles = createThemedStyles((theme) =>
       minHeight: 50,
       minWidth: 56,
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: 6,
       borderRadius: 18,
-      gap: 3,
+      gap: 4,
     },
     navInnerActive: {
       backgroundColor: theme.colors.primaryLight,

@@ -85,10 +85,7 @@ export default function AgentReportsPanel() {
   const currentMonth = expenseSummary[0];
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={s.content}
-    >
+    <View style={s.content}>
       {/* ── Harcama Özeti ── */}
       <Text style={s.sectionLabel}>HARCAMA ÖZETİ</Text>
 
@@ -249,12 +246,12 @@ export default function AgentReportsPanel() {
       ) : null}
 
       <View style={{ height: 80 }} />
-    </ScrollView>
+    </View>
   );
 }
 
 const useStyles = createThemedStyles((theme) => StyleSheet.create({
-  content:        { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 40 },
+  content:        { paddingTop: 8, paddingBottom: 40 },
   sectionLabel:   { fontSize: 11, fontWeight: '700', color: theme.colors.textMuted, letterSpacing: 0.8, marginBottom: 12 },
   loadingBox:     { paddingVertical: 32, alignItems: 'center' },
   errorBox:       { paddingVertical: 24, alignItems: 'center', gap: 8 },

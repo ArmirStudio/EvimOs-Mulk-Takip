@@ -18,6 +18,11 @@ export type { AdCampaign } from '@shared/campaign';
 
 interface Props {
   campaigns: AdCampaign[];
+  onCampaignEvent?: (
+    campaign: AdCampaign,
+    eventType: 'click' | 'link_open',
+    placement: string
+  ) => Promise<void> | void;
 }
 
 const shadow = (color = '#000', opacity = 0.05, radius = 4, elevation = 2) => ({
@@ -28,18 +33,38 @@ const shadow = (color = '#000', opacity = 0.05, radius = 4, elevation = 2) => ({
   elevation,
 });
 
-function openCampaignLink(url?: string | null) {
+async function openCampaignLink(
+  campaign: AdCampaign,
+  placement: string,
+  onCampaignEvent?: Props['onCampaignEvent']
+) {
+  const url = campaign.link_url;
   if (!url) return;
-  Linking.canOpenURL(url)
-    .then((supported) => {
-      if (supported) return Linking.openURL(url);
-      console.warn('Cannot open URL:', url);
-      return undefined;
-    })
-    .catch((error) => console.error('Error opening URL:', error));
+
+  try {
+    await onCampaignEvent?.(campaign, 'click', placement);
+  } catch {
+    // Analytics must not block the user's navigation.
+  }
+
+  try {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      try {
+        await onCampaignEvent?.(campaign, 'link_open', placement);
+      } catch {
+        // Analytics must not block the user's navigation.
+      }
+      await Linking.openURL(url);
+      return;
+    }
+    console.warn('Cannot open URL:', url);
+  } catch (error) {
+    console.error('Error opening URL:', error);
+  }
 }
 
-export function SponsoredProjectsStrip({ campaigns }: Props) {
+export function SponsoredProjectsStrip({ campaigns, onCampaignEvent }: Props) {
   const theme = useAppTheme();
   const s = useStyles();
   const c = theme.colors.stitch;
@@ -57,7 +82,7 @@ export function SponsoredProjectsStrip({ campaigns }: Props) {
           <TouchableOpacity
             key={ad.id}
             style={s.compactProjectCard}
-            onPress={() => openCampaignLink(ad.link_url)}
+            onPress={() => openCampaignLink(ad, 'sponsored_strip', onCampaignEvent)}
             activeOpacity={ad.link_url ? 0.75 : 1}
           >
             {ad.image_url ? (
@@ -78,7 +103,7 @@ export function SponsoredProjectsStrip({ campaigns }: Props) {
   );
 }
 
-export function RealEstateNewsRail({ campaigns }: Props) {
+export function RealEstateNewsRail({ campaigns, onCampaignEvent }: Props) {
   const theme = useAppTheme();
   const s = useStyles();
   const c = theme.colors.stitch;
@@ -94,7 +119,7 @@ export function RealEstateNewsRail({ campaigns }: Props) {
           <TouchableOpacity
             key={item.id}
             style={s.newsRailCard}
-            onPress={() => openCampaignLink(item.link_url)}
+            onPress={() => openCampaignLink(item, 'news_rail', onCampaignEvent)}
             activeOpacity={item.link_url ? 0.75 : 1}
           >
             {item.image_url ? (
@@ -115,7 +140,7 @@ export function RealEstateNewsRail({ campaigns }: Props) {
   );
 }
 
-export function MarketingTrustSections({ campaigns }: Props) {
+export function MarketingTrustSections({ campaigns, onCampaignEvent }: Props) {
   const theme = useAppTheme();
   const s = useStyles();
   const c = theme.colors.stitch;
@@ -169,7 +194,7 @@ export function MarketingTrustSections({ campaigns }: Props) {
               <TouchableOpacity
                 key={service.id}
                 style={s.partnerItem}
-                onPress={() => openCampaignLink(service.link_url)}
+                onPress={() => openCampaignLink(service, 'partner_service', onCampaignEvent)}
                 activeOpacity={service.link_url ? 0.75 : 1}
               >
                 {service.service_icon ? (
@@ -187,16 +212,16 @@ export function MarketingTrustSections({ campaigns }: Props) {
   );
 }
 
-export default function DashboardMarketingSection({ campaigns }: Props) {
+export default function DashboardMarketingSection({ campaigns, onCampaignEvent }: Props) {
   const hasCampaigns = campaigns.some((item) =>
     item.type === 'inline_ad' || item.type === 'news' || item.type === 'testimonial' || item.type === 'service'
   );
   if (!hasCampaigns) return null;
   return (
     <>
-      <SponsoredProjectsStrip campaigns={campaigns} />
-      <RealEstateNewsRail campaigns={campaigns} />
-      <MarketingTrustSections campaigns={campaigns} />
+      <SponsoredProjectsStrip campaigns={campaigns} onCampaignEvent={onCampaignEvent} />
+      <RealEstateNewsRail campaigns={campaigns} onCampaignEvent={onCampaignEvent} />
+      <MarketingTrustSections campaigns={campaigns} onCampaignEvent={onCampaignEvent} />
     </>
   );
 }

@@ -25,6 +25,7 @@ export default function LandlordLayout() {
       <Stack.Screen name="change-password" options={getDetailScreenOptions(theme)} />
       <Stack.Screen name="maintenance/[id]" options={getDetailScreenOptions(theme)} />
       <Stack.Screen name="receipts/[id]" options={getDetailScreenOptions(theme)} />
+      <Stack.Screen name="reports" options={getDetailScreenOptions(theme)} />
     </Stack>
   );
 }

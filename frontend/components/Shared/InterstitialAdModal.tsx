@@ -11,28 +11,23 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { AdCampaign } from '@shared/campaign';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
-
-export interface InterstitialAd {
-  id: string;
-  title: string;
-  body?: string | null;
-  image_url?: string | null;
-  link_url?: string | null;
-  lock_duration?: number | null;
-  modal_width_pct?: number | null;
-  image_height_pct?: number | null;
-}
 
 interface Props {
   visible: boolean;
-  ad: InterstitialAd | null;
+  ad: AdCampaign | null;
+  onCampaignEvent?: (
+    campaign: AdCampaign,
+    eventType: 'click' | 'link_open',
+    placement: string
+  ) => Promise<void> | void;
   onClose: () => void;
 }
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
-export default function InterstitialAdModal({ visible, ad, onClose }: Props) {
+export default function InterstitialAdModal({ visible, ad, onCampaignEvent, onClose }: Props) {
   const theme = useAppTheme();
   const styles = useStyles();
 
@@ -83,8 +78,18 @@ export default function InterstitialAdModal({ visible, ad, onClose }: Props) {
   const openLink = async () => {
     if (!ad.link_url) return;
     try {
+      await onCampaignEvent?.(ad, 'click', 'interstitial_modal');
+    } catch {
+      // Analytics must not block the user's navigation.
+    }
+    try {
       const supported = await Linking.canOpenURL(ad.link_url);
       if (supported) {
+        try {
+          await onCampaignEvent?.(ad, 'link_open', 'interstitial_modal');
+        } catch {
+          // Analytics must not block the user's navigation.
+        }
         await Linking.openURL(ad.link_url);
       }
     } catch (error) {

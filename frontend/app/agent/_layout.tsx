@@ -36,6 +36,7 @@ export default function AgentLayout() {
       <Stack.Screen name="pending-invites" options={getMainSurfaceScreenOptions(theme)} />
       <Stack.Screen name="pending-invite-detail" options={getDetailScreenOptions(theme)} />
       <Stack.Screen name="team-messages" options={getDetailScreenOptions(theme)} />
+      <Stack.Screen name="reports" options={getDetailScreenOptions(theme)} />
       <Stack.Screen name="force-password-change" options={{ headerShown: false }} />
     </Stack>
   );

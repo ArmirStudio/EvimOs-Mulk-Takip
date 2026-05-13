@@ -47,16 +47,17 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('property-images', 'property-images', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
+-- Hassas/office-scope dosyalar: private
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('tenant-documents', 'tenant-documents', TRUE)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('tenant-documents', 'tenant-documents', FALSE)
+ON CONFLICT (id) DO UPDATE SET public = FALSE;
 
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('task-photos', 'task-photos', TRUE)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('task-photos', 'task-photos', FALSE)
+ON CONFLICT (id) DO UPDATE SET public = FALSE;
 
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('announcement-files', 'announcement-files', TRUE)
-ON CONFLICT (id) DO NOTHING;
+VALUES ('announcement-files', 'announcement-files', FALSE)
+ON CONFLICT (id) DO UPDATE SET public = FALSE;
 
 -- ============================================================

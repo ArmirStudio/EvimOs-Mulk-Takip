@@ -584,11 +584,11 @@ const useStyles = createThemedStyles((theme) =>
     summaryPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
+      gap: 6,
       backgroundColor: theme.colors.successLight,
       borderRadius: theme.borderRadius.round,
       paddingHorizontal: theme.spacing.md,
-      paddingVertical: 4,
+      paddingVertical: 6,
     },
     summaryPillText: {
       fontSize: theme.fontSize.sm,

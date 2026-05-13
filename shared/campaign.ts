@@ -102,3 +102,12 @@ export interface AdCampaign {
   created_at?: string;
   updated_at?: string;
 }
+
+export interface AdCampaignStats {
+  campaign_id: string;
+  title: string | null;
+  type: CampaignType;
+  impressions: number;
+  clicks: number;
+  link_opens: number;
+}
