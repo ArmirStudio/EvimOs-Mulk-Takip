@@ -127,3 +127,16 @@ async def supabase_disconnect_handler(_request: Request, exc: Exception):
         {"detail": "Baglanti yenilendi, lutfen tekrar deneyin"},
         status_code=503,
     )
+
+
+@app.exception_handler(Exception)
+async def generic_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        "Unhandled exception on %s %s: %s",
+        request.method, request.url.path, exc,
+        exc_info=True,
+    )
+    return JSONResponse(
+        {"detail": f"Sunucu hatasi ({type(exc).__name__}). Lutfen tekrar deneyin."},
+        status_code=500,
+    )

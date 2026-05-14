@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import hashlib
+import logging
 import secrets
 import time
 import os
@@ -19,6 +20,7 @@ from models.schemas import (
 )
 
 router = APIRouter(tags=["invites"])
+logger = logging.getLogger(__name__)
 
 INVITE_TTL_HOURS = 24
 REMINDER_COOLDOWN_HOURS = 24
@@ -96,13 +98,16 @@ def _build_invite_link(token: str) -> str:
 
 
 def _event(invite_id: str | None, event_type: str, *, actor_id: str | None = None, target_user_id: str | None = None, payload: dict | None = None) -> None:
-    supabase.table("invite_events").insert({
-        "invite_id": invite_id,
-        "event_type": event_type,
-        "actor_id": actor_id,
-        "target_user_id": target_user_id,
-        "payload": payload or {},
-    }).execute()
+    try:
+        supabase.table("invite_events").insert({
+            "invite_id": invite_id,
+            "event_type": event_type,
+            "actor_id": actor_id,
+            "target_user_id": target_user_id,
+            "payload": payload or {},
+        }).execute()
+    except Exception as exc:
+        logger.warning("invite_events insert skipped [%s/%s]: %s", invite_id, event_type, exc)
 
 
 def _require_invite_manager(current_user: dict) -> str:
@@ -332,23 +337,33 @@ def create_invite(request: CreateInviteRequest, current_user: dict = Depends(get
         raise HTTPException(status_code=403, detail="Tam yetkili calisan davetini yalnizca agent olusturabilir")
 
     token = secrets.token_urlsafe(32)
-    code = _generate_unique_invite_code()
+    try:
+        code = _generate_unique_invite_code()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("invite code generation failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Davet kodu uretilemedi, lutfen tekrar deneyin")
     expires_at = _now() + timedelta(hours=INVITE_TTL_HOURS)
-    result = supabase.table("invites").insert({
-        "office_owner_id": owner_id,
-        "created_by": current_user.get("id"),
-        "role": request.role,
-        "contact_label": contact_label,
-        "token_hash": _hash_token(token),
-        "code_hash": _hash_token(code),
-        "prefill_full_name": request.prefill_full_name.strip() if request.prefill_full_name else None,
-        "prefill_phone": _normalize_phone(request.prefill_phone),
-        "prefill_email": request.prefill_email.strip().lower() if request.prefill_email else None,
-        "employee_access_level": request.employee_access_level if request.role == "employee" else None,
-        "expires_at": _iso(expires_at),
-    }).execute()
+    try:
+        result = supabase.table("invites").insert({
+            "office_owner_id": owner_id,
+            "created_by": current_user.get("id"),
+            "role": request.role,
+            "contact_label": contact_label,
+            "token_hash": _hash_token(token),
+            "code_hash": _hash_token(code),
+            "prefill_full_name": request.prefill_full_name.strip() if request.prefill_full_name else None,
+            "prefill_phone": _normalize_phone(request.prefill_phone),
+            "prefill_email": request.prefill_email.strip().lower() if request.prefill_email else None,
+            "employee_access_level": request.employee_access_level if request.role == "employee" else None,
+            "expires_at": _iso(expires_at),
+        }).execute()
+    except Exception as exc:
+        logger.error("invites insert failed: %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail="Davet olusturulamadi, lutfen tekrar deneyin")
     if not result.data:
-        raise HTTPException(status_code=500, detail="Davet oluşturulamadı")
+        raise HTTPException(status_code=500, detail="Davet olusturulamadi")
     invite = result.data[0]
     _event(invite["id"], "created", actor_id=current_user.get("id"), payload={
         "role": request.role,
