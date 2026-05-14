@@ -30,20 +30,20 @@ const FILTER_LABELS: Record<ReceiptFilter, string> = {
   pending: 'Bekleyen',
   approved: 'Onaylı',
   rejected: 'Reddedilen',
-  withdrawn: 'Geri Alinan',
+  withdrawn: 'Geri Alınan',
 };
 
 const RECEIPT_TYPE_LABELS: Record<string, string> = {
-  rent: 'Kira Odemesi',
-  dues: 'Aidat Odemesi',
+  rent: 'Kira Ödemesi',
+  dues: 'Aidat Ödemesi',
   other: 'Diğer Ödeme',
 };
 
 const RECEIPT_STATUS_LABELS: Record<string, string> = {
   pending: 'Bekleyen',
-  approved: 'Onaylandi',
+  approved: 'Onaylandı',
   rejected: 'Reddedildi',
-  withdrawn: 'Geri Alindi',
+  withdrawn: 'Geri Alındı',
 };
 
 function getActorRoute(role?: string | null) {

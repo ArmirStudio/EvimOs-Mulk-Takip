@@ -8,6 +8,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '../../services/supabase';
+import { getPropertyScores, type PropertyScore } from '../../services/appApi';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { PROPERTY_IMAGES, formatRentDay, formatCurrency } from '../../utils/propertyHelpers';
 import { useUserData } from '../../hooks/useUserData';
@@ -65,6 +66,7 @@ export default function PropertiesScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [sortBy, setSortBy] = useState<SortType>('newest');
   const [showSortModal, setShowSortModal] = useState(false);
+  const [scoreMap, setScoreMap] = useState<Record<string, PropertyScore>>({});
 
   const userRole = userData?.role || 'tenant';
   const canEditProperties = canManageOfficeRecords(userData);
@@ -110,6 +112,18 @@ export default function PropertiesScreen() {
     if (!userLoading && userData?.id) loadProperties();
   }, [loadProperties, userLoading, userData?.id]);
 
+  useEffect(() => {
+    if (userRole === 'landlord' || userRole === 'agent') {
+      getPropertyScores()
+        .then((res) => {
+          const map: Record<string, PropertyScore> = {};
+          for (const s of res.scores) map[s.property_id] = s;
+          setScoreMap(map);
+        })
+        .catch(() => {/* non-blocking */});
+    }
+  }, [userRole, userData?.id]);
+
   useFocusEffect(
     useCallback(() => {
       if (!userLoading && userData?.id) loadProperties();
@@ -153,6 +167,14 @@ export default function PropertiesScreen() {
     const roomType = item.room_type || parseRoomType(item.description);
     const area = item.area || null;
     const imageUri = item.images?.[0] || PROPERTY_IMAGES[index % PROPERTY_IMAGES.length];
+    const score = scoreMap[item.id];
+    const scoreColor = !score
+      ? theme.colors.textMuted
+      : score.overall >= 80
+      ? theme.colors.success
+      : score.overall >= 50
+      ? theme.colors.warning
+      : theme.colors.error;
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 60).duration(400).springify()}>
@@ -243,6 +265,12 @@ export default function PropertiesScreen() {
               </View>
 
               <View style={s.actionRow}>
+                {/* Performance score badge — landlord/agent only */}
+                {score && (
+                  <View style={[s.scoreBadge, { borderColor: scoreColor }]}>
+                    <Text style={[s.scoreText, { color: scoreColor }]}>{score.overall}</Text>
+                  </View>
+                )}
                 {canEditProperties && (
                   <TouchableOpacity
                     style={s.editBtn}
@@ -560,6 +588,13 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   tenantName: { fontSize: 13, fontWeight: '600', color: theme.colors.textPrimary, flex: 1 },
   tenantNameEmpty: { color: theme.colors.textMuted, fontStyle: 'italic' },
   actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  scoreBadge: {
+    width: 36, height: 36, borderRadius: 18,
+    borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: theme.colors.surface,
+  },
+  scoreText: { fontSize: 11, fontWeight: '800' },
   editBtn: {
     width: 32, height: 32, borderRadius: 16,
     backgroundColor: theme.colors.surface2,

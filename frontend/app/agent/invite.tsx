@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import {
   Alert,
   Linking,
+  Modal,
   Platform,
+  Pressable,
   ScrollView,
   Share,
   StatusBar,
@@ -15,25 +17,24 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import * as Contacts from 'expo-contacts';
+import Animated, { ZoomIn, FadeIn } from 'react-native-reanimated';
 
 import { createThemedStyles, useAppTheme } from '../theme';
 import { createInvite, type InviteRole } from '../../services/appApi';
-import { normalizeTurkishPhone } from '../../utils/phone';
 
-type EntryMethod = 'contacts' | 'manual';
 type EmployeeAccessLevel = 'full' | 'limited';
 
-const ROLE_OPTIONS: { value: InviteRole; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
-  { value: 'tenant', label: 'Kiracı', icon: 'person' },
-  { value: 'landlord', label: 'Ev Sahibi', icon: 'home' },
-  { value: 'employee', label: 'Çalışan', icon: 'badge' },
+const ROLE_OPTIONS: { value: InviteRole; label: string; icon: keyof typeof MaterialIcons.glyphMap; desc: string }[] = [
+  { value: 'tenant', label: 'Kiracı', icon: 'person', desc: 'Kira ödemeleri, bakım talepleri' },
+  { value: 'landlord', label: 'Ev Sahibi', icon: 'home', desc: 'Mülk yönetimi, onaylar' },
+  { value: 'employee', label: 'Çalışan', icon: 'badge', desc: 'Ekip görevleri, raporlar' },
 ];
 
 export default function InviteCreateScreen() {
   const theme = useAppTheme();
   const styles = useStyles();
-  const params = useLocalSearchParams<{ role?: string; name?: string; phone?: string; email?: string; access?: string }>();
+  const params = useLocalSearchParams<{ role?: string; access?: string }>();
+
   const initialRole = useMemo<InviteRole | null>(() => {
     return params.role === 'tenant' || params.role === 'landlord' || params.role === 'employee'
       ? params.role
@@ -41,18 +42,17 @@ export default function InviteCreateScreen() {
   }, [params.role]);
 
   const [role, setRole] = useState<InviteRole | null>(initialRole);
-  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<EmployeeAccessLevel>(params.access === 'full' ? 'full' : 'limited');
-  const [entryMethod, setEntryMethod] = useState<EntryMethod>('manual');
-  const [contactLabel, setContactLabel] = useState(typeof params.name === 'string' ? params.name : '');
-  const [prefillName, setPrefillName] = useState(typeof params.name === 'string' ? params.name : '');
-  const [prefillPhone, setPrefillPhone] = useState(typeof params.phone === 'string' ? params.phone : '');
-  const [prefillEmail, setPrefillEmail] = useState(typeof params.email === 'string' ? params.email : '');
+  const [employeeAccessLevel, setEmployeeAccessLevel] = useState<EmployeeAccessLevel>(
+    params.access === 'full' ? 'full' : 'limited',
+  );
+  const [contactLabel, setContactLabel] = useState('');
   const [creating, setCreating] = useState(false);
-  const [link, setLink] = useState('');
   const [code, setCode] = useState('');
+  const [codeModalVisible, setCodeModalVisible] = useState(false);
 
   const canCreate = !!role && !!contactLabel.trim() && !creating;
-  const shareText = `Evimos davetiniz:\nLink: ${link}\nKod: ${code}\nKod ve link 24 saat geçerlidir.`;
+
+  const shareText = `EvimOS davet kodunuz: ${code}\n24 saat geçerlidir.`;
 
   const handleCreate = async () => {
     if (!role || !canCreate) return;
@@ -61,13 +61,13 @@ export default function InviteCreateScreen() {
       const response = await createInvite({
         role,
         contact_label: contactLabel.trim(),
-        prefill_full_name: prefillName.trim() || null,
-        prefill_phone: normalizeTurkishPhone(prefillPhone) || null,
-        prefill_email: prefillEmail.trim().toLowerCase() || null,
+        prefill_full_name: null,
+        prefill_phone: null,
+        prefill_email: null,
         employee_access_level: role === 'employee' ? employeeAccessLevel : null,
       });
-      setLink(response.link);
       setCode(response.code);
+      setCodeModalVisible(true);
     } catch (error: any) {
       Alert.alert('Davet oluşturulamadı', error?.detail || error?.message || 'Lütfen tekrar deneyin.');
     } finally {
@@ -76,83 +76,48 @@ export default function InviteCreateScreen() {
   };
 
   const handleCopy = async () => {
-    if (!link) return;
+    if (!code) return;
     if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
       await navigator.clipboard.writeText(shareText);
-      Alert.alert('Kopyalandı', 'Davet linki ve kodu panoya kopyalandı.');
+      Alert.alert('Kopyalandı', 'Davet kodu panoya kopyalandı.');
       return;
     }
     await Share.share({ message: shareText });
   };
 
   const handleWhatsapp = () => {
-    if (!link) return;
-    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(shareText)}`).catch(() => Share.share({ message: shareText }));
+    if (!code) return;
+    Linking.openURL(`whatsapp://send?text=${encodeURIComponent(shareText)}`).catch(() =>
+      Share.share({ message: shareText }),
+    );
   };
 
   const handleSms = () => {
-    if (!link) return;
-    Linking.openURL(`sms:?body=${encodeURIComponent(shareText)}`).catch(() => Share.share({ message: shareText }));
-  };
-
-  const handlePickContact = async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Rehber kullanılamıyor', 'Web ortamında manuel bilgi girişini kullanın.');
-      setEntryMethod('manual');
-      return;
-    }
-
-    try {
-      const available = await Contacts.isAvailableAsync();
-      if (!available) {
-        Alert.alert('Rehber kullanılamıyor', 'Bu cihazda rehber seçimi desteklenmiyor.');
-        setEntryMethod('manual');
-        return;
-      }
-
-      if (Platform.OS === 'android') {
-        const permission = await Contacts.requestPermissionsAsync();
-        if (permission.status !== 'granted') {
-          Alert.alert('İzin gerekli', 'Rehber izni verilmedi. Manuel bilgi girişini kullanabilirsiniz.');
-          setEntryMethod('manual');
-          return;
-        }
-      }
-
-      const selected = await Contacts.presentContactPickerAsync();
-      if (!selected) return;
-
-      const contact: any = selected;
-      const fullName = contact.name || [contact.firstName, contact.lastName].filter(Boolean).join(' ');
-      const phone = contact.phoneNumbers?.[0]?.number || '';
-      const email = contact.emails?.[0]?.email || '';
-      setEntryMethod('contacts');
-      setPrefillName(fullName || '');
-      setPrefillPhone(normalizeTurkishPhone(phone));
-      setPrefillEmail(email || '');
-      if (!contactLabel.trim() && fullName) {
-        setContactLabel(fullName);
-      }
-    } catch {
-      Alert.alert('Rehber açılamadı', 'Kişi seçilemedi. Manuel bilgi girişini kullanabilirsiniz.');
-      setEntryMethod('manual');
-    }
+    if (!code) return;
+    Linking.openURL(`sms:?body=${encodeURIComponent(shareText)}`).catch(() =>
+      Share.share({ message: shareText }),
+    );
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={theme.colors.background} />
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
           <MaterialIcons name="arrow-back" size={22} color={theme.colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Davet Et</Text>
-        <TouchableOpacity onPress={() => router.push('/agent/pending-invites' as never)} style={styles.iconButton}>
+        <TouchableOpacity
+          onPress={() => router.push('/agent/pending-invites' as never)}
+          style={styles.iconButton}
+        >
           <MaterialIcons name="pending-actions" size={22} color={theme.colors.primary} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        {/* Rol Seçimi */}
         <View style={styles.glassCard}>
           <Text style={styles.cardTitle}>Kimi davet ediyorsunuz?</Text>
           <View style={styles.roleGrid}>
@@ -165,22 +130,32 @@ export default function InviteCreateScreen() {
                   onPress={() => setRole(item.value)}
                   activeOpacity={0.85}
                 >
-                  <MaterialIcons name={item.icon} size={20} color={active ? theme.colors.textInverse : theme.colors.primary} />
-                  <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{item.label}</Text>
+                  <View style={[styles.roleIconWrap, active && styles.roleIconWrapActive]}>
+                    <MaterialIcons
+                      name={item.icon}
+                      size={22}
+                      color={active ? theme.colors.primary : theme.colors.textMuted}
+                    />
+                  </View>
+                  <Text style={[styles.roleLabel, active && styles.roleLabelActive]}>{item.label}</Text>
+                  <Text style={[styles.roleDesc, active && styles.roleDescActive]} numberOfLines={2}>
+                    {item.desc}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
 
+        {/* Çalışan Yetkisi */}
         {role === 'employee' && (
           <View style={styles.glassCard}>
             <Text style={styles.cardTitle}>Çalışan yetkisi</Text>
             <View style={styles.segment}>
               {([
-                ['limited', 'Sınırlı'] as const,
-                ['full', 'Tam yetki'] as const,
-              ]).map(([value, label]) => {
+                ['limited', 'Sınırlı', 'visibility'] as const,
+                ['full', 'Tam Yetki', 'admin-panel-settings'] as const,
+              ]).map(([value, label, icon]) => {
                 const active = employeeAccessLevel === value;
                 return (
                   <TouchableOpacity
@@ -189,112 +164,108 @@ export default function InviteCreateScreen() {
                     onPress={() => setEmployeeAccessLevel(value)}
                     activeOpacity={0.85}
                   >
+                    <MaterialIcons
+                      name={icon}
+                      size={18}
+                      color={active ? theme.colors.primary : theme.colors.textMuted}
+                    />
                     <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
-            <Text style={styles.helpText}>Tam yetkili çalışan ofis kayıtlarını yönetebilir; sınırlı çalışan sadece atanan işlere odaklanır.</Text>
+            <Text style={styles.helpText}>
+              Tam yetkili çalışan ofis kayıtlarını yönetebilir; sınırlı çalışan sadece atanan işlere odaklanır.
+            </Text>
           </View>
         )}
 
+        {/* Rehber Etiketi */}
         <View style={styles.glassCard}>
-          <Text style={styles.cardTitle}>Kişi bilgisi</Text>
-          <View style={styles.segment}>
-            {([
-              ['contacts', 'Rehberden Seç', 'contacts'] as const,
-              ['manual', 'Manuel Gir', 'edit'] as const,
-            ]).map(([value, label, icon]) => {
-              const active = entryMethod === value;
-              return (
-                <TouchableOpacity
-                  key={value}
-                  style={[styles.segmentButton, active && styles.segmentButtonActive]}
-                  onPress={() => {
-                    setEntryMethod(value);
-                    if (value === 'contacts') void handlePickContact();
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <MaterialIcons name={icon} size={20} color={active ? theme.colors.textInverse : theme.colors.primary} />
-                  <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <TextInput
-            style={styles.input}
-            value={prefillName}
-            onChangeText={setPrefillName}
-            placeholder="Ad Soyad (opsiyonel)"
-            placeholderTextColor={theme.colors.textMuted}
-          />
-          <TextInput
-            style={styles.input}
-            value={prefillPhone}
-            onChangeText={setPrefillPhone}
-            onBlur={() => setPrefillPhone(normalizeTurkishPhone(prefillPhone))}
-            keyboardType="phone-pad"
-            placeholder="+905321234567"
-            placeholderTextColor={theme.colors.textMuted}
-          />
-          <TextInput
-            style={styles.input}
-            value={prefillEmail}
-            onChangeText={setPrefillEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholder="E-posta (opsiyonel)"
-            placeholderTextColor={theme.colors.textMuted}
-          />
-          <Text style={styles.helpText}>Rehberden sadece seçtiğiniz kişinin bilgileri bu forma alınır; tüm rehber aktarılmaz.</Text>
-        </View>
-
-        <View style={styles.glassCard}>
-          <Text style={styles.cardTitle}>Rehber etiketi</Text>
+          <Text style={styles.cardTitle}>Rehber etiketi *</Text>
           <TextInput
             style={styles.input}
             value={contactLabel}
             onChangeText={setContactLabel}
-            placeholder="Örn: Ahmet Daire 5, Beşevler Kiracı"
+            placeholder="Örn: Ahmet Bey, Beşevler Daire 5"
             placeholderTextColor={theme.colors.textMuted}
           />
-          <Text style={styles.helpText}>Bu takma ad profil adı değildir; yalnızca ofis kontrol alanında kullanılır.</Text>
+          <Text style={styles.helpText}>
+            Bu isim profil adı değildir; sadece ofis kontrol panelinizde görünür.
+          </Text>
         </View>
 
+        {/* Oluştur Butonu */}
         <TouchableOpacity
           style={[styles.primaryButton, !canCreate && styles.primaryButtonDisabled]}
           onPress={handleCreate}
           disabled={!canCreate}
+          activeOpacity={0.85}
         >
-          <MaterialIcons name="link" size={20} color={theme.colors.textInverse} />
-          <Text style={styles.primaryButtonText}>{creating ? 'Oluşturuluyor' : 'Davet Linki ve Kodu Oluştur'}</Text>
+          <MaterialIcons
+            name={creating ? 'hourglass-empty' : 'key'}
+            size={20}
+            color={theme.colors.textInverse}
+          />
+          <Text style={styles.primaryButtonText}>
+            {creating ? 'Oluşturuluyor…' : 'Davet Kodu Oluştur'}
+          </Text>
         </TouchableOpacity>
+      </ScrollView>
 
-        {link ? (
-          <View style={styles.resultBox}>
-            <Text style={styles.resultLabel}>24 saat geçerli tek kullanımlık link ve kod</Text>
-            <Text style={styles.linkText} numberOfLines={3}>{link}</Text>
-            <Text style={styles.codeText}>Kod: {code}</Text>
-            <Text style={styles.helpText}>Kod sadece bu ekranda gösterilir. Kaybolursa yeni davet oluşturun.</Text>
+      {/* Animasyonlu Kod Kartı Modal */}
+      <Modal
+        visible={codeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCodeModalVisible(false)}
+        statusBarTranslucent
+      >
+        <Animated.View entering={FadeIn.duration(200)} style={styles.modalOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setCodeModalVisible(false)} />
+          <Animated.View entering={ZoomIn.duration(320).springify().damping(14)} style={styles.codeCard}>
+            {/* Kapat */}
+            <TouchableOpacity
+              style={styles.closeBtn}
+              onPress={() => setCodeModalVisible(false)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialIcons name="close" size={20} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+
+            {/* İkon */}
+            <View style={styles.codeIconWrap}>
+              <MaterialIcons name="key" size={28} color={theme.colors.primary} />
+            </View>
+
+            <Text style={styles.codeCardTitle}>Davet Kodu</Text>
+            <Text style={styles.codeDisplay}>{code}</Text>
+            <Text style={styles.codeExpiry}>24 saat geçerlidir · Tek kullanımlık</Text>
+
+            <View style={styles.divider} />
+
+            {/* Paylaşım Butonları */}
             <View style={styles.shareRow}>
-              <TouchableOpacity style={styles.shareButton} onPress={handleWhatsapp}>
-                <MaterialIcons name="chat" size={18} color={theme.colors.primary} />
-                <Text style={styles.shareText}>WhatsApp</Text>
+              <TouchableOpacity style={[styles.shareBtn, styles.shareBtnWhatsapp]} onPress={handleWhatsapp} activeOpacity={0.85}>
+                <MaterialIcons name="chat" size={20} color="#ffffff" />
+                <Text style={styles.shareBtnText}>WhatsApp</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.shareButton} onPress={handleSms}>
-                <MaterialIcons name="sms" size={18} color={theme.colors.primary} />
-                <Text style={styles.shareText}>SMS</Text>
+              <TouchableOpacity style={[styles.shareBtn, styles.shareBtnSms]} onPress={handleSms} activeOpacity={0.85}>
+                <MaterialIcons name="sms" size={20} color="#ffffff" />
+                <Text style={styles.shareBtnText}>SMS</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.shareButton} onPress={handleCopy}>
-                <MaterialIcons name="content-copy" size={18} color={theme.colors.primary} />
-                <Text style={styles.shareText}>Kopyala</Text>
+              <TouchableOpacity style={[styles.shareBtn, styles.shareBtnCopy]} onPress={handleCopy} activeOpacity={0.85}>
+                <MaterialIcons name="content-copy" size={20} color={theme.colors.textPrimary} />
+                <Text style={[styles.shareBtnText, { color: theme.colors.textPrimary }]}>Kopyala</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        ) : null}
-      </ScrollView>
+
+            <Text style={styles.codeNote}>
+              Kod yalnızca bu ekranda gösterilir. Kaybedilirse yeni davet oluşturun.
+            </Text>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -319,8 +290,16 @@ const useStyles = createThemedStyles((theme) =>
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
-    headerTitle: { fontSize: theme.fontSize.xl, color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold },
-    content: { padding: theme.spacing.lg, paddingBottom: theme.spacing.xxxl, gap: theme.spacing.lg },
+    headerTitle: {
+      fontSize: theme.fontSize.xl,
+      color: theme.colors.textPrimary,
+      fontWeight: theme.fontWeight.bold,
+    },
+    content: {
+      padding: theme.spacing.lg,
+      paddingBottom: theme.spacing.xxxl,
+      gap: theme.spacing.lg,
+    },
     glassCard: {
       borderRadius: theme.borderRadius.xl,
       borderWidth: 1,
@@ -330,27 +309,56 @@ const useStyles = createThemedStyles((theme) =>
       gap: theme.spacing.md,
       ...theme.shadows.sm,
     },
-    cardTitle: { fontSize: theme.fontSize.base, color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold },
+    cardTitle: {
+      fontSize: theme.fontSize.base,
+      color: theme.colors.textPrimary,
+      fontWeight: theme.fontWeight.bold,
+    },
     roleGrid: { flexDirection: 'row', gap: theme.spacing.sm },
     roleButton: {
       flex: 1,
-      minHeight: 70,
       borderRadius: theme.borderRadius.lg,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.surface,
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: theme.spacing.xs,
       paddingHorizontal: theme.spacing.sm,
+      paddingVertical: theme.spacing.md,
+      gap: 6,
     },
-    roleButtonActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
+    roleButtonActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primaryLight,
+    },
+    roleIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.surface2,
+    },
+    roleIconWrapActive: { backgroundColor: `${theme.colors.primary}22` },
+    roleLabel: {
+      fontSize: theme.fontSize.sm,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.colors.textPrimary,
+      textAlign: 'center',
+    },
+    roleLabelActive: { color: theme.colors.primary },
+    roleDesc: {
+      fontSize: 10,
+      color: theme.colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 14,
+    },
+    roleDescActive: { color: theme.colors.primary, opacity: 0.8 },
     segment: { flexDirection: 'row', gap: theme.spacing.sm },
     segmentButton: {
       flex: 1,
-      minHeight: 48,
+      minHeight: 52,
       borderRadius: theme.borderRadius.lg,
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: theme.colors.border,
       backgroundColor: theme.colors.surface,
       flexDirection: 'row',
@@ -359,10 +367,21 @@ const useStyles = createThemedStyles((theme) =>
       gap: theme.spacing.sm,
       paddingHorizontal: theme.spacing.sm,
     },
-    segmentButtonActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
-    segmentText: { color: theme.colors.textPrimary, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.sm, textAlign: 'center' },
-    segmentTextActive: { color: theme.colors.textInverse },
-    helpText: { fontSize: theme.fontSize.xs, lineHeight: 17, color: theme.colors.textMuted },
+    segmentButtonActive: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primaryLight,
+    },
+    segmentText: {
+      color: theme.colors.textMuted,
+      fontWeight: theme.fontWeight.bold,
+      fontSize: theme.fontSize.sm,
+    },
+    segmentTextActive: { color: theme.colors.primary },
+    helpText: {
+      fontSize: theme.fontSize.xs,
+      lineHeight: 17,
+      color: theme.colors.textMuted,
+    },
     input: {
       minHeight: 56,
       borderRadius: theme.borderRadius.lg,
@@ -374,7 +393,7 @@ const useStyles = createThemedStyles((theme) =>
       fontSize: theme.fontSize.base,
     },
     primaryButton: {
-      minHeight: 56,
+      minHeight: 58,
       borderRadius: theme.borderRadius.lg,
       backgroundColor: theme.colors.primary,
       alignItems: 'center',
@@ -384,30 +403,107 @@ const useStyles = createThemedStyles((theme) =>
       paddingHorizontal: theme.spacing.lg,
       ...theme.shadows.md,
     },
-    primaryButtonDisabled: { opacity: 0.55 },
-    primaryButtonText: { color: theme.colors.textInverse, fontWeight: theme.fontWeight.bold, fontSize: theme.fontSize.base },
-    resultBox: {
-      borderRadius: theme.borderRadius.xl,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      backgroundColor: theme.colors.navGlass,
-      padding: theme.spacing.lg,
-      gap: theme.spacing.md,
-      ...theme.shadows.sm,
+    primaryButtonDisabled: { opacity: 0.5 },
+    primaryButtonText: {
+      color: theme.colors.textInverse,
+      fontWeight: theme.fontWeight.bold,
+      fontSize: theme.fontSize.base,
     },
-    resultLabel: { fontSize: theme.fontSize.sm, color: theme.colors.textMuted, fontWeight: theme.fontWeight.semibold },
-    linkText: { color: theme.colors.textPrimary, fontSize: theme.fontSize.sm, lineHeight: 20 },
-    codeText: { color: theme.colors.primary, fontSize: theme.fontSize.xl, fontWeight: theme.fontWeight.bold, letterSpacing: 1.2 },
-    shareRow: { flexDirection: 'row', gap: theme.spacing.sm },
-    shareButton: {
+
+    // ── Modal ──
+    modalOverlay: {
       flex: 1,
-      minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: theme.colors.primaryLight,
-      gap: 2,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      paddingHorizontal: 24,
     },
-    shareText: { fontSize: theme.fontSize.xs, color: theme.colors.primary, fontWeight: theme.fontWeight.bold },
-  })
+    codeCard: {
+      width: '100%',
+      borderRadius: 28,
+      backgroundColor: theme.colors.background,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      padding: 28,
+      alignItems: 'center',
+      gap: 12,
+      ...theme.shadows.lg,
+    },
+    closeBtn: {
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.surface2,
+    },
+    codeIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.primaryLight,
+      marginBottom: 4,
+    },
+    codeCardTitle: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    codeDisplay: {
+      fontSize: 38,
+      fontWeight: '900',
+      color: theme.colors.primary,
+      letterSpacing: 10,
+      fontVariant: ['tabular-nums'],
+    },
+    codeExpiry: {
+      fontSize: 12,
+      color: theme.colors.textMuted,
+      fontWeight: '600',
+    },
+    divider: {
+      width: '100%',
+      height: 1,
+      backgroundColor: theme.colors.divider,
+      marginVertical: 4,
+    },
+    shareRow: {
+      flexDirection: 'row',
+      gap: 10,
+      width: '100%',
+    },
+    shareBtn: {
+      flex: 1,
+      minHeight: 52,
+      borderRadius: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+    },
+    shareBtnWhatsapp: { backgroundColor: '#25D366' },
+    shareBtnSms: { backgroundColor: theme.colors.primary },
+    shareBtnCopy: {
+      backgroundColor: theme.colors.surface2,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    shareBtnText: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#ffffff',
+    },
+    codeNote: {
+      fontSize: 11,
+      color: theme.colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 16,
+    },
+  }),
 );

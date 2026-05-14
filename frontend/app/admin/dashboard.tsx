@@ -99,11 +99,11 @@ export default function AdminDashboardScreen() {
         </View>
 
         <View style={styles.analyticsCard}>
-          <Text style={styles.sectionTitle}>Kullanim Ozeti</Text>
+          <Text style={styles.sectionTitle}>Kullanım Özeti</Text>
           <View style={styles.analyticsRow}>
             <AnalyticsItem label="Ev Sahibi" value={stats.totalLandlords} />
-            <AnalyticsItem label="Kiraci" value={stats.totalTenants} />
-            <AnalyticsItem label="Mulk" value={stats.totalProperties} />
+            <AnalyticsItem label="Kiracı" value={stats.totalTenants} />
+            <AnalyticsItem label="Mülk" value={stats.totalProperties} />
             <AnalyticsItem label="Dolu" value={stats.occupiedProperties} />
           </View>
         </View>
@@ -112,7 +112,7 @@ export default function AdminDashboardScreen() {
           <Text style={styles.sectionTitle}>Aylik Hareket</Text>
           <View style={styles.analyticsRow}>
             <AnalyticsItem label="Makbuz" value={stats.receiptsUploadedThisMonth} />
-            <AnalyticsItem label="Ariza" value={stats.maintenanceCreatedThisMonth} />
+            <AnalyticsItem label="Arıza" value={stats.maintenanceCreatedThisMonth} />
             <AnalyticsItem label="Ort. Kira" value={`₺${stats.avgRent.toLocaleString('tr-TR')}`} />
           </View>
         </View>

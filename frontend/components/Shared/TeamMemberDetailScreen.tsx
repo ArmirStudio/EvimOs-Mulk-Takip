@@ -102,9 +102,9 @@ export default function TeamMemberDetailScreen() {
 
     Alert.alert(
       'Çalışanı Sil',
-      `${member.full_name} kaydini silmek istediginize emin misiniz? Bu islem mulk atamasini da temizler.`,
+      `${member.full_name} kaydını silmek istediğinize emin misiniz? Bu işlem mülk atamasını da temizler.`,
       [
-        { text: 'Iptal', style: 'cancel' },
+        { text: 'İptal', style: 'cancel' },
         {
           text: 'Sil',
           style: 'destructive',
@@ -161,7 +161,7 @@ export default function TeamMemberDetailScreen() {
           </View>
           <View style={styles.metricCard}>
             <Text style={styles.metricValue}>{metrics.property_showings_this_month}</Text>
-            <Text style={styles.metricLabel}>Ev Gosterimi</Text>
+            <Text style={styles.metricLabel}>Ev Gösterimi</Text>
           </View>
         </View>
 
@@ -176,7 +176,7 @@ export default function TeamMemberDetailScreen() {
             {canEdit && (
               <TouchableOpacity style={styles.secondaryAction} onPress={() => setEditOpen(true)}>
                 <MaterialIcons name="edit" size={16} color={theme.colors.primary} />
-                <Text style={styles.secondaryActionText}>Duzenle</Text>
+                <Text style={styles.secondaryActionText}>Düzenle</Text>
               </TouchableOpacity>
             )}
             {canDelete && (

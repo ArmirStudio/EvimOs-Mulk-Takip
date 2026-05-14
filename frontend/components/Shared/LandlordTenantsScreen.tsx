@@ -135,8 +135,8 @@ export default function LandlordTenantsScreen() {
           >
             <View style={styles.heroCard}>
               <Text style={styles.heroEyebrow}>Kiracı rehberi</Text>
-              <Text style={styles.heroTitle}>{tenantCount} aktif eslesme</Text>
-              <Text style={styles.heroSubtitle}>Telefon, e-posta ve bagli mulk bilgisini tek listede gorun.</Text>
+              <Text style={styles.heroTitle}>{tenantCount} aktif eşleşme</Text>
+              <Text style={styles.heroSubtitle}>Telefon, e-posta ve bağlı mülk bilgisini tek listede görün.</Text>
             </View>
 
             {rows.length === 0 ? (

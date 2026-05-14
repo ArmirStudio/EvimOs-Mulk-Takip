@@ -26,8 +26,8 @@ type Status = 'pending' | 'active';
 const ROLE_LABELS: Record<AdminDevUserRole, string> = {
   agent: 'Agent',
   landlord: 'Ev sahibi',
-  tenant: 'Kiraci',
-  employee: 'Calisan',
+  tenant: 'Kiracı',
+  employee: 'Çalışan',
 };
 
 export default function AdminDevToolsScreen() {
@@ -70,7 +70,7 @@ export default function AdminDevToolsScreen() {
         setEmployeeAccess(first.employee_access_level === 'full' ? 'full' : 'limited');
       }
     } catch (error: any) {
-      Alert.alert('Hata', error?.detail || error?.message || 'Dev kullanicilar yuklenemedi.');
+      Alert.alert('Hata', error?.detail || error?.message || 'Dev kullanıcılar yüklenemedi.');
     } finally {
       setLoading(false);
     }
@@ -91,11 +91,11 @@ export default function AdminDevToolsScreen() {
 
   const handleSave = async () => {
     if (!selectedUserId) {
-      Alert.alert('Hata', 'Kullanici secin.');
+      Alert.alert('Hata', 'Kullanıcı seçin.');
       return;
     }
     if (role !== 'agent' && !targetAgentId) {
-      Alert.alert('Hata', 'Tenant, landlord ve calisan icin agent secin.');
+      Alert.alert('Hata', 'Tenant, landlord ve çalışan için agent seçin.');
       return;
     }
 
@@ -109,7 +109,7 @@ export default function AdminDevToolsScreen() {
         agency_id: role === 'agent' ? agencyId || null : null,
         employee_access_level: role === 'employee' ? employeeAccess : null,
       });
-      Alert.alert('Kaydedildi', 'Kullanici baglantisi guncellendi.');
+      Alert.alert('Kaydedildi', 'Kullanıcı bağlantısı güncellendi.');
       await load();
     } catch (error: any) {
       Alert.alert('Hata', error?.detail || error?.message || 'Kullanici baglanamadi.');
@@ -148,29 +148,29 @@ export default function AdminDevToolsScreen() {
           {selectedUser ? (
             <Text style={styles.metaText}>{selectedUser.email}</Text>
           ) : (
-            <Text style={styles.metaText}>Baglanabilecek kullanici bulunamadi.</Text>
+            <Text style={styles.metaText}>Bağlanabilecek kullanıcı bulunamadı.</Text>
           )}
         </View>
 
         <View style={styles.panel}>
           <Text style={styles.sectionTitle}>Rol</Text>
           <Picker selectedValue={role} onValueChange={(value) => setRole(value as AdminDevUserRole)}>
-            <Picker.Item label="Tenant / Kiraci" value="tenant" />
+            <Picker.Item label="Tenant / Kiracı" value="tenant" />
             <Picker.Item label="Landlord / Ev sahibi" value="landlord" />
-            <Picker.Item label="Employee / Calisan" value="employee" />
+            <Picker.Item label="Employee / Çalışan" value="employee" />
             <Picker.Item label="Agent" value="agent" />
           </Picker>
         </View>
 
         {role === 'agent' ? (
           <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Agent firma/ofis baglantisi</Text>
+            <Text style={styles.sectionTitle}>Agent firma/ofis bağlantısı</Text>
             <Picker selectedValue={agencyId} onValueChange={(value) => setAgencyId(String(value))}>
-              <Picker.Item label="Bagimsiz agent" value="" />
+              <Picker.Item label="Bağımsız agent" value="" />
               {agencies.map((agency) => (
                 <Picker.Item
                   key={agency.id}
-                  label={`${agency.name} - ${agency.entity_type === 'company' ? 'Sirket' : 'Ofis'}`}
+                  label={`${agency.name} - ${agency.entity_type === 'company' ? 'Şirket' : 'Ofis'}`}
                   value={agency.id}
                 />
               ))}
@@ -178,9 +178,9 @@ export default function AdminDevToolsScreen() {
           </View>
         ) : (
           <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Altina baglanacak agent</Text>
+            <Text style={styles.sectionTitle}>Altına bağlanacak agent</Text>
             <Picker selectedValue={targetAgentId} onValueChange={(value) => setTargetAgentId(String(value))}>
-              <Picker.Item label="Agent secin" value="" />
+              <Picker.Item label="Agent seçin" value="" />
               {agents.map((agent) => (
                 <Picker.Item
                   key={agent.id}
@@ -194,9 +194,9 @@ export default function AdminDevToolsScreen() {
 
         {role === 'employee' ? (
           <View style={styles.panel}>
-            <Text style={styles.sectionTitle}>Calisan yetkisi</Text>
+            <Text style={styles.sectionTitle}>Çalışan yetkisi</Text>
             <Picker selectedValue={employeeAccess} onValueChange={(value) => setEmployeeAccess(value as 'full' | 'limited')}>
-              <Picker.Item label="Sinirli" value="limited" />
+              <Picker.Item label="Sınırlı" value="limited" />
               <Picker.Item label="Tam yetkili" value="full" />
             </Picker>
           </View>
@@ -219,7 +219,7 @@ export default function AdminDevToolsScreen() {
           {saving ? (
             <ActivityIndicator color={theme.colors.textInverse} />
           ) : (
-            <Text style={styles.saveText}>Baglantiyi kaydet</Text>
+            <Text style={styles.saveText}>Bağlantıyı kaydet</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

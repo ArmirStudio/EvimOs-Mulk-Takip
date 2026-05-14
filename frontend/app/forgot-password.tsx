@@ -33,7 +33,7 @@ export default function ForgotPasswordScreen() {
 
   const handleReset = async () => {
     if (!isSupabaseConfigured) {
-      setMessage(supabaseConfigurationErrorMessage || 'Supabase ayarlari eksik.');
+      setMessage(supabaseConfigurationErrorMessage || 'Supabase ayarları eksik.');
       return;
     }
     if (!identifier.trim()) {
@@ -53,11 +53,11 @@ export default function ForgotPasswordScreen() {
       const redirectTo = Linking.createURL('auth/callback');
       const { error } = await supabase.auth.resetPasswordForEmail(email.toLowerCase(), { redirectTo });
       if (error) throw error;
-      Alert.alert('Baglanti gonderildi', 'Sifre sifirlama baglantisi e-posta adresinize gonderildi.', [
+      Alert.alert('Bağlantı gönderildi', 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.', [
         { text: 'Tamam', onPress: () => router.replace('/login' as never) },
       ]);
     } catch (error: any) {
-      setMessage(error?.detail || error?.message || 'Sifre sifirlama baglantisi gonderilemedi.');
+      setMessage(error?.detail || error?.message || 'Şifre sıfırlama bağlantısı gönderilemedi.');
     } finally {
       setLoading(false);
     }
@@ -72,9 +72,9 @@ export default function ForgotPasswordScreen() {
             <View style={styles.iconBox}>
               <Ionicons name="key-outline" size={28} color={theme.colors.primary} />
             </View>
-            <Text style={styles.title}>Sifremi unuttum</Text>
+            <Text style={styles.title}>Şifremi unuttum</Text>
             <Text style={styles.subtitle}>
-              Hesabiniza bagli e-posta veya telefon numarasini girin. Size sifre sifirlama baglantisi gonderecegiz.
+              Hesabınıza bağlı e-posta veya telefon numarasını girin. Size şifre sıfırlama bağlantısı göndereceğiz.
             </Text>
           </View>
 
@@ -117,13 +117,13 @@ export default function ForgotPasswordScreen() {
             {loading ? (
               <ActivityIndicator color={theme.colors.textInverse} />
             ) : (
-              <Text style={styles.primaryText}>Sifirlama baglantisi gonder</Text>
+              <Text style={styles.primaryText}>Sıfırlama bağlantısı gönder</Text>
             )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/login' as never)}>
             <Ionicons name="arrow-back" size={18} color={theme.colors.primary} />
-            <Text style={styles.secondaryText}>Girise don</Text>
+            <Text style={styles.secondaryText}>Girişe dön</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAwareScrollView>

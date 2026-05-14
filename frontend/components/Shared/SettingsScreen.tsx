@@ -58,58 +58,74 @@ const getInitials = (name: string): string =>
 const TERMS_SECTIONS = [
   {
     title: '1. Genel Hükümler',
-    body: 'Bu uygulama, Armir Studio tarafından geliştirilen EvimOs — Mülk Yönetim platformudur. Uygulamayı kullanarak aşağıdaki koşulları kabul etmiş sayılırsınız.',
+    body: 'EvimOs — Mülk Yönetim, Armir Studio tarafından geliştirilen ve emlak yönetimi süreçlerini dijitalleştiren bir mobil platformdur. Bu Kullanım Koşulları, uygulamayı indiren, kaydolan veya herhangi bir şekilde kullanan tüm kişiler için geçerlidir.\n\nUygulamayı kullanabilmek için 18 yaşında veya üzerinde olmanız gerekmektedir. Uygulamayı kullanarak bu koşulların tamamını okuduğunuzu, anladığınızı ve kabul ettiğinizi beyan etmiş sayılırsınız.',
   },
   {
-    title: '2. Hesap Sorumluluğu',
-    body: 'Hesabınızla gerçekleştirilen tüm işlemler size aittir. Hesap bilgilerinizi üçüncü şahıslarla paylaşmamanız, şifrenizi düzenli olarak güncellemeniz ve yetkisiz erişim durumunda Armir Studio\'yu derhal bilgilendirmeniz gerekmektedir.',
+    title: '2. Hesap ve Güvenlik',
+    body: 'Hesabınız, size özel kimlik bilgileriyle korunmaktadır. Hesabınızla gerçekleştirilen tüm işlemler size aittir.\n\nYükümlülükleriniz:\n• Şifrenizi güçlü ve benzersiz tutmak\n• Hesap bilgilerini hiçbir üçüncü şahısla paylaşmamak\n• Yetkisiz erişim veya şüpheli bir durumu derhal destek@armirstudio.com adresine bildirmek\n• Başkasına ait kimlik bilgilerini kullanmamak\n\nArmir Studio, hesap güvenliğinizi sağlamak için gerekli teknik önlemleri alır; ancak şifrenizin güvenliği tamamen sizin sorumluluğunuzdadır.',
   },
   {
-    title: '3. Platform Kullanımı',
-    body: 'EvimOs; mülk, kira, dekont, bakım ve ekip kayıtlarını rolünüze göre yönetmenizi sağlar. Yanlış, eksik veya size ait olmayan kayıt oluşturmamak sizin sorumluluğunuzdadır. Platform yalnızca yasal amaçlarla kullanılabilir.',
+    title: '3. Platform Kullanımı ve Yasaklı Faaliyetler',
+    body: 'EvimOs; mülk, kira, dekont, bakım talebi ve ekip yönetimi gibi emlak operasyonlarını rolünüze göre (Emlakçı, Çalışan, Ev Sahibi, Kiracı) yönetmenizi sağlar.\n\nAşağıdaki faaliyetler kesinlikle yasaktır:\n• Yanlış, yanıltıcı veya başkasına ait bilgileri kaydetmek\n• Platformu dolandırıcılık veya yasadışı amaçlarla kullanmak\n• Sistem güvenliğini, RLS politikalarını veya erişim kontrollerini aşmaya çalışmak\n• Başka kullanıcıların verilerine yetkisiz erişim sağlamak\n• Platformu aşırı yükleyecek veya işleyişini bozacak davranışlarda bulunmak\n\nBu kurallara aykırı davranışlar hesabın askıya alınması veya kalıcı kapatılmasıyla sonuçlanabilir.',
   },
   {
-    title: '4. Fikri Mülkiyet',
-    body: 'Uygulama içeriği, tasarımı, yazılımı ve tüm bileşenleri Armir Studio\'nun fikri mülkiyetidir. İzinsiz kopyalanması, dağıtılması veya değiştirilmesi yasaktır.',
+    title: '4. Kullanıcı Verileri ve İçerik',
+    body: 'Platform üzerinden yüklediğiniz veya oluşturduğunuz içerikler (belgeler, fotoğraflar, notlar) size aittir. Armir Studio, yalnızca hizmeti sunmak amacıyla bu verileri işler ve saklar.\n\nGirdiğiniz verilerin doğruluğundan siz sorumlusunuzdur. Gerçeğe aykırı kayıtların oluşturulmasından doğabilecek yasal, idari veya sözleşmesel sorunlarda Armir Studio\'nun herhangi bir sorumluluğu bulunmaz.',
   },
   {
-    title: '5. Hizmet Değişiklikleri',
-    body: 'Armir Studio, önceden haber vermeksizin platformda değişiklik yapma, hizmetleri askıya alma veya sonlandırma hakkını saklı tutar. Kullanım koşullarında yapılacak değişiklikler uygulama içinden bildirilecektir.',
+    title: '5. Fikri Mülkiyet',
+    body: 'Uygulama içeriği, arayüz tasarımı, kaynak kodu, marka adı, logolar ve tüm bileşenler Armir Studio\'nun fikri mülkiyetidir ve Türk Fikir ve Sanat Eserleri Kanunu (FSEK) ile uluslararası telif hakkı yasaları kapsamında korunmaktadır.\n\nKullanıcılara yalnızca kişisel ve ticari olmayan kullanım için sınırlı, devredilemez bir lisans verilmektedir. Uygulamanın herhangi bir bölümünü izinsiz kopyalamak, dağıtmak, ters mühendislik uygulamak veya türev eser oluşturmak yasaktır.',
   },
   {
-    title: '6. Sorumluluk Sınırlaması',
-    body: 'Platform "olduğu gibi" sunulmaktadır. Armir Studio, teknik aksaklıklar, veri kaybı veya platform kullanımından doğan dolaylı zararlardan sorumlu tutulamaz.',
+    title: '6. Hizmet Değişiklikleri ve Sonlandırma',
+    body: 'Armir Studio, herhangi bir zamanda ve önceden haber vermeksizin:\n• Platform özelliklerini değiştirme veya kaldırma\n• Hizmetleri geçici olarak askıya alma\n• Platforma erişimi sonlandırma\n\nhakkını saklı tutar. Kullanım Koşulları\'nda yapılacak önemli değişiklikler uygulama içi bildirim veya e-posta ile duyurulacaktır. Değişiklikten sonra platformu kullanmaya devam etmek, yeni koşulları kabul ettiğiniz anlamına gelir.',
+  },
+  {
+    title: '7. Sorumluluk Sınırlaması',
+    body: 'Platform "olduğu gibi" (as-is) sunulmaktadır. Armir Studio, aşağıdaki durumlardan doğan zararlardan sorumlu tutulamaz:\n• Teknik aksaklıklar, sunucu kesintileri veya veri kaybı\n• Üçüncü taraf hizmet sağlayıcılarının (Supabase, Apple, Google) sorunları\n• Kullanıcı hatalarından kaynaklanan veri hataları veya kayıpları\n• Platformun kullanılamamasından doğan dolaylı veya dolaysız zararlar\n\nAzami sorumluluk miktarı, varsa ödediğiniz son 12 aylık abonelik ücreti ile sınırlıdır.',
+  },
+  {
+    title: '8. Uygulanacak Hukuk',
+    body: 'Bu Kullanım Koşulları, Türkiye Cumhuriyeti hukuku ve özellikle 6502 sayılı Tüketicinin Korunması Hakkında Kanun, 5846 sayılı Fikir ve Sanat Eserleri Kanunu ve 6698 sayılı KVKK hükümleri çerçevesinde yorumlanır.\n\nBu koşullardan doğabilecek anlaşmazlıklarda İstanbul (Çağlayan) Tüketici Mahkemeleri ve Hakem Heyetleri yetkilidir.',
   },
   {
     title: 'İletişim',
-    body: 'Armir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nTelefon: [Eklenecek]',
+    body: 'Armir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nTelefon: [Eklenecek]\nVergi No: [Eklenecek]',
   },
 ];
 
 const PRIVACY_SECTIONS = [
   {
     title: 'Veri Sorumlusu',
-    body: '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla hareket eden Armir Studio, kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemektedir.\n\nArmir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nVergi No: [Eklenecek]',
+    body: '6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında veri sorumlusu sıfatıyla hareket eden Armir Studio, kişisel verilerinizi aşağıda açıklanan amaçlar doğrultusunda işlemektedir.\n\nArmir Studio\nAdres: [Eklenecek]\nE-posta: destek@armirstudio.com\nTelefon: [Eklenecek]\nVergi No: [Eklenecek]',
   },
   {
     title: 'İşlenen Kişisel Veriler',
-    body: '• Ad, soyad, e-posta adresi, telefon numarası\n• Konum bilgileri (şehir, ilçe)\n• Mülk ve kira kayıtları, dekontlar\n• Uygulama içi işlem geçmişi ve operasyon hareketleri\n• Profil fotoğrafı ve iletişim tercihleri',
+    body: 'Hizmet kapsamında işlenen veriler:\n\n• Kimlik: Ad, soyad\n• İletişim: E-posta adresi, telefon numarası\n• Konum: Şehir, ilçe (kesin konum alınmaz)\n• Hesap: Kullanıcı rolü, tercihler, avatar fotoğrafı\n• Mülk verileri: Adres, kira tutarı, sözleşme tarihleri\n• Finansal kayıtlar: Ödeme dekontları, harcama kayıtları\n• Teknik: Cihaz push token\'ı (bildirim için), uygulama içi işlem geçmişi\n\nÖzel nitelikli kişisel veri işlenmemektedir.',
   },
   {
-    title: 'Veri İşleme Amaçları',
-    body: 'Kişisel verileriniz; uygulama işlevlerinin yerine getirilmesi, yetki kontrolü, müşteri desteği, yasal yükümlülüklerin karşılanması ve hizmet kalitesinin iyileştirilmesi amacıyla işlenmektedir.',
+    title: 'Veri İşleme Amaçları ve Hukuki Dayanakları',
+    body: "Kişisel verileriniz aşağıdaki amaçlarla ve KVKK'nın 5. ve 6. maddeleri kapsamında işlenmektedir:\n\n• Sözleşmenin ifası: Platformun işlevlerinin (mülk, kira, bakım yönetimi) yerine getirilmesi\n• Meşru menfaat: Güvenlik, hata tespiti ve hizmet kalitesinin iyileştirilmesi\n• Yasal yükümlülük: Vergi, ticaret ve saklama mevzuatına uyum\n• Açık rıza: Pazarlama bildirimleri (yalnızca onay verildiğinde)\n\nVerileriniz profil oluşturma veya otomatik karar alma için kullanılmamaktadır.",
   },
   {
-    title: 'Veri Güvenliği',
-    body: 'Verileriniz, endüstri standardı şifreleme ve güvenlik önlemleriyle korunmaktadır. Yetkisiz erişime karşı teknik ve idari tedbirler alınmaktadır. Verileriniz üçüncü taraflarla yalnızca yasal zorunluluk veya açık rızanız bulunduğu durumlarda paylaşılmaktadır.',
+    title: 'Veri Güvenliği ve Aktarımı',
+    body: 'Güvenlik önlemleri:\n• Veri tabanı: Supabase (AWS üzerinde, TLS 1.2+ şifreleme ile)\n• Depolama: AES-256 şifreleme ile nesne depolama\n• Erişim kontrolü: Rol tabanlı Row Level Security (RLS) politikaları\n• Kimlik doğrulama: JWT token ile oturum yönetimi\n\nYurt dışı aktarım:\nVerileriniz, Supabase altyapısı aracılığıyla Avrupa Ekonomik Alanı (AEA) içindeki veri merkezlerinde işlenebilir. Bu aktarım, KVKK madde 9 kapsamında yeterli koruma koşullarına uygun olarak gerçekleştirilmektedir.\n\nVerileriniz reklam amacıyla üçüncü taraflarla paylaşılmaz.',
   },
   {
     title: 'Haklarınız (KVKK Madde 11)',
-    body: 'Kişisel verilerinize ilişkin; bilgi talep etme, düzeltme isteme, silme veya yok etme talep etme, işlemeye itiraz etme ve zararın giderilmesini talep etme haklarına sahipsiniz. Bu haklarınızı kullanmak için destek@armirstudio.com adresine başvurabilirsiniz.',
+    body: 'KVKK kapsamında aşağıdaki haklara sahipsiniz:\n\n• Bilgi edinme: Hangi verilerinizin işlendiğini öğrenme\n• Erişim: Verilerinize erişim ve kopyasını talep etme\n• Düzeltme: Hatalı veya eksik verilerin düzeltilmesini isteme\n• Silme / Yok etme: Koşulların oluşması halinde verilerinizin silinmesini talep etme\n• İtiraz: Otomatik işleme kararlarına itiraz etme\n• Taşınabilirlik: Verilerinizi yapılandırılmış biçimde alma\n• Şikayet: KVKK\'ya aykırılık halinde Kişisel Verileri Koruma Kurumu\'na (kvkk.gov.tr) başvurma\n\nBu haklarınız için: destek@armirstudio.com\nYanıt süresi: 30 gün (yasal azami süre)',
+  },
+  {
+    title: 'Çerezler ve Takip Teknolojileri',
+    body: 'EvimOs mobil uygulaması çerez (cookie) kullanmamaktadır. Oturum yönetimi için JWT token cihazınızda güvenli şekilde saklanır.\n\nPush bildirimleri için cihaz token\'ınız yalnızca bildirim gönderimi amacıyla işlenir ve üçüncü taraflarla paylaşılmaz. Bildirimleri dilediğiniz zaman cihaz ayarlarından devre dışı bırakabilirsiniz.',
   },
   {
     title: 'Veri Saklama Süresi',
-    body: 'Kişisel verileriniz, ilgili mevzuatta öngörülen süreler ve hizmet ilişkisinin devamı süresince saklanmaktadır. İlişkinin sona ermesinin ardından yasal yükümlülükler kapsamında belirlenen süreler dışında silinmektedir.',
+    body: 'Kişisel verileriniz:\n• Hesap aktifken: Hizmet ilişkisi süresince saklanır\n• Hesap silindiğinde: 30 gün içinde anonim hale getirilir veya silinir\n• Finansal kayıtlar: 6102 sayılı TTK gereği 10 yıl saklanır\n• Yasal bildirimler: İlgili mevzuat kapsamında belirlenen süreler\n\nVerilerinizin silinmesini talep etmek için destek@armirstudio.com adresine başvurabilirsiniz.',
+  },
+  {
+    title: 'Politika Değişiklikleri',
+    body: 'Bu Gizlilik Politikası değiştirildiğinde uygulama içi bildirim veya e-posta ile bilgilendirileceksiniz. Politikanın güncel versiyonu her zaman uygulama içinde erişilebilir olacaktır.\n\nSon güncelleme: Mayıs 2025',
   },
 ];
 

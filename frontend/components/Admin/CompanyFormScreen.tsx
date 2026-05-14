@@ -262,7 +262,7 @@ export default function CompanyFormScreen({
                 </View>
                 <View style={styles.bannerCta}>
                   <Ionicons name="images-outline" size={16} color={theme.colors.textInverse} />
-                  <Text style={styles.bannerCtaText}>Banner Degistir</Text>
+                  <Text style={styles.bannerCtaText}>Banner Değiştir</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -283,11 +283,11 @@ export default function CompanyFormScreen({
               <View style={styles.logoMeta}>
                 <Text style={styles.logoMetaTitle}>Logo</Text>
                 <Text style={styles.logoMetaText}>
-                  Liste kartlarinda, profil basliginda ve yonetim alanlarinda gorunen kare marka gorseli.
+                  Liste kartlarında, profil başlığında ve yönetim alanlarında görünen kare marka görseli.
                 </Text>
                 <TouchableOpacity style={styles.secondaryButton} onPress={() => pickImage('logoUrl')}>
                   <Ionicons name="camera-outline" size={16} color={theme.colors.primary} />
-                  <Text style={styles.secondaryButtonText}>Logo Degistir</Text>
+                  <Text style={styles.secondaryButtonText}>Logo Değiştir</Text>
                 </TouchableOpacity>
               </View>
             </View>

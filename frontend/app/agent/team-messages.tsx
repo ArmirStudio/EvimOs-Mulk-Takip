@@ -83,7 +83,7 @@ export default function TeamMessagesScreen() {
       setMessages((msgRes.messages as TeamMessage[]) || []);
       setReadStatus((readRes.readers as TeamMessageReadStatus[]) || []);
     } catch (e: any) {
-      setError(e?.message || 'Mesajlar yuklenemedi.');
+      setError(e?.message || 'Mesajlar yüklenemedi.');
     } finally {
       setLoading(false);
     }
@@ -218,7 +218,7 @@ export default function TeamMessagesScreen() {
   ): Promise<{ inputs: TeamMessageAttachmentInput[]; uploadedPaths: string[] }> => {
     if (!attachments.length) return { inputs: [], uploadedPaths: [] };
     if (!userData?.id) {
-      throw new Error('Kullanici bilgisi bulunamadi');
+      throw new Error('Kullanıcı bilgisi bulunamadı');
     }
 
     const officeOwnerId = userData.role === 'employee'
@@ -226,7 +226,7 @@ export default function TeamMessagesScreen() {
       : userData.id;
 
     if (!officeOwnerId) {
-      throw new Error('Ofis bilgisi bulunamadi');
+      throw new Error('Ofis bilgisi bulunamadı');
     }
 
     const timestamp = Date.now();

@@ -1,6 +1,6 @@
 import logging
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -358,3 +358,185 @@ def record_campaign_event(
     }).execute()
 
     return {"success": True, "link_url": link_url}
+
+
+@router.get("/rent-alerts")
+def get_rent_alerts(current_user: dict = Depends(get_current_user)):
+    """
+    For landlords: returns properties with overdue rent collection
+    and contracts expiring within 60 days.
+    """
+    uid = current_user["id"]
+    role = current_user.get("role")
+
+    if role == "agent":
+        props_result = supabase.table("properties").select(
+            "id, address, city, district, status, monthly_rent, rent_day, contract_end, tenant_id"
+        ).eq("agent_id", uid).execute()
+    elif role == "landlord":
+        props_result = supabase.table("properties").select(
+            "id, address, city, district, status, monthly_rent, rent_day, contract_end, tenant_id"
+        ).eq("landlord_id", uid).execute()
+    else:
+        return {"rent_due": [], "expiring_contracts": []}
+
+    properties = props_result.data or []
+    today = datetime.utcnow().date()
+    current_month = today.strftime("%Y-%m")
+
+    occupied_ids = [p["id"] for p in properties if p.get("status") == "occupied"]
+
+    # Fetch approved receipts for current month across occupied properties
+    approved_this_month: set[str] = set()
+    if occupied_ids:
+        receipts_result = supabase.table("receipts").select("property_id").in_(
+            "property_id", occupied_ids
+        ).eq("status", "approved").eq("month", current_month).execute()
+        for row in receipts_result.data or []:
+            approved_this_month.add(row["property_id"])
+
+    rent_due = []
+    for p in properties:
+        if p.get("status") != "occupied":
+            continue
+        rent_day = p.get("rent_day")
+        if not rent_day:
+            continue
+        if p["id"] in approved_this_month:
+            continue
+        # Rent is due if today >= rent_day of current month
+        if today.day >= rent_day:
+            days_overdue = today.day - rent_day
+        else:
+            days_overdue = 0  # not yet due but no receipt
+        rent_due.append({
+            "property_id": p["id"],
+            "address": p.get("address"),
+            "city": p.get("city"),
+            "district": p.get("district"),
+            "monthly_rent": p.get("monthly_rent"),
+            "rent_day": rent_day,
+            "days_overdue": days_overdue,
+        })
+
+    expiring_contracts = []
+    for p in properties:
+        contract_end_str = p.get("contract_end")
+        if not contract_end_str:
+            continue
+        try:
+            contract_end = datetime.strptime(contract_end_str[:10], "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        days_remaining = (contract_end - today).days
+        if 0 <= days_remaining <= 60:
+            expiring_contracts.append({
+                "property_id": p["id"],
+                "address": p.get("address"),
+                "city": p.get("city"),
+                "district": p.get("district"),
+                "contract_end": contract_end_str[:10],
+                "days_remaining": days_remaining,
+            })
+
+    expiring_contracts.sort(key=lambda x: x["days_remaining"])
+    rent_due.sort(key=lambda x: x["days_overdue"], reverse=True)
+
+    return {"rent_due": rent_due, "expiring_contracts": expiring_contracts}
+
+
+@router.get("/property-scores")
+def get_property_scores(current_user: dict = Depends(get_current_user)):
+    """
+    Returns a performance score per property for landlords/agents.
+    Score (0-100) is a weighted composite of:
+    - Collection rate (50%): approved receipts in last 3 months vs expected
+    - Maintenance health (30%): no open critical/pending maintenance
+    - Occupancy (20%): occupied = full score
+    """
+    uid = current_user["id"]
+    role = current_user.get("role")
+
+    if role == "agent":
+        props_result = supabase.table("properties").select(
+            "id, status, address, city, district"
+        ).eq("agent_id", uid).execute()
+    elif role == "landlord":
+        props_result = supabase.table("properties").select(
+            "id, status, address, city, district"
+        ).eq("landlord_id", uid).execute()
+    else:
+        return {"scores": []}
+
+    properties = props_result.data or []
+    if not properties:
+        return {"scores": []}
+
+    prop_ids = [p["id"] for p in properties]
+
+    # Last 3 months strings
+    today = datetime.utcnow().date()
+    last_3_months = []
+    for i in range(3):
+        d = today.replace(day=1) - timedelta(days=i * 28)
+        last_3_months.append(d.strftime("%Y-%m"))
+
+    # Approved receipts in last 3 months
+    receipts_result = supabase.table("receipts").select("property_id, month").in_(
+        "property_id", prop_ids
+    ).eq("status", "approved").in_("month", last_3_months).execute()
+    approved_by_prop: dict[str, set[str]] = {}
+    for r in receipts_result.data or []:
+        pid = r["property_id"]
+        if pid not in approved_by_prop:
+            approved_by_prop[pid] = set()
+        approved_by_prop[pid].add(r["month"])
+
+    # Open maintenance requests
+    maint_result = supabase.table("maintenance_requests").select("property_id, status, priority").in_(
+        "property_id", prop_ids
+    ).in_("status", ["pending", "in_progress"]).execute()
+    open_maint: dict[str, list[dict]] = {}
+    for m in maint_result.data or []:
+        pid = m["property_id"]
+        if pid not in open_maint:
+            open_maint[pid] = []
+        open_maint[pid].append(m)
+
+    scores = []
+    for p in properties:
+        pid = p["id"]
+
+        # Occupancy score
+        status = p.get("status", "vacant")
+        occupancy_score = 100 if status == "occupied" else (50 if status == "maintenance" else 0)
+
+        # Collection score: approved months / 3 (for occupied only)
+        if status == "occupied":
+            approved_months = len(approved_by_prop.get(pid, set()))
+            collection_score = int((approved_months / 3) * 100)
+        else:
+            collection_score = 100  # vacant property, N/A → neutral
+
+        # Maintenance score
+        open_reqs = open_maint.get(pid, [])
+        critical = sum(1 for m in open_reqs if m.get("priority") == "high")
+        normal = sum(1 for m in open_reqs if m.get("priority") != "high")
+        maintenance_score = max(0, 100 - (critical * 30) - (normal * 10))
+
+        overall = int(
+            collection_score * 0.5 +
+            maintenance_score * 0.3 +
+            occupancy_score * 0.2
+        )
+
+        scores.append({
+            "property_id": pid,
+            "address": p.get("address"),
+            "overall": overall,
+            "collection": collection_score,
+            "maintenance": maintenance_score,
+            "occupancy": occupancy_score,
+        })
+
+    return {"scores": scores}

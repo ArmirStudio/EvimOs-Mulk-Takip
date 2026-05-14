@@ -261,7 +261,7 @@ export default function LoginScreen() {
               activeOpacity={0.78}
               accessibilityRole="button"
             >
-              <Text style={styles.forgotButtonText}>Sifremi unuttum</Text>
+              <Text style={styles.forgotButtonText}>Şifremi unuttum</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

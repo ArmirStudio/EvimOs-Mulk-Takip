@@ -1,71 +1,13 @@
 -- ============================================================
--- Extracted from supabase/00_MASTER_SCHEMA.sql
--- Run order: 10_storage_policies.sql - Storage policies
+-- Run order: 10b — Storage policies: Private buckets
+-- Bucket'lar: tenant-documents, receipts, property-documents,
+--             maintenance-photos, team-message-files,
+--             task-photos, announcement-files
+-- Bu bucket'lar property veya ofis üyeliği bazında erişim kontrolü.
 -- ============================================================
 
--- BOLUM 10: STORAGE POLITIKALARI
--- Bucket erişim politikaları: private buckets signed URL, public buckets authenticated write
--- ============================================================
-
--- ── AVATARS (Public - herkes okuyabilir, kendi avatar yazabilir) ────────
-DROP POLICY IF EXISTS "avatars_public_read" ON storage.objects;
-DROP POLICY IF EXISTS "avatars_authenticated_write" ON storage.objects;
-
-CREATE POLICY "avatars_public_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'avatars');
-
-CREATE POLICY "avatars_authenticated_write" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'avatars'
-    AND auth.uid() IS NOT NULL
-    AND (storage.foldername(name))[1] = auth.uid()::text
-  );
-
--- ── AGENCY_BRANDING (Public - herkes okuyabilir, agent/admin kendi agency yazabilir) ────────
-DROP POLICY IF EXISTS "agency_branding_read" ON storage.objects;
-DROP POLICY IF EXISTS "agency_branding_write" ON storage.objects;
-
-CREATE POLICY "agency_branding_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'agency-branding');
-
-CREATE POLICY "agency_branding_write" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'agency-branding'
-    AND auth.uid() IS NOT NULL
-  );
-
--- ── AD_MEDIA (Public - herkes okuyabilir, admin yazabilir) ────────
-DROP POLICY IF EXISTS "ad_media_read" ON storage.objects;
-DROP POLICY IF EXISTS "ad_media_admin_write" ON storage.objects;
-
-CREATE POLICY "ad_media_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'ad-media');
-
-CREATE POLICY "ad_media_admin_write" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'ad-media'
-    AND auth.uid() IS NOT NULL
-  );
-
--- ── PROPERTY_IMAGES (Public - herkes okuyabilir, property owner yazabilir) ────────
-DROP POLICY IF EXISTS "property_images_read" ON storage.objects;
-DROP POLICY IF EXISTS "property_images_write" ON storage.objects;
-
-CREATE POLICY "property_images_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'property-images');
-
-CREATE POLICY "property_images_write" ON storage.objects
-  FOR INSERT TO authenticated
-  WITH CHECK (
-    bucket_id = 'property-images'
-    AND auth.uid() IS NOT NULL
-  );
-
--- ── TENANT_DOCUMENTS (Public - herkes okuyabilir, owner yazabilir) ────────
-DROP POLICY IF EXISTS "tenant_documents_read" ON storage.objects;
+-- ── TENANT_DOCUMENTS ─────────────────────────────────────────
+DROP POLICY IF EXISTS "tenant_documents_read"  ON storage.objects;
 DROP POLICY IF EXISTS "tenant_documents_write" ON storage.objects;
 
 CREATE POLICY "tenant_documents_read" ON storage.objects
@@ -91,9 +33,9 @@ CREATE POLICY "tenant_documents_write" ON storage.objects
     )
   );
 
--- ── RECEIPTS (Private - owner veya property admin yazabilir/okuyabilir) ────────
-DROP POLICY IF EXISTS "receipts_private_read" ON storage.objects;
-DROP POLICY IF EXISTS "receipts_private_write" ON storage.objects;
+-- ── RECEIPTS ─────────────────────────────────────────────────
+DROP POLICY IF EXISTS "receipts_private_read"   ON storage.objects;
+DROP POLICY IF EXISTS "receipts_private_write"  ON storage.objects;
 DROP POLICY IF EXISTS "receipts_private_update" ON storage.objects;
 DROP POLICY IF EXISTS "receipts_private_delete" ON storage.objects;
 
@@ -150,9 +92,9 @@ CREATE POLICY "receipts_private_delete" ON storage.objects
     )
   );
 
--- ── PROPERTY_DOCUMENTS (Private - owner veya property admin yazabilir/okuyabilir) ────────
-DROP POLICY IF EXISTS "property_documents_read" ON storage.objects;
-DROP POLICY IF EXISTS "property_documents_write" ON storage.objects;
+-- ── PROPERTY_DOCUMENTS ───────────────────────────────────────
+DROP POLICY IF EXISTS "property_documents_read"   ON storage.objects;
+DROP POLICY IF EXISTS "property_documents_write"  ON storage.objects;
 DROP POLICY IF EXISTS "property_documents_update" ON storage.objects;
 DROP POLICY IF EXISTS "property_documents_delete" ON storage.objects;
 
@@ -208,8 +150,8 @@ CREATE POLICY "property_documents_delete" ON storage.objects
     )
   );
 
--- ── MAINTENANCE_PHOTOS (Private - owner veya property admin yazabilir/okuyabilir) ────────
-DROP POLICY IF EXISTS "maintenance_photos_read" ON storage.objects;
+-- ── MAINTENANCE_PHOTOS ───────────────────────────────────────
+DROP POLICY IF EXISTS "maintenance_photos_read"  ON storage.objects;
 DROP POLICY IF EXISTS "maintenance_photos_write" ON storage.objects;
 
 CREATE POLICY "maintenance_photos_read" ON storage.objects
@@ -235,9 +177,8 @@ CREATE POLICY "maintenance_photos_write" ON storage.objects
     )
   );
 
--- ── TASK_PHOTOS ve ANNOUNCEMENT_FILES (Public - authenticated upload) ────────
--- TEAM_MESSAGE_FILES (Private - ayni ofis uyeleri okur, kullanici kendi klasorune yazar)
-DROP POLICY IF EXISTS "team_message_files_read" ON storage.objects;
+-- ── TEAM_MESSAGE_FILES ───────────────────────────────────────
+DROP POLICY IF EXISTS "team_message_files_read"   ON storage.objects;
 DROP POLICY IF EXISTS "team_message_files_insert" ON storage.objects;
 DROP POLICY IF EXISTS "team_message_files_update" ON storage.objects;
 DROP POLICY IF EXISTS "team_message_files_delete" ON storage.objects;
@@ -281,18 +222,15 @@ CREATE POLICY "team_message_files_delete" ON storage.objects
     AND (storage.foldername(name))[2] = public.get_current_user_id()::text
   );
 
-DROP POLICY IF EXISTS "team_public_files_read" ON storage.objects;
+-- ── TASK_PHOTOS ──────────────────────────────────────────────
+DROP POLICY IF EXISTS "team_public_files_read"   ON storage.objects;
 DROP POLICY IF EXISTS "team_public_files_insert" ON storage.objects;
 DROP POLICY IF EXISTS "team_public_files_update" ON storage.objects;
 DROP POLICY IF EXISTS "team_public_files_delete" ON storage.objects;
-DROP POLICY IF EXISTS "task_photos_read" ON storage.objects;
-DROP POLICY IF EXISTS "task_photos_write" ON storage.objects;
+DROP POLICY IF EXISTS "task_photos_read"   ON storage.objects;
+DROP POLICY IF EXISTS "task_photos_write"  ON storage.objects;
 DROP POLICY IF EXISTS "task_photos_update" ON storage.objects;
 DROP POLICY IF EXISTS "task_photos_delete" ON storage.objects;
-DROP POLICY IF EXISTS "announcement_files_read" ON storage.objects;
-DROP POLICY IF EXISTS "announcement_files_write" ON storage.objects;
-DROP POLICY IF EXISTS "announcement_files_update" ON storage.objects;
-DROP POLICY IF EXISTS "announcement_files_delete" ON storage.objects;
 
 CREATE POLICY "task_photos_read" ON storage.objects
   FOR SELECT TO authenticated
@@ -366,6 +304,12 @@ CREATE POLICY "task_photos_delete" ON storage.objects
     )
   );
 
+-- ── ANNOUNCEMENT_FILES ───────────────────────────────────────
+DROP POLICY IF EXISTS "announcement_files_read"   ON storage.objects;
+DROP POLICY IF EXISTS "announcement_files_write"  ON storage.objects;
+DROP POLICY IF EXISTS "announcement_files_update" ON storage.objects;
+DROP POLICY IF EXISTS "announcement_files_delete" ON storage.objects;
+
 CREATE POLICY "announcement_files_read" ON storage.objects
   FOR SELECT TO authenticated
   USING (
@@ -409,5 +353,3 @@ CREATE POLICY "announcement_files_delete" ON storage.objects
     AND (storage.foldername(name))[1] = public.get_current_office_owner_id()::text
     AND (storage.foldername(name))[2] = public.get_current_user_id()::text
   );
-
--- ============================================================

@@ -1,6 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
+  FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -17,6 +20,9 @@ import { useUserData } from '../../hooks/useUserData';
 import AnimatedHeaderScrollView from '../../components/Shared/AnimatedHeaderScrollView';
 import AgentReportsPanel from '../../components/Shared/AgentReportsPanel';
 import { AreaChart, ArcScore, DonutChart } from '../../components/Shared/ReportCharts';
+
+const SCREEN_W = Dimensions.get('window').width;
+const CARD_SNAP_W = SCREEN_W - 32 - 16; // padding 16 each side, gap 8 between
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -48,41 +54,25 @@ function SectionHeader({
   title,
   subtitle,
   iconBg,
+  accentColor,
 }: {
   icon: string;
   title: string;
   subtitle?: string;
   iconBg?: string;
+  accentColor?: string;
 }) {
   const theme = useAppTheme();
   const s = useCardStyles();
   return (
     <View style={s.secHeader}>
       <View style={[s.secIconBg, iconBg ? { backgroundColor: iconBg } : null]}>
-        <MaterialIcons name={icon as any} size={18} color={theme.colors.primary} />
+        <MaterialIcons name={icon as any} size={18} color={accentColor || theme.colors.primary} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={s.secTitle}>{title}</Text>
         {subtitle ? <Text style={s.secSubtitle}>{subtitle}</Text> : null}
       </View>
-    </View>
-  );
-}
-
-function StatChip({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: string | number;
-  color?: string;
-}) {
-  const s = useCardStyles();
-  return (
-    <View style={s.chip}>
-      <Text style={[s.chipValue, color ? { color } : null]}>{value}</Text>
-      <Text style={s.chipLabel}>{label}</Text>
     </View>
   );
 }
@@ -105,6 +95,72 @@ function ErrorBox({ message, onRetry }: { message: string; onRetry: () => void }
       <TouchableOpacity onPress={onRetry}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: theme.colors.primary }}>Tekrar dene</Text>
       </TouchableOpacity>
+    </View>
+  );
+}
+
+// Yatay kaydırmalı özet kartı
+function HorizontalSnapCards({ items }: { items: { label: string; value: string | number; color?: string; icon: string; bg: string }[] }) {
+  const theme = useAppTheme();
+  const flatRef = useRef<FlatList>(null);
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  return (
+    <View>
+      <FlatList
+        ref={flatRef}
+        data={items}
+        horizontal
+        pagingEnabled={false}
+        snapToInterval={CARD_SNAP_W / 2 + 8}
+        decelerationRate="fast"
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 10, paddingRight: 8 }}
+        onMomentumScrollEnd={(e) => {
+          const idx = Math.round(e.nativeEvent.contentOffset.x / (CARD_SNAP_W / 2 + 8));
+          setActiveIdx(Math.min(idx, items.length - 1));
+        }}
+        keyExtractor={(_, i) => String(i)}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              width: CARD_SNAP_W / 2,
+              borderRadius: 16,
+              backgroundColor: item.bg,
+              padding: 14,
+              gap: 6,
+            }}
+          >
+            <View style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: 'rgba(255,255,255,0.25)',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <MaterialIcons name={item.icon as any} size={18} color={item.color || theme.colors.textPrimary} />
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: '900', color: item.color || theme.colors.textPrimary }}>
+              {item.value}
+            </Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: item.color || theme.colors.textSecondary, opacity: 0.85 }}>
+              {item.label}
+            </Text>
+          </View>
+        )}
+      />
+      {/* Dot indicators */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 5, marginTop: 10 }}>
+        {items.map((_, i) => (
+          <View
+            key={i}
+            style={{
+              width: activeIdx === i ? 16 : 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: activeIdx === i ? theme.colors.primary : theme.colors.surface2,
+            }}
+          />
+        ))}
+      </View>
     </View>
   );
 }
@@ -224,7 +280,6 @@ export default function AgentReportsScreen() {
   const allReceipts = receipts.data || [];
   const approvedReceipts = allReceipts.filter((r) => r.status === 'approved');
 
-  // Income — last 6 months
   const incomeData = React.useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, i) => {
@@ -237,27 +292,25 @@ export default function AgentReportsScreen() {
           const rd = new Date(r.created_at);
           return rd.getFullYear() === y && rd.getMonth() === m;
         })
-        .reduce((s, r) => s + (r.amount || 0), 0);
+        .reduce((sum, r) => sum + (r.amount || 0), 0);
       return { label: monthLabel(d), value: total };
     });
   }, [approvedReceipts]);
 
   const thisMonthIncome = incomeData[incomeData.length - 1]?.value || 0;
 
-  // Gecikme skoru — this month
   const lateScore = React.useMemo(() => {
     if (!occupied.length) return 100;
     const now = new Date();
     const y = now.getFullYear();
     const m = now.getMonth();
-    const onTime = occupied.filter((p) => {
-      const hasApproved = approvedReceipts.some((r) => {
+    const onTime = occupied.filter((p) =>
+      approvedReceipts.some((r) => {
         if (r.property_id !== p.id || !r.created_at) return false;
         const rd = new Date(r.created_at);
         return rd.getFullYear() === y && rd.getMonth() === m;
-      });
-      return hasApproved;
-    });
+      }),
+    );
     return Math.round((onTime.length / occupied.length) * 100);
   }, [occupied, approvedReceipts]);
 
@@ -276,7 +329,6 @@ export default function AgentReportsScreen() {
     return { on, total: occupied.length };
   }, [occupied, approvedReceipts]);
 
-  // Sözleşme bitiş
   const contractBuckets = React.useMemo(() => {
     const now = new Date();
     const d30 = new Date(now.getTime() + 30 * 86400000);
@@ -304,7 +356,6 @@ export default function AgentReportsScreen() {
       .slice(0, 5);
   }, [allProps]);
 
-  // Boş mülk alarmı
   const vacantWithAge = React.useMemo(() => {
     const now = new Date();
     return vacant
@@ -315,48 +366,81 @@ export default function AgentReportsScreen() {
       .sort((a, b) => b.days - a.days);
   }, [vacant]);
 
-  // Ev sahibi tepki hızı — avg days from created_at to updated_at on approved receipts (last 30 days)
   const responseSpeed = React.useMemo(() => {
     const cutoff = new Date(Date.now() - 30 * 86400000);
     const recent = approvedReceipts.filter((r) => r.created_at && new Date(r.created_at) >= cutoff);
     if (!recent.length) return null;
-    const avgMs = recent.reduce((s, r) => {
-      const a = r.created_at ? new Date(r.created_at).getTime() : 0;
-      const b = r.updated_at ? new Date(r.updated_at).getTime() : 0;
-      return s + Math.max(0, b - a);
-    }, 0) / recent.length;
+    const avgMs =
+      recent.reduce((sum, r) => {
+        const a = r.created_at ? new Date(r.created_at).getTime() : 0;
+        const b = r.updated_at ? new Date(r.updated_at).getTime() : 0;
+        return sum + Math.max(0, b - a);
+      }, 0) / recent.length;
     return +(avgMs / 86400000).toFixed(1);
   }, [approvedReceipts]);
 
-  // Bakım çözüm hızı
   const maintStats = React.useMemo(() => {
     const allM = maint.data || [];
     const now = new Date();
     const cutoff30 = new Date(now.getTime() - 30 * 86400000);
     const cutoff60 = new Date(now.getTime() - 60 * 86400000);
-
     const closed = allM.filter((m) => m.status === 'completed' || m.status === 'closed');
     const closedThis = closed.filter((m) => m.updated_at && new Date(m.updated_at) >= cutoff30);
-    const closedLast = closed.filter((m) => m.updated_at && new Date(m.updated_at) < cutoff30 && new Date(m.updated_at) >= cutoff60);
-
+    const closedLast = closed.filter(
+      (m) => m.updated_at && new Date(m.updated_at) < cutoff30 && new Date(m.updated_at) >= cutoff60,
+    );
     const avgDays = (arr: Maintenance[]) => {
       if (!arr.length) return null;
-      const total = arr.reduce((s, m) => {
+      const total = arr.reduce((sum, m) => {
         const a = m.created_at ? new Date(m.created_at).getTime() : 0;
         const b = m.updated_at ? new Date(m.updated_at).getTime() : 0;
-        return s + Math.max(0, b - a);
+        return sum + Math.max(0, b - a);
       }, 0);
       return +(total / arr.length / 86400000).toFixed(1);
     };
-
     const open = allM.filter((m) => m.status === 'open' || m.status === 'pending');
-
-    return {
-      avgThis: avgDays(closedThis),
-      avgLast: avgDays(closedLast),
-      openCount: open.length,
-    };
+    return { avgThis: avgDays(closedThis), avgLast: avgDays(closedLast), openCount: open.length };
   }, [maint.data]);
+
+  // Yatay kayan stat kartları için veri
+  const occupancyCards = React.useMemo(() => [
+    { label: 'Toplam Mülk', value: allProps.length, icon: 'home-work', bg: theme.colors.primaryLight, color: theme.colors.primary },
+    { label: 'Kirada', value: occupied.length, icon: 'people', bg: theme.colors.successLight, color: theme.colors.success },
+    { label: 'Boş', value: vacant.length, icon: 'home', bg: theme.colors.warningLight, color: theme.colors.warning },
+    { label: 'Doluluk', value: `${occupancyPct}%`, icon: 'pie-chart', bg: occupancyPct >= 80 ? theme.colors.successLight : theme.colors.primaryLight, color: occupancyPct >= 80 ? theme.colors.success : theme.colors.primary },
+  ], [allProps.length, occupied.length, vacant.length, occupancyPct, theme]);
+
+  // Hızlı performans kartları (yana kayan)
+  const performanceCards = React.useMemo(() => [
+    {
+      label: 'Kira Gecikme Skoru',
+      value: `%${lateScore}`,
+      icon: 'timer',
+      bg: lateScore >= 80 ? theme.colors.successLight : theme.colors.warningLight,
+      color: lateScore >= 80 ? theme.colors.success : theme.colors.warning,
+    },
+    {
+      label: 'Tepki Hızı (gün)',
+      value: responseSpeed !== null ? `${responseSpeed}` : '—',
+      icon: 'speed',
+      bg: theme.colors.primaryLight,
+      color: theme.colors.primary,
+    },
+    {
+      label: 'Açık Bakım',
+      value: maintStats.openCount,
+      icon: 'build',
+      bg: maintStats.openCount > 0 ? theme.colors.errorLight : theme.colors.successLight,
+      color: maintStats.openCount > 0 ? theme.colors.error : theme.colors.success,
+    },
+    {
+      label: 'Çözüm Süresi',
+      value: maintStats.avgThis !== null ? `${maintStats.avgThis}g` : '—',
+      icon: 'check-circle-outline',
+      bg: theme.colors.surface2,
+      color: theme.colors.textSecondary,
+    },
+  ], [lateScore, responseSpeed, maintStats, theme]);
 
   // ─── render ─────────────────────────────────────────────────────────────────
 
@@ -373,40 +457,52 @@ export default function AgentReportsScreen() {
       }
       scrollContentStyle={s.scroll}
     >
-      {/* ─── 1. Mülk & Doluluk ─── */}
+      {/* ─── 1. Mülk & Doluluk — Yatay Kaydırmalı ─── */}
       <SectionCard delay={0}>
-        <SectionHeader icon="home-work" title="Mülk & Doluluk" subtitle={`${allProps.length} mülk yönetiliyor`} />
+        <SectionHeader
+          icon="home-work"
+          title="Mülk & Doluluk"
+          subtitle={`${allProps.length} mülk yönetiliyor`}
+        />
         {props.loading ? (
           <LoadingBox />
         ) : props.error ? (
           <ErrorBox message={props.error} onRetry={loadProperties} />
         ) : (
-          <View style={s.row}>
-            <View style={s.chartCenter}>
+          <View style={{ gap: 14 }}>
+            <View style={s.donutRow}>
               <DonutChart
                 segments={[
                   { value: occupied.length || 0.01, color: theme.colors.primary },
                   { value: vacant.length || (occupied.length ? 0 : 0.01), color: theme.colors.surface2 },
                 ]}
-                size={110}
-                strokeWidth={18}
+                size={100}
+                strokeWidth={16}
                 centerLabel={`${occupancyPct}%`}
                 centerSublabel="Dolu"
               />
+              <View style={{ flex: 1 }}>
+                <Text style={s.bigOccupancy}>{occupancyPct}%</Text>
+                <Text style={s.bigOccupancySub}>doluluk oranı</Text>
+                <Text style={[s.bigOccupancySub, { marginTop: 4 }]}>
+                  {occupied.length}/{allProps.length} mülk kirada
+                </Text>
+              </View>
             </View>
-            <View style={s.chipCol}>
-              <StatChip label="Toplam" value={allProps.length} />
-              <StatChip label="Dolu" value={occupied.length} color={theme.colors.primary} />
-              <StatChip label="Boş" value={vacant.length} color={theme.colors.textMuted} />
-              <StatChip label="Doluluk" value={`${occupancyPct}%`} color={occupancyPct >= 80 ? theme.colors.success : theme.colors.warning} />
-            </View>
+            <HorizontalSnapCards items={occupancyCards} />
           </View>
         )}
       </SectionCard>
 
       {/* ─── 2. Gelir Raporu ─── */}
       <SectionCard delay={50}>
-        <SectionHeader icon="account-balance" title="Gelir Raporu" subtitle="Son 6 ay onaylanan kira" />
+        <SectionHeader
+          icon="account-balance"
+          title="Gelir Raporu"
+          subtitle="Son 6 ay onaylanan kira"
+          iconBg={theme.colors.successLight}
+          accentColor={theme.colors.success}
+        />
         {receipts.loading ? (
           <LoadingBox />
         ) : receipts.error ? (
@@ -414,16 +510,26 @@ export default function AgentReportsScreen() {
         ) : (
           <View style={{ gap: 8 }}>
             <View style={s.bigNumRow}>
-              <Text style={s.bigNum}>{fmtCurrency(thisMonthIncome)}</Text>
+              <Text style={[s.bigNum, { color: theme.colors.success }]}>{fmtCurrency(thisMonthIncome)}</Text>
               <Text style={s.bigNumSub}>Bu ay tahsilat</Text>
             </View>
-            <AreaChart data={incomeData} color={theme.colors.primary} gradientId="agentIncome" height={110} />
+            <AreaChart data={incomeData} color={theme.colors.success} gradientId="agentIncome" height={110} />
           </View>
         )}
       </SectionCard>
 
-      {/* ─── 3. Kira Gecikme Skoru ─── */}
+      {/* ─── 3. Performans Özeti — Yatay Kaydırmalı Kartlar ─── */}
       <SectionCard delay={100}>
+        <SectionHeader icon="insights" title="Performans Özeti" subtitle="Kira, tepki ve bakım metrikleri" />
+        {receipts.loading || maint.loading ? (
+          <LoadingBox />
+        ) : (
+          <HorizontalSnapCards items={performanceCards} />
+        )}
+      </SectionCard>
+
+      {/* ─── 4. Kira Gecikme Skoru ─── */}
+      <SectionCard delay={130}>
         <SectionHeader icon="timer" title="Kira Gecikme Skoru" subtitle="Bu ay zamanında ödeme oranı" />
         {receipts.loading ? (
           <LoadingBox />
@@ -437,9 +543,15 @@ export default function AgentReportsScreen() {
         )}
       </SectionCard>
 
-      {/* ─── 4. Sözleşme Bitiş Takvimi ─── */}
-      <SectionCard delay={150}>
-        <SectionHeader icon="event" title="Sözleşme Bitiş Takvimi" subtitle="Önümüzdeki 90 gün" />
+      {/* ─── 5. Sözleşme Bitiş Takvimi ─── */}
+      <SectionCard delay={160}>
+        <SectionHeader
+          icon="event"
+          title="Sözleşme Bitiş Takvimi"
+          subtitle="Önümüzdeki 90 gün"
+          iconBg={theme.colors.warningLight}
+          accentColor={theme.colors.warning}
+        />
         {props.loading ? (
           <LoadingBox />
         ) : (
@@ -459,13 +571,15 @@ export default function AgentReportsScreen() {
               </View>
             </View>
             {upcomingContracts.length === 0 ? (
-              <Text style={s.emptyNote}>90 gün içinde biten sözleşme yok</Text>
+              <View style={s.successRow}>
+                <MaterialIcons name="check-circle" size={18} color={theme.colors.success} />
+                <Text style={[s.emptyNote, { color: theme.colors.successText }]}>90 gün içinde biten sözleşme yok</Text>
+              </View>
             ) : (
               upcomingContracts.map((p) => {
-                const daysLeft = p.contract_end
-                  ? daysBetween(new Date(), new Date(p.contract_end))
-                  : 0;
-                const color = daysLeft <= 30 ? theme.colors.error : daysLeft <= 60 ? theme.colors.warning : theme.colors.success;
+                const daysLeft = p.contract_end ? daysBetween(new Date(), new Date(p.contract_end)) : 0;
+                const color =
+                  daysLeft <= 30 ? theme.colors.error : daysLeft <= 60 ? theme.colors.warning : theme.colors.success;
                 return (
                   <View key={p.id} style={s.listRow}>
                     <Text style={s.listRowText} numberOfLines={1}>{p.address || 'Bilinmeyen adres'}</Text>
@@ -478,9 +592,15 @@ export default function AgentReportsScreen() {
         )}
       </SectionCard>
 
-      {/* ─── 5. Boş Mülk Alarmı ─── */}
-      <SectionCard delay={200}>
-        <SectionHeader icon="warning" title="Boş Mülk Alarmı" subtitle={`${vacant.length} boş mülk`} />
+      {/* ─── 6. Boş Mülk Alarmı ─── */}
+      <SectionCard delay={190}>
+        <SectionHeader
+          icon="warning"
+          title="Boş Mülk Alarmı"
+          subtitle={`${vacant.length} boş mülk`}
+          iconBg={vacant.length > 0 ? theme.colors.errorLight : theme.colors.successLight}
+          accentColor={vacant.length > 0 ? theme.colors.error : theme.colors.success}
+        />
         {props.loading ? (
           <LoadingBox />
         ) : vacant.length === 0 ? (
@@ -494,6 +614,7 @@ export default function AgentReportsScreen() {
               const color = p.days >= 30 ? theme.colors.error : theme.colors.warning;
               return (
                 <View key={p.id} style={s.listRow}>
+                  <MaterialIcons name="home" size={14} color={color} />
                   <Text style={s.listRowText} numberOfLines={1}>{p.address || 'Bilinmeyen adres'}</Text>
                   <Text style={[s.listRowBadge, { color }]}>{p.days} gün boş</Text>
                 </View>
@@ -503,23 +624,8 @@ export default function AgentReportsScreen() {
         )}
       </SectionCard>
 
-      {/* ─── 6. Ev Sahibi Tepki Hızı ─── */}
-      <SectionCard delay={230}>
-        <SectionHeader icon="speed" title="Ev Sahibi Tepki Hızı" subtitle="Onay ortalama süresi (son 30 gün)" />
-        {receipts.loading ? (
-          <LoadingBox />
-        ) : responseSpeed === null ? (
-          <Text style={s.emptyNote}>Bu ay için yeterli veri yok</Text>
-        ) : (
-          <View style={s.bigNumRow}>
-            <Text style={s.bigNum}>{responseSpeed} gün</Text>
-            <Text style={s.bigNumSub}>ortalama onay süresi</Text>
-          </View>
-        )}
-      </SectionCard>
-
       {/* ─── 7. Bakım Çözüm Hızı ─── */}
-      <SectionCard delay={260}>
+      <SectionCard delay={220}>
         <SectionHeader icon="build" title="Bakım Çözüm Hızı" subtitle="Bu ay kapatılan talepler" />
         {maint.loading ? (
           <LoadingBox />
@@ -530,9 +636,7 @@ export default function AgentReportsScreen() {
                 {maintStats.avgThis !== null ? `${maintStats.avgThis} gün` : '—'}
               </Text>
               <Text style={s.bigNumSub}>
-                {maintStats.avgLast !== null
-                  ? `Geçen ay: ${maintStats.avgLast} gün`
-                  : 'Ortalama çözüm süresi'}
+                {maintStats.avgLast !== null ? `Geçen ay: ${maintStats.avgLast} gün` : 'Ortalama çözüm süresi'}
               </Text>
             </View>
             <View style={s.listRow}>
@@ -545,7 +649,7 @@ export default function AgentReportsScreen() {
       </SectionCard>
 
       {/* ─── 8 & 9. Harcama + Ekip (AgentReportsPanel) ─── */}
-      <Animated.View entering={FadeInDown.delay(300).duration(380)}>
+      <Animated.View entering={FadeInDown.delay(260).duration(380)}>
         <View style={s.panelWrap}>
           <AgentReportsPanel />
         </View>
@@ -561,10 +665,10 @@ export default function AgentReportsScreen() {
 const useCardStyles = createThemedStyles((theme) =>
   StyleSheet.create({
     card: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 18,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.colors.border,
       padding: 16,
       gap: 12,
       ...theme.shadows.sm,
@@ -580,36 +684,31 @@ const useCardStyles = createThemedStyles((theme) =>
     },
     secTitle: { fontSize: 15, fontWeight: '700', color: theme.colors.textPrimary },
     secSubtitle: { fontSize: 12, color: theme.colors.textMuted, marginTop: 1 },
-    chip: {
-      flex: 1,
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface2,
-      borderRadius: 12,
-      paddingVertical: 10,
-      paddingHorizontal: 4,
-      gap: 2,
-    },
-    chipValue: { fontSize: 18, fontWeight: '800', color: theme.colors.textPrimary },
-    chipLabel: { fontSize: 11, color: theme.colors.textMuted, fontWeight: '600', textAlign: 'center' },
   }),
 );
 
 const useStyles = createThemedStyles((theme) =>
   StyleSheet.create({
     scroll: { paddingHorizontal: 16, gap: 14 },
-    headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16 },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 16,
+    },
     backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
     headerTitle: { fontSize: 17, fontWeight: '700', color: theme.colors.textPrimary },
     row: { flexDirection: 'row', gap: 10, alignItems: 'center' },
-    chipCol: { flex: 1, gap: 6 },
-    chartCenter: { alignItems: 'center', justifyContent: 'center' },
+    donutRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    bigOccupancy: { fontSize: 32, fontWeight: '900', color: theme.colors.textPrimary },
+    bigOccupancySub: { fontSize: 13, color: theme.colors.textMuted, fontWeight: '500' },
     bigNumRow: { gap: 2 },
     bigNum: { fontSize: 28, fontWeight: '800', color: theme.colors.textPrimary },
     bigNumSub: { fontSize: 12, color: theme.colors.textMuted, fontWeight: '500' },
     arcRow: { alignItems: 'center', gap: 6 },
     arcSub: { fontSize: 13, color: theme.colors.textSecondary, textAlign: 'center', fontWeight: '500' },
-    contractChip: { flex: 1, alignItems: 'center', borderRadius: 12, paddingVertical: 10, gap: 2 },
-    contractChipNum: { fontSize: 22, fontWeight: '800' },
+    contractChip: { flex: 1, alignItems: 'center', borderRadius: 14, paddingVertical: 12, gap: 2 },
+    contractChipNum: { fontSize: 24, fontWeight: '900' },
     contractChipLbl: { fontSize: 11, fontWeight: '600' },
     listRow: {
       flexDirection: 'row',
@@ -624,10 +723,11 @@ const useStyles = createThemedStyles((theme) =>
     emptyNote: { fontSize: 13, color: theme.colors.textMuted, textAlign: 'center', paddingVertical: 8 },
     successRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 },
     panelWrap: {
-      backgroundColor: '#FFFFFF',
-      borderRadius: 18,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 20,
       borderWidth: 1,
-      borderColor: theme.colors.divider,
+      borderColor: theme.colors.border,
+      padding: 16,
       overflow: 'hidden',
       ...theme.shadows.sm,
     },

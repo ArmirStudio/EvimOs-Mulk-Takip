@@ -19,7 +19,7 @@ interface CompactDatePickerProps {
   title?: string;
 }
 
-const MONTH_NAMES = ['Ocak', 'Subat', 'Mart', 'Nisan', 'Mayis', 'Haziran', 'Temmuz', 'Agustos', 'Eylul', 'Ekim', 'Kasim', 'Aralik'];
+const MONTH_NAMES = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 const DAY_NAMES = ['Pt', 'Sa', 'Ca', 'Pe', 'Cu', 'Ct', 'Pa'];
 
 export function CompactDatePicker({
@@ -178,7 +178,7 @@ export function CompactDatePicker({
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>Iptal</Text>
+              <Text style={styles.cancelBtnText}>İptal</Text>
             </TouchableOpacity>
           </View>
         </View>

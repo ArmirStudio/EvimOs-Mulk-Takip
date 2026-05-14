@@ -1,38 +1,38 @@
-# Veritabani Semasi
+# Veritabanı Şeması
 
-Bu dosya canli tablolarin kritik alanlarini ozetler. Tam kaynak icin `supabase/schema_parts/` ve `supabase/migrations/` kullanilir.
+Bu dosya canlı tabloların kritik alanlarını özetler. Tam kaynak için `supabase/schema_parts/` ve `supabase/migrations/` kullanılır.
 
 ## users
 
-Onemli kolonlar:
+Önemli kolonlar:
 - `id`, `auth_id`, `email`, `full_name`, `phone`
 - `role`: `admin | agent | landlord | tenant | employee`
 - `status`: `pending | active`
 - `created_by`, `agency_id`, `invited_via_invite_id`
 - `employee_access_level`: `full | limited`
 - `preferred_currency`, `preferred_theme`
-- `terms_accepted_at` — yasal kabul zamani; bos olan aktif kullanici `/legal-acceptance` ekranina yonlendirilir
-- `first_login` — yalnizca `complete-onboarding` endpoint'i tarafindan `false` yapilir
-- `onboarded_at` — agent ilk sifre belirleme tamamlandiginda set edilir; bu alani bos olan agent onboarding guard'i tetikler
+- `terms_accepted_at` — yasal kabul zamanı; boş olan aktif kullanıcı `/legal-acceptance` ekranına yönlendirilir
+- `first_login` — yalnızca `complete-onboarding` endpoint'i tarafından `false` yapılır
+- `onboarded_at` — agent ilk şifre belirleme tamamlandığında set edilir; boş olan agent onboarding guard'ı tetikler
+- `push_token` — Expo push bildirimleri için; `notify_user()` bu alanı okur
 - `created_at`, `updated_at`
 
 Kurallar:
-- Tenant, landlord ve employee bir agent altina `created_by = agent.users.id` ile baglanir
-- Agent kaydi opsiyonel olarak `agency_id` ile agency altina baglanir
-- `terms_accepted_at` yasal kabul endpoint'i tarafindan yazilir; `first_login` bu adimda degismez
-- `first_login = false` yalnizca `PATCH /api/users/me/complete-onboarding` ile yazilir
-- `onboarded_at` bostan farkli olan agent bir daha force-password-change ekranini gormez
+- Tenant, landlord ve employee bir agent altına `created_by = agent.users.id` ile bağlanır
+- Agent kaydı opsiyonel olarak `agency_id` ile agency altına bağlanır
+- `terms_accepted_at` yasal kabul endpoint'i tarafından yazılır; `first_login` bu adımda değişmez
+- `first_login = false` yalnızca `PATCH /api/users/me/complete-onboarding` ile yazılır
+- `onboarded_at` dolu olan agent force-password-change ekranını bir daha görmez
 
 ## invites
 
 Agent kontrollu tenant, landlord ve employee davetleri.
 
-Onemli kolonlar:
+Önemli kolonlar:
 - `id`, `office_owner_id`, `created_by`
 - `role`: `tenant | landlord | employee`
 - `contact_label`
 - `token_hash`, `code_hash`
-- `prefill_full_name`, `prefill_phone`, `prefill_email`
 - `expires_at`, `used_at`, `used_by`
 - `revoked_at`, `revoked_by`
 - `last_reminded_at`, `reminder_count`
@@ -40,39 +40,43 @@ Onemli kolonlar:
 
 Kurallar:
 - Ham token ve ham kod DB'de saklanmaz
-- `contact_label` agent'in ozel takip adidir; profil adi degildir
-- Davetli rol secemez; rol davetten gelir
+- `contact_label` agent'in özel takip adıdır; profil adı değildir
+- Davetli rol seçemez; rol davetten gelir
 
 ## agencies
 
-Sirket/ofis kayitlari admin tarafindan yonetilir. Agent kaydi `users.agency_id` ile agency altina baglanabilir.
+Şirket/ofis kayıtları admin tarafından yönetilir. Agent kaydı `users.agency_id` ile agency altına bağlanabilir.
 
 ## properties
 
-- Aktif model `properties.tenant_id` ve `properties.landlord_id` uzerindedir
-- Coklu property assignment bu fazda yoktur
+Önemli kolonlar (finansal ve sözleşme):
+- `monthly_rent`, `dues_amount`, `dues_day`, `rent_day`
+- `deposit_amount`, `deposit_currency`
+- `contract_start`, `contract_end`, `contract_duration`
+- `status`: `vacant | occupied | maintenance`
+- `landlord_id`, `tenant_id`, `agent_id`, `employee_id`
+
+Kurallar:
+- Aktif model `properties.tenant_id` ve `properties.landlord_id` üzerindedir
+- Çoklu property assignment bu fazda yoktur
+- `rent_day` ve `contract_end` alanları kira takip ve sözleşme bitiş alarmı hesaplamalarında kullanılır
 
 ## team_messages
 
-Ekip ici sohbet.
+Ekip içi sohbet.
 
-Onemli kolonlar:
-- `id`
-- `office_owner_id`: agent'in `users.id` degeri
-- `sender_id`
-- `body`
-- `reply_to_id`
-- `created_at`
+Önemli kolonlar:
+- `id`, `office_owner_id` (agent'ın `users.id`), `sender_id`, `body`, `reply_to_id`, `created_at`
 
 Kurallar:
-- RLS helper-function tabanlidir; `auth.uid()` dogrudan `public.users.id` ile eslenmez
-- Reply kontrolu ayni `office_owner_id` scope'u icinde zorunludur
+- RLS helper-function tabanlıdır; `auth.uid()` doğrudan `public.users.id` ile eşlenmez
+- Reply kontrolü aynı `office_owner_id` scope'u içinde zorunludur
 
 ## team_message_attachments
 
-Ekip mesajlarina bagli private dosya ekleri.
+Ekip mesajlarına bağlı private dosya ekleri.
 
-Onemli kolonlar:
+Önemli kolonlar:
 - `id`, `message_id`, `office_owner_id`, `uploaded_by`
 - `bucket`: `team-message-files`
 - `storage_path`: `office_owner_id/uploaded_by/timestamp-index-safe_name`
@@ -81,86 +85,95 @@ Onemli kolonlar:
 - `created_at`
 
 Kurallar:
-- Mesaj basina en fazla 5 ek
-- Dosya basina en fazla 10 MB
+- Mesaj başına en fazla 5 ek; dosya başına en fazla 10 MB
 - `audio/*` ve `video/*` kabul edilmez
-- Ekler public URL degildir; private bucket + signed URL ile acilir
-- Mesaj veya attachment insert'i basarisiz olursa orphan storage objesi birakilmaz
+- Ekler public URL değildir; private bucket + signed URL ile açılır
+- Mesaj veya attachment insert'i başarısız olursa orphan storage objesi bırakılmaz
 
 ## team_message_reads
 
-Kullanici basina son okuma zamani.
+Kullanıcı başına son okuma zamanı.
 
-Onemli kolonlar:
-- `office_owner_id` PK parcasi
-- `user_id` PK parcasi
+- `office_owner_id` + `user_id` composite PK
 - `last_read_at`
-
-Kurallar:
-- Kullanici yalniz kendi `last_read_at` kaydini upsert eder
-- Ofis sahibi ayni office scope'undaki read durumlarini gorebilir
+- Kullanıcı yalnız kendi `last_read_at` kaydını upsert eder
 
 ## team_meetings
 
-Ofis ekibinin toplanti kayitlari.
-
-Onemli kolonlar:
-- `id`, `office_owner_id`, `created_by`
-- `title`, `description`, `notes`
-- `scheduled_at`
+- `id`, `office_owner_id`, `created_by`, `title`, `description`, `notes`, `scheduled_at`
 - `status`: `scheduled | completed | cancelled`
-- `created_at`, `updated_at`
 
 ## office_expenses
 
-Ofis gider kayitlari.
-
-Onemli kolonlar:
-- `id`, `office_owner_id`, `created_by`
-- `amount`
+- `id`, `office_owner_id`, `created_by`, `amount`
 - `category`: `kira | fatura | ulasim | yemek | malzeme | diger`
 - `description`, `expense_date`, `receipt_url`
-- `created_at`, `updated_at`
-
-Kurallar:
-- Agent tum ofis giderlerini duzenleyebilir ve silebilir
-- Employee yalniz kendi olusturdugu giderleri duzenleyebilir ve silebilir
+- Agent tüm ofis giderlerini düzenleyebilir/silebilir; employee yalnız kendi oluşturduklarını
 
 ## receipts
 
-Dekont kayitlari ve dosya yasam dongusu.
+Dekont kayıtları ve dosya yaşam döngüsü.
 
-Onemli kolonlar:
-- `id`, `property_id`, `uploaded_by`
-- `receipt_type`, `amount`, `month`
+Önemli kolonlar:
+- `id`, `property_id`, `uploaded_by`, `reviewed_by`
+- `receipt_type`: `rent | dues | other`
+- `amount`, `month` (format: `YYYY-MM`)
 - `status`: `pending | approved | rejected | withdrawn`
-- `document_url`, `storage_path`
-- `replaces_receipt_id`
+- `document_url`, `storage_path`, `replaces_receipt_id`
 - `withdrawn_at`, `withdrawn_by`, `withdrawal_reason`
-- `created_at`, `updated_at`
+- `pending_since_at`, `auto_approved_at`
 
 Kurallar:
-- Dekont upload'inda dosya private `receipts` bucket'ina yuklenir
-- Tenant `pending` veya `rejected` dekontu geri cektiginde fiziksel storage objesi silinir
-- Geri cekilen dekontta `document_url` ve `storage_path` temizlenir; audit izi `receipt_events` uzerinde kalir
-- Replacement upload basarili olduktan sonra eski `rejected` / `withdrawn` dosya orphan birakilmaz
+- Dekont upload'ında dosya private `receipts` bucket'ına yüklenir
+- Tenant `pending` veya `rejected` dekontu geri çektiğinde fiziksel storage objesi silinir; `document_url` ve `storage_path` temizlenir
+- Audit izi `receipt_events` üzerinde kalır
+- Replacement upload başarılı olduktan sonra eski rejected/withdrawn dosya orphan bırakılmaz
 
-## campaign Tablolari
+## maintenance_requests
 
-Reklam kampanyasi tablolari `admin-web/` ve backend `/api/admin/*` tarafindan yonetilir. Mobil uygulama kampanya CRUD yapmaz; yalniz dashboard delivery ve impression yazimi vardir.
+Önemli kolonlar:
+- `id`, `property_id`, `created_by`, `title`, `description`
+- `status`: `pending | in_progress | completed | rejected`
+- `priority`: `low | medium | high`
+- `assigned_technician_id`: `office_contacts.id` FK (nullable)
+- `assigned_technician_snapshot`: JSONB (silinen usta bilgisi için snapshot)
+- `tenant_approved_at`, `tenant_rejected_at`, `tenant_rejection_reason`
+- `seen_at`, `seen_by`
+
+## ad_campaigns / ad_interactions
+
+- `ad_campaigns`: `admin-web/` ve `/api/admin/*` tarafından yönetilir. Mobil uygulama yalnızca dashboard delivery ve impression yazımı yapar.
+- `ad_interactions`: `id`, `ad_id`, `user_id`, `event_type` (`click | link_open`), `placement`, `link_url`, `shown_date`, `metadata` JSONB
+
+## Dashboard Hesaplama Endpoint'leri (DB'ye yazılmaz)
+
+| Endpoint | Açıklama |
+|---|---|
+| `GET /dashboard/rent-alerts` | Bu ay approved dekontu olmayan dolu mülkler + 60 gün içinde biten sözleşmeler |
+| `GET /dashboard/property-scores` | Mülk başına 0–100 performans skoru (tahsilat + bakım + doluluk) |
 
 ## Migrationlar
 
-Uygulanmis migration dosyalari `supabase/migrations/` altinda:
+| Dosya | İçerik |
+|---|---|
+| `20260507_invites_add_employee.sql` | Davet sistemine employee rolü |
+| `20260507_office_expenses.sql` | `office_expenses` tablosu |
+| `20260507_team_meetings.sql` | `team_meetings` tablosu |
+| `20260507_team_messages_v2.sql` | Mesajlaşma V2 |
+| `20260508_team_message_attachments.sql` | Mesaj ekleri |
+| `20260509_single_invite_and_office_contacts.sql` | Tekil davet + `office_contacts` |
+| `20260509_employee_office_contacts_full_access.sql` | Employee rehber erişimi |
+| `20260512_supabase_alignment_and_storage_cleanup.sql` | Hizalama ve storage cleanup |
+| `20260512_team_messages_helper_policy_fix.sql` | Mesaj RLS düzeltmesi |
+| `20260512_team_message_policy_qualification_fix.sql` | Policy qualification düzeltmesi |
+| `20260512_agent_onboarding.sql` | `users.onboarded_at` kolonu |
+| `20260513_storage_policy_tightening.sql` | Storage policy sıkılaştırması |
+| `20260513_ad_interactions.sql` | `ad_interactions` tablosu |
+| `20260513_lock_down_user_self_update.sql` | Kullanıcı self-update kısıtlaması |
 
-- `20260512_supabase_alignment_and_storage_cleanup.sql`
-- `20260512_team_messages_helper_policy_fix.sql`
-- `20260512_team_message_policy_qualification_fix.sql`
-- `20260512_agent_onboarding.sql` — `users.onboarded_at TIMESTAMPTZ` kolonu eklendi
+## Canlı Kaynaklar
 
-## Canli Kaynaklar
-
-- Fresh kurulum: `supabase/schema_parts/*`
+- Fresh kurulum: `supabase/schema_parts/*` (tam liste için `supabase/README.md`)
 - Migrationlar: `supabase/migrations/*`
-- RLS ozeti: `kitap/rls.md`
+- RLS özeti: `kitap/rls.md`
 - Yetki matrisi: `kitap/permissions.md`

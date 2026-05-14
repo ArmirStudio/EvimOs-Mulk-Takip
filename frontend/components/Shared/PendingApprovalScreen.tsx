@@ -8,6 +8,14 @@ import {
   View,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated, {
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 
 import { createThemedStyles, useAppTheme } from '../../app/theme';
@@ -31,6 +39,69 @@ function getNextAllowedAt(lastRemindedAt?: string | null) {
   return last + COOLDOWN_MS;
 }
 
+function PulseIcon() {
+  const theme = useAppTheme();
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.12, { duration: 900 }),
+        withTiming(1, { duration: 900 }),
+      ),
+      -1,
+      false,
+    );
+    opacity.value = withRepeat(
+      withSequence(
+        withTiming(0.7, { duration: 900 }),
+        withTiming(1, { duration: 900 }),
+      ),
+      -1,
+      false,
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  return (
+    <View style={{ alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+      {/* Pulse ring */}
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            width: 90,
+            height: 90,
+            borderRadius: 45,
+            borderWidth: 2,
+            borderColor: `${theme.colors.primary}40`,
+          },
+          animStyle,
+        ]}
+      />
+      <View
+        style={{
+          width: 72,
+          height: 72,
+          borderRadius: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.colors.primaryLight,
+          borderWidth: 1.5,
+          borderColor: `${theme.colors.primary}30`,
+        }}
+      >
+        <MaterialIcons name="hourglass-top" size={34} color={theme.colors.primary} />
+      </View>
+    </View>
+  );
+}
+
 export default function PendingApprovalScreen({
   userData,
   onReminderSent,
@@ -51,12 +122,12 @@ export default function PendingApprovalScreen({
 
   const nextAllowedAt = useMemo(
     () => getNextAllowedAt(userData.inviteLastRemindedAt),
-    [userData.inviteLastRemindedAt]
+    [userData.inviteLastRemindedAt],
   );
   const remainingMs = nextAllowedAt ? nextAllowedAt - now : 0;
   const isCoolingDown = remainingMs > 0;
   const officeName = userData.inviteOfficeName || 'Emlak ofisi';
-  const roleLabel = userData.role === 'landlord' ? 'ev sahibi' : 'kiracı';
+  const roleLabel = userData.role === 'landlord' ? 'Ev Sahibi' : 'Kiracı';
 
   const handleRemind = async () => {
     if (sending || isCoolingDown) return;
@@ -84,16 +155,25 @@ export default function PendingApprovalScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.panel}>
-        <View style={styles.iconWrap}>
-          <MaterialIcons name="hourglass-top" size={34} color={theme.colors.primary} />
+      <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.panel}>
+        {/* Üst aksan çizgisi */}
+        <View style={styles.accentBar} />
+
+        <PulseIcon />
+
+        <View style={styles.badgeRow}>
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{roleLabel.toUpperCase()} DAVETİ</Text>
+          </View>
         </View>
-        <Text style={styles.eyebrow}>{roleLabel.toLocaleUpperCase('tr-TR')} DAVETI</Text>
-        <Text style={styles.title}>{officeName} davetinizi aldı, hesabınız onay bekliyor.</Text>
+
+        <Text style={styles.title}>{officeName} davetinizi aldı</Text>
+        <Text style={styles.subtitle}>Hesabınız onay bekliyor</Text>
         <Text style={styles.body}>
-          Onaylandığınızda uygulamadaki ilgili ekranlar açılacak. Şu anda sadece bu durum ekranını görebilirsiniz.
+          Onaylandığınızda ilgili ekranlar açılacak. Emlakçınıza hatırlatma gönderebilirsiniz.
         </Text>
 
+        {/* Hatırlatma Butonu */}
         <TouchableOpacity
           style={[styles.primaryButton, (sending || isCoolingDown) && styles.primaryButtonDisabled]}
           onPress={handleRemind}
@@ -104,23 +184,34 @@ export default function PendingApprovalScreen({
             <ActivityIndicator color={theme.colors.textInverse} />
           ) : (
             <>
-              <MaterialIcons name={isCoolingDown ? 'lock-clock' : 'notifications-active'} size={20} color={theme.colors.textInverse} />
+              <MaterialIcons
+                name={isCoolingDown ? 'lock-clock' : 'notifications-active'}
+                size={20}
+                color={theme.colors.textInverse}
+              />
               <Text style={styles.primaryButtonText}>
                 {isCoolingDown
-                  ? `Tekrar göndermek için ${formatRemaining(remainingMs)} kaldı`
-                  : 'Emlakçıya Bildirim Gönder'}
+                  ? `${formatRemaining(remainingMs)} sonra tekrar gönder`
+                  : 'Emlakçıya Hatırlat'}
               </Text>
             </>
           )}
         </TouchableOpacity>
 
-        {sentMessage ? <Text style={styles.feedback}>{sentMessage}</Text> : null}
+        {sentMessage ? (
+          <View style={styles.feedbackRow}>
+            <MaterialIcons name="check-circle-outline" size={15} color={theme.colors.success} />
+            <Text style={styles.feedback}>{sentMessage}</Text>
+          </View>
+        ) : null}
 
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleSignOut} activeOpacity={0.75}>
-          <MaterialIcons name="logout" size={18} color={theme.colors.textSecondary} />
-          <Text style={styles.secondaryButtonText}>Çıkış Yap</Text>
+        <View style={styles.divider} />
+
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.75}>
+          <MaterialIcons name="logout" size={16} color={theme.colors.textMuted} />
+          <Text style={styles.signOutText}>Çıkış Yap</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
@@ -131,87 +222,118 @@ const useStyles = createThemedStyles((theme) =>
       flex: 1,
       justifyContent: 'center',
       paddingHorizontal: theme.spacing.xl,
-      paddingBottom: 120,
+      paddingBottom: 100,
       backgroundColor: theme.colors.background,
     },
     panel: {
       alignItems: 'center',
-      borderRadius: theme.borderRadius.xl,
+      borderRadius: 28,
       borderWidth: 1,
       borderColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.navGlass,
       paddingHorizontal: theme.spacing.xl,
-      paddingVertical: theme.spacing.xxl,
-      gap: theme.spacing.md,
-      ...theme.shadows.md,
+      paddingBottom: theme.spacing.xl,
+      paddingTop: 0,
+      gap: theme.spacing.sm,
+      overflow: 'hidden',
+      ...theme.shadows.lg,
     },
-    iconWrap: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
-      alignItems: 'center',
+    accentBar: {
+      width: '100%',
+      height: 4,
+      backgroundColor: theme.colors.primary,
+      borderRadius: 0,
+      marginBottom: theme.spacing.lg,
+    },
+    badgeRow: {
+      flexDirection: 'row',
       justifyContent: 'center',
-      backgroundColor: theme.colors.primaryLight,
-      marginBottom: theme.spacing.xs,
+      marginBottom: 4,
     },
-    eyebrow: {
-      fontSize: theme.fontSize.xs,
-      fontWeight: theme.fontWeight.bold,
-      color: theme.colors.textMuted,
-      letterSpacing: 0.8,
+    badge: {
+      paddingHorizontal: 14,
+      paddingVertical: 5,
+      borderRadius: 999,
+      backgroundColor: theme.colors.primaryLight,
+      borderWidth: 1,
+      borderColor: `${theme.colors.primary}30`,
+    },
+    badgeText: {
+      fontSize: 10,
+      fontWeight: '800',
+      color: theme.colors.primary,
+      letterSpacing: 1.2,
     },
     title: {
       fontSize: theme.fontSize.xxl,
-      lineHeight: 30,
       fontWeight: theme.fontWeight.bold,
       color: theme.colors.textPrimary,
       textAlign: 'center',
+      lineHeight: 30,
+    },
+    subtitle: {
+      fontSize: theme.fontSize.base,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.colors.primary,
+      textAlign: 'center',
     },
     body: {
-      fontSize: theme.fontSize.md,
-      lineHeight: 22,
+      fontSize: theme.fontSize.sm,
+      lineHeight: 21,
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      marginBottom: theme.spacing.sm,
+      paddingHorizontal: 8,
+      marginBottom: 8,
     },
     primaryButton: {
       minHeight: 54,
       width: '100%',
-      borderRadius: theme.borderRadius.lg,
+      borderRadius: 18,
       backgroundColor: theme.colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
       flexDirection: 'row',
       gap: theme.spacing.sm,
       paddingHorizontal: theme.spacing.lg,
+      ...theme.shadows.sm,
     },
-    primaryButtonDisabled: {
-      opacity: 0.68,
-    },
+    primaryButtonDisabled: { opacity: 0.6 },
     primaryButtonText: {
       color: theme.colors.textInverse,
       fontSize: theme.fontSize.base,
       fontWeight: theme.fontWeight.bold,
       textAlign: 'center',
+      flexShrink: 1,
+    },
+    feedbackRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
     },
     feedback: {
       fontSize: theme.fontSize.sm,
-      color: theme.colors.successText,
+      color: theme.colors.success,
       textAlign: 'center',
       lineHeight: 19,
+      flex: 1,
     },
-    secondaryButton: {
+    divider: {
+      width: '100%',
+      height: 1,
+      backgroundColor: theme.colors.divider,
+      marginVertical: 4,
+    },
+    signOutBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: theme.spacing.xs,
-      paddingVertical: theme.spacing.sm,
+      paddingVertical: theme.spacing.xs,
       paddingHorizontal: theme.spacing.md,
-      marginTop: theme.spacing.xs,
     },
-    secondaryButtonText: {
-      color: theme.colors.textSecondary,
+    signOutText: {
+      color: theme.colors.textMuted,
       fontSize: theme.fontSize.sm,
       fontWeight: theme.fontWeight.semibold,
     },
-  })
+  }),
 );

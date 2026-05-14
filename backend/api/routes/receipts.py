@@ -280,13 +280,49 @@ def review_receipt(
         current_user["id"],
         request.notes,
     )
-    notify_user(
-        receipt_doc.get("uploaded_by"),
-        "receipt",
-        "Dekont Sonuclandi",
-        "Yuklediginiz dekont ev sahibi tarafindan degerlendirildi.",
-        receipt_id,
-    )
+
+    if next_status == "approved":
+        amount = receipt_doc.get("amount")
+        month = receipt_doc.get("month", "")
+        receipt_type = receipt_doc.get("receipt_type", "")
+        type_label = {"rent": "Kira", "dues": "Aidat", "other": "Diğer"}.get(receipt_type, "Ödeme")
+        try:
+            month_label = datetime.strptime(month, "%Y-%m").strftime("%B %Y") if month else ""
+        except ValueError:
+            month_label = month
+        amount_str = f"{float(amount):,.0f} ₺".replace(",", ".") if amount is not None else ""
+        tenant_msg = f"✅ {type_label} dekontu onaylandı."
+        if amount_str and month_label:
+            tenant_msg = f"✅ {month_label} {type_label.lower()} dekontu ({amount_str}) onaylandı."
+        elif amount_str:
+            tenant_msg = f"✅ {type_label} dekontu ({amount_str}) onaylandı."
+        notify_user(
+            receipt_doc.get("uploaded_by"),
+            "receipt",
+            "Dekont Onaylandı",
+            tenant_msg,
+            receipt_id,
+        )
+        # Notify landlord too if reviewer is the agent (not the landlord themselves)
+        landlord_id = property_doc.get("landlord_id")
+        if landlord_id and landlord_id != current_user["id"]:
+            landlord_msg = tenant_msg.replace("✅", "💰").replace("onaylandı", "tahsil edildi")
+            notify_user(
+                landlord_id,
+                "receipt",
+                "Kira Tahsilatı",
+                landlord_msg,
+                receipt_id,
+            )
+    else:
+        notify_user(
+            receipt_doc.get("uploaded_by"),
+            "receipt",
+            "Dekont Reddedildi",
+            "Yüklediğiniz dekont reddedildi. Lütfen yeni bir dekont yükleyin.",
+            receipt_id,
+        )
+
     return {"success": True, "status": next_status}
 
 

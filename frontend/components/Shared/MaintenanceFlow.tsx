@@ -17,9 +17,9 @@ export const MaintenanceFlow: React.FC<MaintenanceFlowProps> = ({ request }) => 
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Surec akisi</Text>
+        <Text style={styles.title}>Süreç akışı</Text>
         <Text style={styles.caption}>
-          {request?.updated_at ? `Son guncelleme ${formatMaintenanceDate(request.updated_at, 'relative')}` : 'Talep acildi'}
+          {request?.updated_at ? `Son güncelleme ${formatMaintenanceDate(request.updated_at, 'relative')}` : 'Talep açıldı'}
         </Text>
       </View>
 
@@ -88,7 +88,7 @@ export const MaintenanceFlow: React.FC<MaintenanceFlowProps> = ({ request }) => 
               <Text style={styles.stepDescription}>{step.description}</Text>
               <View style={styles.statePill}>
                 <Text style={[styles.statePillText, { color: tone.textColor }]}>
-                  {isDone ? 'Tamamlandi' : isActive ? 'Aktif adim' : 'Siradaki adim'}
+                  {isDone ? 'Tamamlandı' : isActive ? 'Aktif adım' : 'Sıradaki adım'}
                 </Text>
               </View>
             </View>

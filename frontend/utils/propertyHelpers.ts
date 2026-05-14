@@ -66,26 +66,19 @@ export const formatCurrencyInput = (raw: string): string => {
 };
 
 export const formatDecimalInput = (raw: string): { display: string; raw: string } => {
-  // Accepts user input with comma or dot as decimal separator.
-  // Returns { display: "1.250,50", raw: "1250.50" } for parent state storage.
-  const sanitized = raw.replace(/[^0-9.,]/g, '');
+  // Turkish format: dots are thousand separators (stripped on input), comma is decimal separator.
+  // "30.000" re-typed → dots stripped → "30000" → formatted back as "30.000" correctly.
+  const sanitized = raw.replace(/[^0-9,]/g, '');
 
-  // Find decimal separator (first comma or dot)
   const commaIdx = sanitized.indexOf(',');
-  const dotIdx = sanitized.indexOf('.');
-  let sepIdx = -1;
-  if (commaIdx !== -1 && dotIdx !== -1) sepIdx = Math.min(commaIdx, dotIdx);
-  else if (commaIdx !== -1) sepIdx = commaIdx;
-  else if (dotIdx !== -1) sepIdx = dotIdx;
-
   let intStr: string;
   let decStr: string | null = null;
 
-  if (sepIdx !== -1) {
-    intStr = sanitized.slice(0, sepIdx).replace(/[^0-9]/g, '');
-    decStr = sanitized.slice(sepIdx + 1).replace(/[^0-9]/g, '').slice(0, 2);
+  if (commaIdx !== -1) {
+    intStr = sanitized.slice(0, commaIdx);
+    decStr = sanitized.slice(commaIdx + 1).slice(0, 2);
   } else {
-    intStr = sanitized.replace(/[^0-9]/g, '');
+    intStr = sanitized;
   }
 
   const formattedInt = intStr ? parseInt(intStr, 10).toLocaleString('tr-TR') : '';

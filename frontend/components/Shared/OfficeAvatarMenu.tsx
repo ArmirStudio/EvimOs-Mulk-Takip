@@ -116,7 +116,7 @@ export default function OfficeAvatarMenu({ onNotifications }: OfficeAvatarMenuPr
               <View style={[styles.menuIconBg, { backgroundColor: theme.colors.errorLight }]}>
                 <MaterialIcons name="logout" size={18} color={theme.colors.error} />
               </View>
-              <Text style={[styles.menuLabel, { color: theme.colors.error }]}>Cikis</Text>
+              <Text style={[styles.menuLabel, { color: theme.colors.error }]}>Çıkış</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>

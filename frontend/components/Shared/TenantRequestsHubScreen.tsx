@@ -194,7 +194,7 @@ export default function TenantRequestsHubScreen() {
         kind: 'maintenance',
         group: isPendingGroup ? 'pending' : 'history',
         sortAt: item.updated_at || item.created_at,
-        title: item.title || 'Bakim kaydi',
+        title: item.title || 'Bakım kaydı',
         subtitle:
           [item.property_address, item.property_district, item.property_city].filter(Boolean).join(', ') ||
           tr.tenant.unknownProperty,

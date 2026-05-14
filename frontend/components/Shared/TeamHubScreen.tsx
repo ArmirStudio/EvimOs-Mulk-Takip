@@ -179,7 +179,7 @@ export default function TeamHubScreen() {
       const memberResponse = await listTeamMembers();
       setMembers(memberResponse.members || []);
     } catch (error: any) {
-      setMembersError(error.message || 'Ofis rosteri yuklenemedi.');
+      setMembersError(error.message || 'Ofis listesi yüklenemedi.');
     } finally {
       setMembersLoading(false);
     }
@@ -205,7 +205,7 @@ export default function TeamHubScreen() {
       const announcementResponse = await listTeamAnnouncements();
       setAnnouncements(announcementResponse.announcements || []);
     } catch (error: any) {
-      setAnnouncementsError(error.message || 'Duyurular yuklenemedi.');
+      setAnnouncementsError(error.message || 'Duyurular yüklenemedi.');
     } finally {
       setAnnouncementsLoading(false);
     }
@@ -462,7 +462,7 @@ export default function TeamHubScreen() {
           ? userData.created_by
           : userData?.id;
         if (!officeOwnerId || !userData?.id) {
-          throw new Error('Ofis bilgisi bulunamadi.');
+          throw new Error('Ofis bilgisi bulunamadı.');
         }
         const preparedAttachment = await prepareUploadAsset({
           uri: announcementAttachment.uri,
@@ -1033,7 +1033,7 @@ export default function TeamHubScreen() {
                 </View>
                 <Text style={styles.sheetSubtitle}>
                   {employeeAccessLevel === 'full'
-                    ? 'Kiraci, ev sahibi ve mulk operasyonlarina erisebilir.'
+                    ? 'Kiracı, ev sahibi ve mülk operasyonlarına erişebilir.'
                     : 'Yalnızca kendisine açık görev ve ekranları görür.'}
                 </Text>
 
@@ -1068,13 +1068,13 @@ export default function TeamHubScreen() {
                 </View>
                 <Text style={styles.sheetMeta}>Atanan: {selectedTask.assignee_name || '-'}</Text>
                 <Text style={styles.sheetMeta}>Tarih: {formatTaskDateTime(selectedTask.scheduled_at)}</Text>
-                {!!selectedTask.property_label && <Text style={styles.sheetMeta}>Mulk: {selectedTask.property_label}</Text>}
+                {!!selectedTask.property_label && <Text style={styles.sheetMeta}>Mülk: {selectedTask.property_label}</Text>}
                 {!!selectedTask.description && <Text style={styles.sheetBody}>{selectedTask.description}</Text>}
                 {(selectedTask.status === 'pending' || selectedTask.status === 'in_progress') && (
                   <>
                     <TextInput
                       style={styles.noteInput}
-                      placeholder="Tamamlama notu veya aciklama"
+                      placeholder="Tamamlama notu veya açıklama"
                       placeholderTextColor={theme.colors.textMuted}
                       value={taskActionNote}
                       onChangeText={setTaskActionNote}
@@ -1086,7 +1086,7 @@ export default function TeamHubScreen() {
                         <MaterialIcons name="add-photo-alternate" size={16} color={theme.colors.primary} />
                         <Text style={styles.secondaryActionText}>Foto Ekle</Text>
                       </TouchableOpacity>
-                      {!!taskActionPhotos.length && <Text style={styles.photoText}>{taskActionPhotos.length} foto secildi</Text>}
+                      {!!taskActionPhotos.length && <Text style={styles.photoText}>{taskActionPhotos.length} fotoğraf seçildi</Text>}
                     </View>
                   </>
                 )}
@@ -1100,12 +1100,12 @@ export default function TeamHubScreen() {
                       }}
                     >
                       <MaterialIcons name="edit" size={16} color={theme.colors.primary} />
-                      <Text style={styles.secondaryActionText}>Duzenle</Text>
+                      <Text style={styles.secondaryActionText}>Düzenle</Text>
                     </TouchableOpacity>
                   )}
                   {(isManager || selectedTask.assignee_id === userData?.id) && selectedTask.status === 'pending' && (
                     <TouchableOpacity style={styles.primaryLarge} onPress={() => handleTaskTransition('start')} disabled={taskModalSubmitting}>
-                      <Text style={styles.primaryActionText}>Baslat</Text>
+                      <Text style={styles.primaryActionText}>Başlat</Text>
                     </TouchableOpacity>
                   )}
                   {selectedTask.assignee_id === userData?.id && selectedTask.status === 'in_progress' && (
@@ -1115,7 +1115,7 @@ export default function TeamHubScreen() {
                   )}
                   {isManager && ['pending', 'in_progress'].includes(selectedTask.status) && (
                     <TouchableOpacity style={styles.cancelLarge} onPress={() => handleTaskTransition('cancel')} disabled={taskModalSubmitting}>
-                      <Text style={styles.cancelText}>Iptal Et</Text>
+                      <Text style={styles.cancelText}>İptal Et</Text>
                     </TouchableOpacity>
                   )}
                   {isManager && ['pending', 'in_progress', 'cancelled'].includes(selectedTask.status) && (
@@ -1173,9 +1173,9 @@ export default function TeamHubScreen() {
               <Switch
                 value={sendToAll}
                 onValueChange={setSendToAll}
-                trackColor={{ false: '#D4D4D4', true: theme.colors.primary }}
+                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
                 thumbColor="#FFFFFF"
-                ios_backgroundColor="#D4D4D4"
+                ios_backgroundColor={theme.colors.border}
               />
             </View>
             {!sendToAll && (

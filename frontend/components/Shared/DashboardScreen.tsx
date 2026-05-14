@@ -11,7 +11,13 @@ import type { AdCampaign } from '@shared/campaign';
 import { createThemedStyles, useAppTheme } from '../../app/theme';
 import { tr } from '../../app/translations';
 import { brand } from '../../constants/brand';
-import { listDashboardCampaigns, recordCampaignEvent } from '../../services/appApi';
+import {
+  listDashboardCampaigns,
+  recordCampaignEvent,
+  getRentAlerts,
+  type RentDueProperty,
+  type ExpiringContract,
+} from '../../services/appApi';
 import { formatCurrency } from '../../utils/propertyHelpers';
 import { supabase } from '../../services/supabase';
 import { useUserData } from '../../hooks/useUserData';
@@ -143,6 +149,8 @@ export default function DashboardScreen() {
   // Landlord state
   const [landlordStats, setLandlordStats] = useState<LandlordStats | null>(null);
   const [landlordTenantCount, setLandlordTenantCount] = useState(0);
+  const [rentDue, setRentDue] = useState<RentDueProperty[]>([]);
+  const [expiringContracts, setExpiringContracts] = useState<ExpiringContract[]>([]);
   const [monthlyRentTotal, setMonthlyRentTotal] = useState(0);
   const [monthlyChartData, setMonthlyChartData] = useState<{ label: string; value: number }[]>([]);
   const [landlordMaintenanceSummary, setLandlordMaintenanceSummary] = useState<MaintenanceSummary>({
@@ -382,6 +390,14 @@ export default function DashboardScreen() {
         .order('updated_at', { ascending: false })
         .limit(6);
       setLandlordMaintenanceSummary(buildMaintenanceSummary(maintenanceRows || []));
+
+      try {
+        const alerts = await getRentAlerts();
+        setRentDue(alerts.rent_due || []);
+        setExpiringContracts(alerts.expiring_contracts || []);
+      } catch {
+        // alert fetch failures are non-blocking
+      }
     } catch {
     } finally {
       setDataLoading(false);
@@ -914,8 +930,8 @@ export default function DashboardScreen() {
               <View style={s.maintenancePanelCard}>
                 <View style={s.maintenancePanelHeader}>
                   <View>
-                    <Text style={s.chartTitle}>Bakim sagligi</Text>
-                    <Text style={s.maintenancePanelSub}>Mulklerinizdeki acik, kritik ve kapanan talepleri izleyin.</Text>
+                    <Text style={s.chartTitle}>Bakım sağlığı</Text>
+                    <Text style={s.maintenancePanelSub}>Mülklerinizdeki açık, kritik ve kapanan talepleri izleyin.</Text>
                   </View>
                   <TouchableOpacity style={s.maintenancePanelLink} onPress={() => router.push('/landlord/maintenance' as any)}>
                     <MaterialIcons name="arrow-forward" size={18} color={theme.colors.primary} />
@@ -924,7 +940,7 @@ export default function DashboardScreen() {
                 <View style={s.maintenanceSummaryRow}>
                   <View style={s.maintenanceSummaryChip}>
                     <Text style={s.maintenanceSummaryValue}>{landlordMaintenanceSummary.pending + landlordMaintenanceSummary.inProgress}</Text>
-                    <Text style={s.maintenanceSummaryLabel}>Acik talep</Text>
+                    <Text style={s.maintenanceSummaryLabel}>Açık talep</Text>
                   </View>
                   <View style={s.maintenanceSummaryChip}>
                     <Text style={s.maintenanceSummaryValue}>{landlordMaintenanceSummary.critical}</Text>
@@ -935,6 +951,97 @@ export default function DashboardScreen() {
                     <Text style={s.maintenanceSummaryLabel}>Tamamlanan</Text>
                   </View>
                 </View>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* ── LANDLORD: KİRA TAHSİLAT DURUMU ────────────────────────────────── */}
+          {role === 'landlord' && rentDue.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(235).duration(500)} style={s.sectionPx}>
+              <View style={s.alertPanel}>
+                <View style={s.alertPanelHeader}>
+                  <MaterialIcons name="payments" size={18} color={theme.colors.warning} />
+                  <Text style={s.alertPanelTitle}>Kira Tahsilatı Bekliyor</Text>
+                  <View style={[s.alertBadge, { backgroundColor: theme.colors.warning }]}>
+                    <Text style={s.alertBadgeText}>{rentDue.length}</Text>
+                  </View>
+                </View>
+                {rentDue.slice(0, 3).map((item) => (
+                  <TouchableOpacity
+                    key={item.property_id}
+                    style={s.alertRow}
+                    activeOpacity={0.75}
+                    onPress={() => router.push('/landlord/receipts' as any)}
+                  >
+                    <View style={s.alertRowDot} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={s.alertRowTitle} numberOfLines={1}>
+                        {item.address || 'Adres bilgisi yok'}
+                      </Text>
+                      <Text style={s.alertRowSub}>
+                        {item.days_overdue > 0
+                          ? `${item.days_overdue} gün gecikmiş`
+                          : `Kira günü: ayın ${item.rent_day}i`}
+                        {item.monthly_rent ? ` · ${formatCurrency(item.monthly_rent)}` : ''}
+                      </Text>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={16} color={theme.colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+                {rentDue.length > 3 && (
+                  <TouchableOpacity
+                    onPress={() => router.push('/landlord/receipts' as any)}
+                    style={s.alertMore}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={s.alertMoreText}>+{rentDue.length - 3} mülk daha →</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </Animated.View>
+          )}
+
+          {/* ── LANDLORD: SÖZLEŞME BİTİŞ ALARMI ──────────────────────────────── */}
+          {role === 'landlord' && expiringContracts.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(242).duration(500)} style={s.sectionPx}>
+              <View style={[s.alertPanel, { borderLeftColor: theme.colors.error }]}>
+                <View style={s.alertPanelHeader}>
+                  <MaterialIcons name="event-busy" size={18} color={theme.colors.error} />
+                  <Text style={[s.alertPanelTitle, { color: theme.colors.error }]}>Sözleşme Bitiyor</Text>
+                  <View style={[s.alertBadge, { backgroundColor: theme.colors.error }]}>
+                    <Text style={s.alertBadgeText}>{expiringContracts.length}</Text>
+                  </View>
+                </View>
+                {expiringContracts.slice(0, 3).map((item) => {
+                  const urgency = item.days_remaining <= 15
+                    ? theme.colors.error
+                    : item.days_remaining <= 30
+                    ? theme.colors.warning
+                    : theme.colors.textSecondary;
+                  return (
+                    <TouchableOpacity
+                      key={item.property_id}
+                      style={s.alertRow}
+                      activeOpacity={0.75}
+                      onPress={() => router.push('/landlord/properties' as any)}
+                    >
+                      <View style={[s.alertRowDot, { backgroundColor: urgency }]} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.alertRowTitle} numberOfLines={1}>
+                          {item.address || 'Adres bilgisi yok'}
+                        </Text>
+                        <Text style={[s.alertRowSub, { color: urgency }]}>
+                          {item.days_remaining === 0
+                            ? 'Bugün bitiyor!'
+                            : `${item.days_remaining} gün kaldı`}
+                          {' · '}
+                          {new Date(item.contract_end).toLocaleDateString('tr-TR')}
+                        </Text>
+                      </View>
+                      <MaterialIcons name="chevron-right" size={16} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </Animated.View>
           )}
@@ -1151,11 +1258,11 @@ export default function DashboardScreen() {
                   <View style={s.tenantMaintenanceCard}>
                     <View style={s.maintenancePanelHeader}>
                       <View>
-                        <Text style={s.chartTitle}>Ariza durumu</Text>
+                        <Text style={s.chartTitle}>Arıza durumu</Text>
                         <Text style={s.maintenancePanelSub}>
                           {tenantMaintenanceSummary.awaitingApproval > 0
-                            ? 'Tamamlanan bir is icin geri bildiriminiz bekleniyor.'
-                            : 'Acik ve devam eden taleplerinizin son durumu.'}
+                            ? 'Tamamlanan bir iş için geri bildiriminiz bekleniyor.'
+                            : 'Açık ve devam eden taleplerinizin son durumu.'}
                         </Text>
                       </View>
                       <TouchableOpacity style={s.maintenancePanelLink} onPress={() => router.push('/tenant/maintenance' as any)}>
@@ -1165,7 +1272,7 @@ export default function DashboardScreen() {
                     <View style={s.maintenanceSummaryRow}>
                       <View style={s.maintenanceSummaryChip}>
                         <Text style={s.maintenanceSummaryValue}>{tenantMaintenanceSummary.pending + tenantMaintenanceSummary.inProgress}</Text>
-                        <Text style={s.maintenanceSummaryLabel}>Acik is</Text>
+                        <Text style={s.maintenanceSummaryLabel}>Açık iş</Text>
                       </View>
                       <View style={s.maintenanceSummaryChip}>
                         <Text style={s.maintenanceSummaryValue}>{tenantMaintenanceSummary.awaitingApproval}</Text>
@@ -1192,7 +1299,7 @@ export default function DashboardScreen() {
                             <MaterialIcons name={statusMeta.icon as any} size={16} color={statusTone.accentColor} />
                           </View>
                           <View style={{ flex: 1 }}>
-                            <Text style={s.activityTitle}>{latestItem.title || 'Bakim kaydi'}</Text>
+                            <Text style={s.activityTitle}>{latestItem.title || 'Bakım kaydı'}</Text>
                             <Text style={s.activityMsg}>{getMaintenanceNextAction(latestItem, 'tenant')}</Text>
                           </View>
                         </TouchableOpacity>
@@ -1349,7 +1456,7 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     gap: 12,
     marginBottom: 14,
   },
-  maintenancePanelSub: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, marginTop: 4, maxWidth: 240 },
+  maintenancePanelSub: { fontSize: 12, color: theme.colors.textSecondary, lineHeight: 18, marginTop: 4, flex: 1 },
   maintenancePanelLink: {
     width: 34,
     height: 34,
@@ -1546,6 +1653,72 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
   occupancyBarBg: { flex: 1, height: 6, borderRadius: 3, backgroundColor: theme.colors.surface2, overflow: 'hidden' },
   occupancyBarFill: { height: 6, borderRadius: 3, backgroundColor: theme.colors.success },
   occupancyPercent: { fontSize: 12, fontWeight: '700', color: theme.colors.successText, width: 36, textAlign: 'right' },
+  // Alert panels (rent due, contract expiry)
+  alertPanel: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.warning,
+    gap: 10,
+    ...theme.shadows.sm,
+  },
+  alertPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  alertPanelTitle: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.warning,
+    flex: 1,
+  },
+  alertBadge: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  alertBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  alertRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  alertRowDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.warning,
+    flexShrink: 0,
+  },
+  alertRowTitle: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+  },
+  alertRowSub: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
+  },
+  alertMore: {
+    paddingTop: 4,
+    alignItems: 'flex-end',
+  },
+  alertMoreText: {
+    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
   reportsBannerCard: {
     flexDirection: 'row',
     alignItems: 'center',

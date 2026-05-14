@@ -207,8 +207,44 @@ export default function PropertyDetailScreen() {
   const handleEdit = () => { if (property?.id) router.push(`/agent/edit-property?id=${property.id}` as any); };
 
   const handleShare = async () => {
+    if (!property) return;
+    const isVacant = property.status === 'vacant';
+
+    const lines: string[] = [];
+
+    if (isVacant) {
+      lines.push('🏠 KİRALIK MÜLK — EvimOS');
+      lines.push('');
+    }
+
+    const title = property.description || property.address;
+    if (title) lines.push(`📍 ${title}`);
+
+    const location = [property.district, property.city].filter(Boolean).join(', ');
+    if (location) lines.push(`🗺  ${location}`);
+
+    if (property.monthly_rent) {
+      lines.push(`💰 ${formatCurrency(property.monthly_rent)} / ay`);
+    }
+
+    if (property.property_type) {
+      const typeStr = TYPE_LABEL[property.property_type] || property.property_type;
+      const areaStr = property.area ? ` · ${property.area} m²` : '';
+      lines.push(`🏗  ${typeStr}${areaStr}`);
+    }
+
+    if (isVacant && property.agent?.phone) {
+      lines.push('');
+      lines.push(`📞 ${property.agent.phone}`);
+    }
+
+    if (isVacant) {
+      lines.push('');
+      lines.push('— EvimOS ile yönetilmektedir —');
+    }
+
     try {
-      await Share.share({ message: `${property?.description || property?.address} - ${formatCurrency(property?.monthly_rent)} / ay` });
+      await Share.share({ message: lines.join('\n') });
     } catch { }
   };
 
@@ -397,6 +433,23 @@ export default function PropertyDetailScreen() {
               <Text style={s.priceBandLabel}>Metrekare</Text>
             </View>
           </Animated.View>
+
+          {/* ── BOŞ MÜLK İLAN PAYLAŞ BANNER ── */}
+          {property.status === 'vacant' && canEditProperty && (
+            <Animated.View entering={FadeInDown.delay(110).duration(400)} style={s.shareListingBanner}>
+              <View style={s.shareListingLeft}>
+                <MaterialIcons name="campaign" size={22} color={theme.colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={s.shareListingTitle}>İlanı Paylaş</Text>
+                  <Text style={s.shareListingSubtitle}>WhatsApp, Instagram ve diğer platformlara gönder</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={s.shareListingBtn} onPress={handleShare} activeOpacity={0.82}>
+                <MaterialIcons name="share" size={16} color={theme.colors.textInverse} />
+                <Text style={s.shareListingBtnText}>Paylaş</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
 
           <View style={s.content}>
             {/* ── MÜLK BİLGİLERİ ── */}
@@ -778,6 +831,46 @@ const useStyles = createThemedStyles((theme) => StyleSheet.create({
     ...theme.shadows.md,
   },
   headerActions: { flexDirection: 'row', gap: 10 },
+
+  // Boş mülk ilan paylaşım banner
+  shareListingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 14,
+    borderRadius: theme.borderRadius.xl,
+    backgroundColor: theme.colors.primaryLight,
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '30',
+  },
+  shareListingLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  shareListingTitle: {
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.primary,
+  },
+  shareListingSubtitle: {
+    fontSize: 11,
+    color: theme.colors.textSecondary,
+    marginTop: 1,
+  },
+  shareListingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: theme.borderRadius.md,
+    flexShrink: 0,
+  },
+  shareListingBtnText: {
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textInverse,
+  },
 
   // Hero
   heroWrap: { width: '100%', aspectRatio: 4 / 3, position: 'relative' },

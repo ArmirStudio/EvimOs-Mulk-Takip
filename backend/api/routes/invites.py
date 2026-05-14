@@ -347,6 +347,8 @@ def create_invite(request: CreateInviteRequest, current_user: dict = Depends(get
         "employee_access_level": request.employee_access_level if request.role == "employee" else None,
         "expires_at": _iso(expires_at),
     }).execute()
+    if not result.data:
+        raise HTTPException(status_code=500, detail="Davet oluşturulamadı")
     invite = result.data[0]
     _event(invite["id"], "created", actor_id=current_user.get("id"), payload={
         "role": request.role,

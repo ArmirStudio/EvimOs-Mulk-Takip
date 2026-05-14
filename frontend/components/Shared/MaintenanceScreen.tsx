@@ -625,7 +625,7 @@ export default function MaintenanceScreen() {
               </View>
               <View style={s.cardHeaderMeta}>
                 <Text style={s.cardTitle} numberOfLines={1}>
-                  {item.title || 'Bakim Talebi'}
+                  {item.title || 'Bakım Talebi'}
                 </Text>
                 <Text style={s.cardAddress} numberOfLines={1}>
                   {item.property_address}
@@ -931,7 +931,7 @@ const useStyles = createThemedStyles((theme) =>
       gap: 12,
     },
     headerTitle: { fontSize: 28, fontWeight: '700', color: theme.colors.textPrimary },
-    headerSubtitle: { fontSize: 13, color: theme.colors.textMuted, marginTop: 4, maxWidth: 260, lineHeight: 18 },
+    headerSubtitle: { fontSize: 13, color: theme.colors.textMuted, marginTop: 4, lineHeight: 18 },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     headerAddBtn: {
       width: 44,

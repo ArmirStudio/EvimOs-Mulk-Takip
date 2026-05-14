@@ -147,9 +147,9 @@ export default function SetPasswordScreen() {
           <View style={styles.iconWrap}>
             <Ionicons name="key-outline" size={36} color={theme.colors.primary} />
           </View>
-          <Text style={styles.title}>Sifrenizi Belirleyin</Text>
+          <Text style={styles.title}>Şifrenizi Belirleyin</Text>
           <Text style={styles.subtitle}>
-            Guvenli bir sifre belirleyerek hesabiniza erismeye devam edin.
+            Güvenli bir şifre belirleyerek hesabınıza erişmeye devam edin.
           </Text>
         </View>
 

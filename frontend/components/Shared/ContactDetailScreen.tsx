@@ -20,14 +20,14 @@ import { useUserData } from '../../hooks/useUserData';
 const ROLE_LABELS: Record<string, string> = {
   agent: 'Emlakçı',
   landlord: 'Ev Sahibi',
-  tenant: 'Kiraci',
+  tenant: 'Kiracı',
   employee: 'Çalışan',
 };
 
 const STATUS_LABELS: Record<string, string> = {
   occupied: 'Kirada',
-  vacant: 'Bos',
-  maintenance: 'Bakimda',
+  vacant: 'Boş',
+  maintenance: 'Bakımda',
 };
 
 function getRoleColors(theme: any): Record<string, { bg: string; text: string }> {
@@ -87,7 +87,7 @@ export default function ContactDetailScreen() {
       setContact(response.user);
       setProperties(response.properties || []);
     } catch {
-      Alert.alert('Hata', 'Kisi bilgileri yuklenemedi.');
+      Alert.alert('Hata', 'Kişi bilgileri yüklenemedi.');
       router.back();
     } finally {
       setLoading(false);
@@ -102,10 +102,10 @@ export default function ContactDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      'Kaydi Sil',
-      `${contact?.full_name ?? 'Bu kisi'} silinecek. Mulk atamalari temizlenecek.`,
+      'Kaydı Sil',
+      `${contact?.full_name ?? 'Bu kişi'} silinecek. Mülk atamaları temizlenecek.`,
       [
-        { text: 'Iptal', style: 'cancel' },
+        { text: 'İptal', style: 'cancel' },
         {
           text: 'Sil',
           style: 'destructive',
@@ -214,7 +214,7 @@ export default function ContactDetailScreen() {
           <View style={s.emptyCard}>
             <MaterialIcons name="home" size={32} color={theme.colors.textMuted} />
             <Text style={s.emptyText}>
-              {contact.role === 'landlord' ? 'Sahip oldugu mulk yok' : 'Eslesmis mulk yok'}
+              {contact.role === 'landlord' ? 'Sahip olduğu mülk yok' : 'Eşleşmiş mülk yok'}
             </Text>
           </View>
         ) : (

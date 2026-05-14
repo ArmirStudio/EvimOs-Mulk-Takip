@@ -87,7 +87,7 @@ function formatMonthDisplay(value: string): string {
 function validateReceiptDocument(document: UploadedDoc): string | null {
   const contentType = (document.type || '').toLowerCase();
   if (!ALLOWED_RECEIPT_CONTENT_TYPES.has(contentType)) {
-    return 'Sadece JPG, PNG, WEBP veya PDF dosyasi yukleyebilirsiniz.';
+    return 'Sadece JPG, PNG, WEBP veya PDF dosyası yükleyebilirsiniz.';
   }
   if (document.size && document.size > MAX_RECEIPT_FILE_SIZE_BYTES) {
     return 'Dosya boyutu 10 MB sınırını aşamaz.';

@@ -711,6 +711,44 @@ export function listDashboardCampaigns() {
   return apiRequest<{ campaigns: any[] }>('/dashboard/campaigns');
 }
 
+export interface RentDueProperty {
+  property_id: string;
+  address: string | null;
+  city: string | null;
+  district: string | null;
+  monthly_rent: number | null;
+  rent_day: number;
+  days_overdue: number;
+}
+
+export interface ExpiringContract {
+  property_id: string;
+  address: string | null;
+  city: string | null;
+  district: string | null;
+  contract_end: string;
+  days_remaining: number;
+}
+
+export function getRentAlerts() {
+  return apiRequest<{ rent_due: RentDueProperty[]; expiring_contracts: ExpiringContract[] }>(
+    '/dashboard/rent-alerts'
+  );
+}
+
+export interface PropertyScore {
+  property_id: string;
+  address: string | null;
+  overall: number;
+  collection: number;
+  maintenance: number;
+  occupancy: number;
+}
+
+export function getPropertyScores() {
+  return apiRequest<{ scores: PropertyScore[] }>('/dashboard/property-scores');
+}
+
 export function recordCampaignEvent(
   campaignId: string,
   payload: {
