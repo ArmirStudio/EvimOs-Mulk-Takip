@@ -233,9 +233,9 @@ export default function PropertyDetailScreen() {
       lines.push(`🏗  ${typeStr}${areaStr}`);
     }
 
-    if (isVacant && property.agent?.phone) {
+    if (isVacant && agent?.phone) {
       lines.push('');
-      lines.push(`📞 ${property.agent.phone}`);
+      lines.push(`📞 ${agent.phone}`);
     }
 
     if (isVacant) {

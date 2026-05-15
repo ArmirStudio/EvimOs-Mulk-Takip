@@ -315,6 +315,43 @@ def complete_agent_onboarding(
     return {"success": True, "user": user}
 
 
+@router.delete("/me")
+def delete_own_account(current_user: dict = Depends(get_current_user)):
+    """
+    Kullanıcının kendi hesabını silmesi. KVKK: PII anında anonim hale getirilir,
+    finansal kayıtlar TTK gereği korunur, auth hesabı kalıcı ban alır.
+    """
+    if current_user.get("role") == "admin":
+        raise HTTPException(status_code=403, detail="Admin hesabı bu yolla silinemez")
+
+    user_id = current_user["id"]
+    auth_id = current_user.get("auth_id")
+    now = datetime.utcnow().isoformat()
+
+    # Benzersiz placeholder — email UNIQUE constraint'i korur
+    anonymized_email = f"deleted_{user_id}@deleted.evimos.app"
+
+    supabase.table("users").update({
+        "full_name": "Silinmiş Hesap",
+        "phone": None,
+        "push_token": None,
+        "avatar_url": None,
+        "email": anonymized_email,
+        "active": False,
+        "updated_at": now,
+    }).eq("id", user_id).execute()
+
+    # Giriş engeli: ban ile auth kullanıcısını devre dışı bırak
+    # (FK RESTRICT nedeniyle silme yerine ban tercih edilir; finansal kayıtlar korunur)
+    if auth_id:
+        try:
+            supabase.auth.admin.update_user_by_id(auth_id, {"ban_duration": "876600h"})
+        except Exception:
+            pass
+
+    return {"success": True}
+
+
 @router.get("/{user_id}")
 def get_user_detail(user_id: str, current_user: dict = Depends(get_current_user)):
     target_user = _get_user_or_404(user_id)

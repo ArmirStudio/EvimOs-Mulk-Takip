@@ -322,6 +322,15 @@ def review_receipt(
             "Yüklediğiniz dekont reddedildi. Lütfen yeni bir dekont yükleyin.",
             receipt_id,
         )
+        landlord_id = property_doc.get("landlord_id")
+        if landlord_id and landlord_id != current_user["id"]:
+            notify_user(
+                landlord_id,
+                "receipt",
+                "Dekont Reddedildi",
+                "Kiracının yüklediği dekont reddedildi. Kiracı yeni dekont yüklemeli.",
+                receipt_id,
+            )
 
     return {"success": True, "status": next_status}
 

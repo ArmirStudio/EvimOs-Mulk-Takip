@@ -16,15 +16,16 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Take photos of receipts and maintenance issues",
-        "NSContactsUsageDescription": "Select one contact to prefill an EvimOs invite",
-        "NSPhotoLibraryUsageDescription": "Select photos from your gallery",
-        "NSMicrophoneUsageDescription": "Record audio for maintenance reports",
+        "NSCameraUsageDescription": "Dekont ve bakım sorunlarının fotoğrafını çekmek için kameraya erişim gerekiyor.",
+        "NSContactsUsageDescription": "EvimOs daveti oluşturmak için rehberden kişi seçilebilir.",
+        "NSPhotoLibraryUsageDescription": "Galeriden fotoğraf veya belge seçmek için izin gerekiyor.",
+        "NSMicrophoneUsageDescription": "Bakım raporu için ses kaydı almak amacıyla mikrofon gerekiyor.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.emirsenocak.frontend"
+      "bundleIdentifier": "com.emirsenocak.evimos"
     },
     "android": {
+      "package": "com.emirsenocak.evimos",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"

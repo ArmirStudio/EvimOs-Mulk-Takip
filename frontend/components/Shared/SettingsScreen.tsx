@@ -11,7 +11,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { createThemedStyles, useAppTheme, useThemeController } from '../../app/theme';
 import { tr } from '../../app/translations';
 import { useUserData, signOut } from '../../hooks/useUserData';
-import { appApi, listUsers, updateUser } from '../../services/appApi';
+import { appApi, listUsers, updateUser, deleteOwnAccount } from '../../services/appApi';
 import { mapPreferenceToBackendTheme } from '../../services/preferences';
 import AnimatedHeaderScrollView from './AnimatedHeaderScrollView';
 import AnimatedScreen from './AnimatedScreen';
@@ -293,6 +293,42 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Hesabı Sil',
+      'Hesabınızı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      [
+        { text: tr.common.cancel, style: 'cancel' },
+        {
+          text: 'Hesabı Sil',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Son Onay',
+              'Kişisel verileriniz anında anonim hale getirilir. Finansal kayıtlar yasal yükümlülük gereği saklanmaya devam eder. Devam edilsin mi?',
+              [
+                { text: tr.common.cancel, style: 'cancel' },
+                {
+                  text: 'Evet, Hesabı Sil',
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      await deleteOwnAccount();
+                      await signOut();
+                      router.replace('/login' as any);
+                    } catch {
+                      Alert.alert(tr.common.error, 'Hesap silinemedi. Lütfen tekrar deneyin.');
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   const renderSectionHeader = (title: string, badgeLabel?: string) => (
     <View style={s.sectionHeaderRow}>
       <Text style={s.sectionLabel}>{title}</Text>
@@ -471,6 +507,8 @@ export default function SettingsScreen() {
       {/* ÇIKIŞ */}
       <View style={[s.menuCard, { marginBottom: 40 }]}>
         {renderMenuItem('logout', tr.auth.logout, handleSignOut, undefined, true)}
+        <View style={s.menuDivider} />
+        {renderMenuItem('delete-forever', 'Hesabımı Sil', handleDeleteAccount, undefined, true)}
       </View>
 
       {/* SETTINGS FOOTER - BRANDING */}

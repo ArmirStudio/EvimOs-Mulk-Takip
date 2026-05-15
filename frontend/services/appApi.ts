@@ -564,6 +564,12 @@ export function completeAgentOnboarding() {
   });
 }
 
+export function deleteOwnAccount() {
+  return apiRequest<{ success: boolean }>('/users/me', {
+    method: 'DELETE',
+  });
+}
+
 export function deleteTeamTask(taskId: string) {
   return apiRequest<{ success: boolean }>(`/team/tasks/${taskId}`, {
     method: 'DELETE',
